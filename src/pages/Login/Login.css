@@ -1,0 +1,1296 @@
+/* ============================================
+   PALETA COLEGIO BELÉN
+   Dorado · Azul · Rojo
+   ============================================ */
+:root {
+  /* Identidad Colegio Belén */
+  --belen-dorado: #F9A825;
+  --belen-dorado-claro: #FBC02D;
+  --belen-dorado-oscuro: #F57F17;
+  --belen-azul: #1A237E;
+  --belen-azul-medio: #283593;
+  --belen-azul-claro: #3949AB;
+  --belen-rojo: #C62828;
+  --belen-rojo-oscuro: #B71C1C;
+
+  /* Sistema */
+  --color-fondo: #FBF8EF;
+  --color-fondo-input: #FAF7EE;
+  --color-blanco: #ffffff;
+  --color-texto: #1A237E;
+  --color-texto-suave: #283593;
+  --color-texto-secundario: #475569;
+  --color-texto-terciario: #94A3B8;
+  --color-borde: #E8E2D0;
+  --color-borde-suave: #F0E9D6;
+
+  --sombra-sm: 0 1px 2px rgba(26, 35, 126, 0.05);
+  --sombra-md: 0 4px 16px -2px rgba(26, 35, 126, 0.08);
+  --sombra-lg: 0 20px 60px -12px rgba(26, 35, 126, 0.18);
+  --sombra-dorada: 0 8px 24px -4px rgba(249, 168, 37, 0.35);
+
+  --radio-sm: 8px;
+  --radio-md: 12px;
+  --radio-lg: 20px;
+  --radio-xl: 28px;
+
+  --transicion: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--belen-azul);
+  color: var(--color-texto);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   LAYOUT PRINCIPAL
+   - Móvil/Tablet (default): fondo cubre toda la pantalla
+   - Desktop (≥1024px): layout dividido, fondo solo en la izquierda
+   ============================================ */
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+/* ============================================
+   FONDO DEL CARRUSEL
+   - Móvil: fixed, cubre toda la pantalla
+   - Desktop: absolute, contenido en la columna izquierda
+   ============================================ */
+.login-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: #0a0f3d;
+  overflow: hidden;
+}
+
+.brand-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    var(--belen-dorado) 0%,
+    var(--belen-dorado) 33%,
+    var(--belen-rojo) 33%,
+    var(--belen-rojo) 66%,
+    var(--belen-dorado) 66%,
+    var(--belen-dorado) 100%
+  );
+  z-index: 10;
+}
+
+.brand-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.4s ease-in-out, transform 8s ease-out;
+  transform: scale(1.08);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.brand-slide.activo {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.brand-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.brand-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(10, 15, 61, 0.75) 0%,
+      rgba(26, 35, 126, 0.6) 40%,
+      rgba(26, 35, 126, 0.75) 70%,
+      rgba(10, 15, 61, 0.92) 100%
+    );
+  z-index: 1;
+}
+
+.brand-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at top left, rgba(249, 168, 37, 0.2) 0%, transparent 45%),
+    radial-gradient(ellipse at bottom right, rgba(198, 40, 40, 0.25) 0%, transparent 50%);
+  z-index: 2;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* ============================================
+   HEADER — Logo y badge
+   ============================================ */
+.login-header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 22px 12px;
+}
+
+.brand-logo {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 50%;
+  padding: 7px;
+  box-shadow:
+    0 0 0 3px rgba(249, 168, 37, 0.5),
+    0 0 0 6px rgba(198, 40, 40, 0.3),
+    0 10px 24px -6px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.brand-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(249, 168, 37, 0.4);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--belen-dorado-claro);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.brand-badge svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   CONTENIDO DE MARCA — Mensajes rotativos
+   ============================================ */
+.login-brand-content {
+  position: relative;
+  z-index: 5;
+  padding: 8px 22px 16px;
+}
+
+.brand-messages {
+  position: relative;
+  width: 100%;
+  min-height: 110px;
+}
+
+.brand-message {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+  pointer-events: none;
+}
+
+.brand-message.activo {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.brand-title {
+  font-size: clamp(1.5rem, 5.5vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  color: #ffffff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.brand-title::before {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--belen-dorado), var(--belen-rojo));
+  border-radius: 2px;
+  box-shadow: 0 0 14px rgba(249, 168, 37, 0.6);
+  margin-bottom: 6px;
+}
+
+.brand-subtitle {
+  font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+  font-weight: 400;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 500px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================
+   PANEL DE FORMULARIO
+   ============================================ */
+.login-form-panel {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.login-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-blanco);
+  border-radius: var(--radio-lg);
+  padding: 36px 32px 36px;
+  box-shadow: var(--sombra-lg);
+  border: 1px solid var(--color-borde-suave);
+  overflow: hidden;
+}
+
+/* Línea de gradiente superior — colores del Colegio */
+.login-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg,
+    var(--belen-dorado-claro) 0%,
+    var(--belen-dorado) 25%,
+    var(--belen-rojo) 50%,
+    var(--belen-dorado-oscuro) 75%,
+    var(--belen-dorado) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radio-lg) var(--radio-lg) 0 0;
+  animation: gradient-flow 8s ease-in-out infinite;
+}
+
+.login-card-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-card-badge {
+  display: none; /* No usado en esta versión, el badge está arriba en el header */
+}
+
+.login-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--belen-azul);
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.login-subtitle {
+  font-size: 0.88rem;
+  color: var(--color-texto-secundario);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--belen-azul);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: var(--belen-azul-medio);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: color var(--transicion);
+  z-index: 1;
+}
+
+.form-input-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.form-input {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px 0 46px;
+  font-size: 0.95rem;
+  color: var(--belen-azul);
+  background: var(--color-fondo-input);
+  border: 1.5px solid var(--color-borde);
+  border-radius: var(--radio-md);
+  outline: none;
+  transition: all var(--transicion);
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+.form-input.has-suffix {
+  padding-right: 46px;
+}
+
+.form-input::placeholder {
+  color: var(--color-texto-terciario);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.form-input:hover:not(:disabled) {
+  border-color: var(--belen-dorado);
+  background: var(--color-blanco);
+}
+
+.form-input:focus {
+  border-color: var(--belen-dorado);
+  background: var(--color-blanco);
+  box-shadow: 0 0 0 4px rgba(249, 168, 37, 0.15);
+}
+
+.form-input:focus ~ .form-input-icon,
+.form-input-wrapper:focus-within .form-input-icon {
+  color: var(--belen-dorado-oscuro);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-input-suffix {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-texto-terciario);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all var(--transicion);
+  padding: 0;
+}
+
+.form-input-suffix svg {
+  width: 20px;
+  height: 20px;
+}
+
+.form-input-suffix:hover {
+  color: var(--belen-dorado-oscuro);
+  background: rgba(249, 168, 37, 0.1);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -2px;
+}
+
+.checkbox-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox-custom {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--color-borde);
+  border-radius: 5px;
+  background: var(--color-blanco);
+  transition: all var(--transicion);
+  flex-shrink: 0;
+}
+
+.checkbox-custom::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 5px;
+  height: 9px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.15s ease;
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked ~ .checkbox-custom {
+  background: var(--belen-dorado);
+  border-color: var(--belen-dorado);
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked ~ .checkbox-custom::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.checkbox-wrapper input[type="checkbox"]:focus-visible ~ .checkbox-custom {
+  box-shadow: 0 0 0 3px rgba(249, 168, 37, 0.25);
+}
+
+.checkbox-label {
+  font-size: 0.85rem;
+  color: var(--color-texto-secundario);
+  font-weight: 500;
+}
+
+.link {
+  font-size: 0.85rem;
+  color: var(--belen-azul);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transicion);
+}
+
+.link:hover {
+  color: var(--belen-dorado-oscuro);
+  text-decoration: underline;
+}
+
+/* ============================================
+   BOTÓN PRINCIPAL — Dorado del Colegio
+   ============================================ */
+.login-button {
+  position: relative;
+  height: 52px;
+  margin-top: 6px;
+  padding: 0 24px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--belen-azul);
+  background: linear-gradient(135deg, var(--belen-dorado-claro) 0%, var(--belen-dorado) 50%, var(--belen-dorado-oscuro) 100%);
+  border: none;
+  border-radius: var(--radio-md);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: inherit;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 4px 12px rgba(249, 168, 37, 0.3),
+    0 2px 4px rgba(26, 35, 126, 0.1);
+  overflow: hidden;
+}
+
+.login-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--belen-dorado) 0%, var(--belen-dorado-oscuro) 100%);
+  opacity: 0;
+  transition: opacity var(--transicion);
+}
+
+.login-button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.login-button > * {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.login-button svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.25s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 8px 24px rgba(249, 168, 37, 0.45),
+    0 4px 8px rgba(26, 35, 126, 0.15);
+}
+
+.login-button:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.login-button:hover:not(:disabled)::after {
+  left: 100%;
+}
+
+.login-button:hover:not(:disabled) svg {
+  transform: translateX(4px);
+}
+
+.login-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(26, 35, 126, 0.25);
+  border-top-color: var(--belen-azul);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.login-card-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-borde-suave);
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--color-texto-secundario);
+}
+
+.alerta {
+  padding: 12px 14px;
+  border-radius: var(--radio-md);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slide-in 0.25s ease;
+}
+
+.alerta-error {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+  color: var(--belen-rojo);
+  border-left: 3px solid var(--belen-rojo);
+}
+
+.alerta svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   FOOTER — Indicadores y desarrollador
+   ============================================ */
+.login-footer {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 16px 22px 22px;
+}
+
+.brand-indicators {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brand-indicator {
+  position: relative;
+  width: 26px;
+  height: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: background var(--transicion);
+  overflow: hidden;
+}
+
+.brand-indicator::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--belen-dorado);
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.brand-indicator.activo {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.brand-indicator.activo::after {
+  transform: scaleX(1);
+  animation: indicator-progress 6s linear forwards;
+}
+
+.brand-indicator:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.brand-developer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.brand-developer-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+}
+
+.brand-developer img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  padding: 2px;
+  object-fit: contain;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.brand-developer-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+.shake {
+  animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px rgba(249, 168, 37, 0.5),
+      0 0 0 6px rgba(198, 40, 40, 0.3),
+      0 10px 24px -6px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(249, 168, 37, 0.65),
+      0 0 0 8px rgba(198, 40, 40, 0.4),
+      0 10px 24px -6px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@keyframes indicator-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes gradient-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ============================================
+   ESCRITORIO (≥1024px) — LAYOUT DIVIDIDO
+   ============================================ */
+@media (min-width: 1024px) {
+  .login-page {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "brand    header"
+      "brand    form"
+      "brand    footer";
+    min-height: 100vh;
+  }
+
+  .login-background {
+    position: relative;
+    grid-area: brand;
+    height: 100%;
+    align-self: stretch;
+  }
+
+  .login-header {
+    grid-area: brand;
+    align-self: start;
+    padding: 40px 48px 16px;
+    gap: 18px;
+  }
+
+  .brand-logo {
+    width: 96px;
+    height: 96px;
+    padding: 10px;
+  }
+
+  .brand-badge {
+    font-size: 0.75rem;
+    padding: 8px 14px;
+  }
+
+  .login-brand-content {
+    grid-area: brand;
+    align-self: center;
+    padding: 24px 48px;
+  }
+
+  .brand-messages {
+    min-height: 160px;
+  }
+
+  .brand-title {
+    font-size: clamp(1.8rem, 2.8vw, 2.4rem);
+  }
+
+  .brand-title::before {
+    width: 64px;
+    height: 4px;
+  }
+
+  .brand-subtitle {
+    font-size: clamp(0.9rem, 1vw, 1.05rem);
+  }
+
+  .login-form-panel {
+    grid-area: form;
+    padding: 32px 28px;
+    align-items: center;
+  }
+
+  .login-card {
+    max-width: 440px;
+    padding: 44px 40px;
+  }
+
+  .login-card::before {
+    height: 7px;
+  }
+
+  .login-title {
+    font-size: 1.7rem;
+  }
+
+  .login-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .login-form {
+    gap: 18px;
+  }
+
+  .form-input {
+    height: 52px;
+  }
+
+  .login-button {
+    height: 54px;
+    font-size: 0.95rem;
+  }
+
+  .login-footer {
+    grid-area: brand;
+    align-self: end;
+    padding: 16px 48px 28px;
+    gap: 18px;
+  }
+
+  .brand-indicator {
+    width: 32px;
+  }
+
+  .brand-developer {
+    padding: 5px 12px 5px 5px;
+  }
+
+  .brand-developer img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .brand-developer-name {
+    font-size: 0.78rem;
+  }
+
+  /* En desktop el indicador vacío del header y footer en la columna derecha */
+  .login-page::before {
+    content: "";
+    grid-area: header;
+  }
+  .login-page::after {
+    content: "";
+    grid-area: footer;
+  }
+}
+
+/* ============================================
+   DESKTOP GRANDE (≥1280px)
+   ============================================ */
+@media (min-width: 1280px) {
+  .login-page {
+    grid-template-columns: 1.2fr 1fr;
+  }
+
+  .login-header {
+    padding: 48px 56px 20px;
+    gap: 20px;
+  }
+
+  .brand-logo {
+    width: 120px;
+    height: 120px;
+    padding: 14px;
+  }
+
+  .brand-badge {
+    font-size: 0.78rem;
+    padding: 9px 18px;
+    letter-spacing: 0.08em;
+  }
+
+  .login-brand-content {
+    padding: 32px 56px;
+  }
+
+  .brand-messages {
+    min-height: 180px;
+  }
+
+  .brand-title {
+    font-size: clamp(2rem, 3vw, 2.8rem);
+  }
+
+  .brand-title::before {
+    width: 72px;
+    height: 5px;
+  }
+
+  .brand-subtitle {
+    font-size: clamp(0.95rem, 1vw, 1.15rem);
+  }
+
+  .login-form-panel {
+    padding: 40px 32px;
+  }
+
+  .login-card {
+    max-width: 460px;
+    padding: 52px 48px;
+  }
+
+  .login-card::before {
+    height: 8px;
+  }
+
+  .login-title {
+    font-size: 1.85rem;
+  }
+
+  .form-input {
+    height: 54px;
+    font-size: 1rem;
+  }
+
+  .form-label {
+    font-size: 0.82rem;
+  }
+
+  .login-button {
+    height: 56px;
+  }
+
+  .login-footer {
+    padding: 20px 56px 32px;
+  }
+
+  .brand-indicators {
+    gap: 8px;
+  }
+
+  .brand-indicator {
+    width: 36px;
+    height: 5px;
+  }
+
+  .brand-developer img {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ============================================
+   DESKTOP MUY GRANDE (≥1600px)
+   ============================================ */
+@media (min-width: 1600px) {
+  .login-page {
+    grid-template-columns: 1.25fr 1fr;
+  }
+
+  .login-header {
+    padding: 56px 72px 24px;
+  }
+
+  .brand-logo {
+    width: 140px;
+    height: 140px;
+    padding: 16px;
+  }
+
+  .login-brand-content {
+    padding: 40px 72px;
+  }
+
+  .brand-messages {
+    min-height: 220px;
+  }
+
+  .brand-title {
+    font-size: clamp(2.4rem, 3.2vw, 3.4rem);
+  }
+
+  .brand-subtitle {
+    font-size: clamp(1rem, 1vw, 1.25rem);
+  }
+
+  .login-card {
+    max-width: 500px;
+    padding: 60px 56px;
+  }
+
+  .login-card::before {
+    height: 9px;
+  }
+
+  .login-title {
+    font-size: 2rem;
+  }
+
+  .form-input {
+    height: 58px;
+  }
+
+  .login-button {
+    height: 60px;
+  }
+
+  .login-footer {
+    padding: 24px 72px 36px;
+  }
+}
+
+/* ============================================
+   MÓVIL PEQUEÑO (≤480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .login-header {
+    padding: 20px 18px 8px;
+    gap: 10px;
+  }
+  .brand-logo {
+    width: 56px;
+    height: 56px;
+    padding: 6px;
+  }
+  .brand-badge {
+    font-size: 0.65rem;
+    padding: 6px 10px;
+    letter-spacing: 0.04em;
+  }
+  .login-brand-content {
+    padding: 4px 18px 12px;
+  }
+  .brand-messages {
+    min-height: 95px;
+  }
+  .brand-title {
+    font-size: 1.35rem;
+  }
+  .brand-title::before {
+    width: 44px;
+    height: 3px;
+  }
+  .brand-subtitle {
+    font-size: 0.82rem;
+  }
+  .login-form-panel {
+    padding: 14px 16px;
+  }
+  .login-card {
+    padding: 30px 24px;
+  }
+  .login-card::before {
+    height: 5px;
+  }
+  .login-title {
+    font-size: 1.35rem;
+  }
+  .form-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .login-footer {
+    padding: 12px 18px 18px;
+    gap: 10px;
+  }
+  .brand-indicator {
+    width: 22px;
+  }
+  .brand-developer {
+    padding: 3px 8px 3px 3px;
+    gap: 6px;
+  }
+  .brand-developer img {
+    width: 22px;
+    height: 22px;
+  }
+  .brand-developer-name {
+    font-size: 0.68rem;
+  }
+}
+
+/* ============================================
+   ORIENTACIÓN HORIZONTAL EN MÓVIL
+   ============================================ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .login-page {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    grid-template-rows: 1fr;
+    grid-template-areas: "brand form";
+  }
+
+  .login-background {
+    grid-area: brand;
+    position: relative;
+  }
+
+  .login-header {
+    grid-area: brand;
+    align-self: start;
+    padding: 14px 18px 8px;
+  }
+
+  .brand-logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .login-brand-content {
+    grid-area: brand;
+    align-self: center;
+    padding: 4px 18px 8px;
+  }
+
+  .brand-messages {
+    min-height: 60px;
+  }
+
+  .brand-title {
+    font-size: 1.1rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.78rem;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .login-form-panel {
+    grid-area: form;
+    padding: 14px 18px;
+  }
+
+  .login-card {
+    padding: 20px 24px;
+    max-width: 100%;
+  }
+
+  .login-card::before {
+    height: 4px;
+  }
+
+  .login-card-header {
+    margin-bottom: 14px;
+  }
+
+  .login-title {
+    font-size: 1.2rem;
+  }
+
+  .login-subtitle {
+    display: none;
+  }
+
+  .login-form {
+    gap: 12px;
+  }
+
+  .form-input {
+    height: 42px;
+  }
+
+  .login-button {
+    height: 44px;
+    margin-top: 2px;
+  }
+
+  .login-card-footer {
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+
+  .login-footer {
+    grid-area: brand;
+    align-self: end;
+    padding: 10px 18px 14px;
+  }
+
+  .brand-developer-label {
+    display: none;
+  }
+}

@@ -1,0 +1,34 @@
+/* Global styles for React Router */
+.app {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Focus visible styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--belen-dorado, #F9A825);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection colors */
+::selection {
+  background-color: var(--belen-dorado, #F9A825);
+  color: var(--belen-azul, #1A237E);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
