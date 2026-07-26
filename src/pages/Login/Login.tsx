@@ -93,6 +93,8 @@ const validarCorreo = (correo: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
 };
 
+const BASE = import.meta.env.BASE_URL;
+
 export default function Login() {
   const [identificador, setIdentificador] = useState('');
   const [password, setPassword] = useState('');
@@ -212,11 +214,11 @@ export default function Login() {
             <picture>
               <source
                 type="image/webp"
-                srcSet={`/${slide.imagen}-640w.webp 640w, /${slide.imagen}-960w.webp 960w, /${slide.imagen}-1280w.webp 1280w, /${slide.imagen}-1920w.webp 1920w`}
+                srcSet={`${BASE}${slide.imagen}-640w.webp 640w, ${BASE}${slide.imagen}-960w.webp 960w, ${BASE}${slide.imagen}-1280w.webp 1280w, ${BASE}${slide.imagen}-1920w.webp 1920w`}
                 sizes="100vw"
               />
               <img
-                src={`/${slide.imagen}-1280w.webp`}
+                src={`${BASE}${slide.imagen}-1280w.webp`}
                 alt=""
                 loading={i === 0 ? 'eager' : 'lazy'}
                 decoding="async"
@@ -236,11 +238,11 @@ export default function Login() {
           <picture>
             <source
               type="image/webp"
-              srcSet="/colegio_belen-192w.webp 192w, /colegio_belen-384w.webp 384w, /colegio_belen-768w.webp 768w"
+              srcSet={`${BASE}colegio_belen-192w.webp 192w, ${BASE}colegio_belen-384w.webp 384w, ${BASE}colegio_belen-768w.webp 768w`}
               sizes="(min-width: 1024px) 120px, 80px"
             />
             <img
-              src="/colegio_belen-384w.webp"
+              src={`${BASE}colegio_belen-384w.webp`}
               alt="Escudo del Colegio Mixto Belén"
               width="120"
               height="151"
@@ -404,11 +406,11 @@ export default function Login() {
           <picture>
             <source
               type="image/webp"
-              srcSet="/universidad_mariano_galvez-64w.webp 64w, /universidad_mariano_galvez-128w.webp 128w, /universidad_mariano_galvez-256w.webp 256w"
+              srcSet={`${BASE}universidad_mariano_galvez-64w.webp 64w, ${BASE}universidad_mariano_galvez-128w.webp 128w, ${BASE}universidad_mariano_galvez-256w.webp 256w`}
               sizes="28px"
             />
             <img
-              src="/universidad_mariano_galvez-128w.webp"
+              src={`${BASE}universidad_mariano_galvez-128w.webp`}
               alt="Universidad Mariano Gálvez de Guatemala"
               width="28"
               height="28"

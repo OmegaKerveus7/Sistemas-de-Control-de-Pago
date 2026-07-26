@@ -23,6 +23,8 @@ const IconoValidar = () => (
   </svg>
 );
 
+const BASE = import.meta.env.BASE_URL;
+
 export function Main() {
   const navigate = useNavigate();
 
@@ -46,11 +48,11 @@ export function Main() {
             <picture>
               <source
                 type="image/webp"
-                srcSet="/colegio_belen-192w.webp 192w, /colegio_belen-384w.webp 384w, /colegio_belen-768w.webp 768w"
+                srcSet={`${BASE}colegio_belen-192w.webp 192w, ${BASE}colegio_belen-384w.webp 384w, ${BASE}colegio_belen-768w.webp 768w`}
                 sizes="(min-width: 1024px) 90px, 70px"
               />
               <img
-                src="/colegio_belen-384w.webp"
+                src={`${BASE}colegio_belen-384w.webp`}
                 alt="Escudo del Colegio Mixto Belén"
                 width="90"
                 height="112"
@@ -138,11 +140,11 @@ export function Main() {
             <picture>
               <source
                 type="image/webp"
-                srcSet="/universidad_mariano_galvez-64w.webp 64w, /universidad_mariano_galvez-128w.webp 128w, /universidad_mariano_galvez-256w.webp 256w"
+                srcSet={`${BASE}universidad_mariano_galvez-64w.webp 64w, ${BASE}universidad_mariano_galvez-128w.webp 128w, ${BASE}universidad_mariano_galvez-256w.webp 256w`}
                 sizes="28px"
               />
               <img
-                src="/universidad_mariano_galvez-128w.webp"
+                src={`${BASE}universidad_mariano_galvez-128w.webp`}
                 alt="Universidad Mariano Gálvez de Guatemala"
                 width="28"
                 height="28"
