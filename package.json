@@ -8,5 +8,9 @@
     "dev:frontend": "cd frontend && bun run dev",
     "build": "cd backend && bun run build && cd ../frontend && bun run build",
     "install:all": "cd backend && bun install && cd ../frontend && bun install"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }
