@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Credenciales } from '../../models';
+import { login, guardarToken } from '../../services/auth.service';
 import './Login.css';
 
 interface Slide {
@@ -94,6 +95,7 @@ const validarCorreo = (correo: string): boolean => {
 };
 
 export default function Login() {
+  const navigate = useNavigate();
   const [identificador, setIdentificador] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
@@ -150,12 +152,20 @@ export default function Login() {
     };
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      console.log('Credenciales enviadas:', credenciales);
-      setError('El servicio de autenticación no está disponible en este momento.');
-      triggerShake();
-    } catch {
-      setError('Error inesperado. Intente nuevamente.');
+      const resultado = await login(credenciales);
+
+      if (resultado.exitoso && resultado.token) {
+        guardarToken(resultado.token);
+        if (resultado.usuario) {
+          localStorage.setItem('usuario', JSON.stringify(resultado.usuario));
+        }
+        navigate('/');
+      } else {
+        setError(resultado.mensaje || 'Error al iniciar sesión');
+        triggerShake();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error inesperado. Intente nuevamente.');
       triggerShake();
     } finally {
       setLoading(false);
