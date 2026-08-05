@@ -26,12 +26,12 @@ jobs:
         with:
           bun-version: latest
 
-      - run: bun install
-      - run: bun run build
+      - run: cd frontend && bun install
+      - run: cd frontend && bun run build
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: frontend/dist
       - id: deployment
         uses: actions/deploy-pages@v4
