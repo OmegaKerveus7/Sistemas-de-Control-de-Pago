@@ -1234,11 +1234,14 @@ body {
 
   .brand-subtitle {
     font-size: 0.78rem;
-    -webkit-line-clamp: 2;
-    display: -webkit-box;
+    display: -webkit-box;    
     -webkit-box-orient: vertical;
-    overflow: hidden;
+    overflow: hidden;            
+
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
   }
+
 
   .login-form-panel {
     grid-area: form;
