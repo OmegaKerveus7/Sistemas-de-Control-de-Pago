@@ -21,6 +21,11 @@ app.get('/api/health', (_req, res) => {
   res.json({ estado: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Saludo
+app.get('/api/saludo', (_req, res) => {
+  res.json({ mensaje: '¡Hola desde la API de parqueo!' });
+});
+
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/usuarios', usuariosRouter);
