@@ -1,33 +1,48 @@
-.PHONY: dev dev-backend dev-frontend build build-backend build-frontend install
+.PHONY: dev dev-backend dev-frontend build build-backend build-frontend install clean stop stop-backend stop-frontend
 
 # === DEVELOPMENT ===
+# Backend  -> http://localhost:4000
+# Frontend -> http://localhost:5173
 
-dev: dev-backend dev-frontend
+dev:
+	cd backend && bun run dev & cd frontend && bun run dev & wait
 
 dev-backend:
-	cd API && bun run dev
+	cd backend && bun run dev
 
 dev-frontend:
-	cd App_Web && bun run dev
+	cd frontend && bun run dev
 
 # === BUILD ===
 
 build: build-backend build-frontend
 
 build-backend:
-	cd API && bun run build
+	cd backend && bun run build
 
 build-frontend:
-	cd App_Web && bun run build
+	cd frontend && bun run build
 
 # === INSTALL ===
 
 install:
-	cd API && bun install
-	cd App_Web && bun install
+	cd backend && bun install
+	cd frontend && bun install
+
+# === STOP ===
+# Mata lo que escuche en el puerto. Compatible con Mac/Linux (lsof)
+# y Windows (PowerShell).
+
+stop: stop-backend stop-frontend
+
+stop-backend:
+	@if command -v lsof >/dev/null 2>&1; then lsof -ti :4000 | xargs kill; else powershell.exe -NoProfile -Command 'Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $$_.OwningProcess -Force -ErrorAction SilentlyContinue }'; fi; true
+
+stop-frontend:
+	@if command -v lsof >/dev/null 2>&1; then lsof -ti :5173 | xargs kill; else powershell.exe -NoProfile -Command 'Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $$_.OwningProcess -Force -ErrorAction SilentlyContinue }'; fi; true
 
 # === CLEAN ===
 
 clean:
-	rm -rf API/node_modules API/dist
-	rm -rf App_Web/node_modules App_Web/dist
+	rm -rf backend/node_modules backend/dist
+	rm -rf frontend/node_modules frontend/dist
