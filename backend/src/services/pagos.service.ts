@@ -1,38 +1,88 @@
-import { getPool, sql } from '../config/database';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
+import { getPool } from '../config/database';
 import type { Pago } from '../models';
 
+const SELECT_BASE = `
+  SELECT id_pago AS id, parqueo_id, monto, metodo, estado, referencia,
+         ip_inicio, ip_pago, procesado_por, creado_en
+  FROM pagos
+`;
+
 export async function listar(): Promise<Pago[]> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .query('SELECT * FROM Pagos ORDER BY creado_en DESC');
-  return result.recordset;
+  const pool = getPool();
+  const [rows] = await pool.query(`${SELECT_BASE} ORDER BY creado_en DESC`);
+  return rows as Pago[];
 }
 
 export async function obtenerPorId(id: number): Promise<Pago | null> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('id', sql.Int, id)
-    .query('SELECT * FROM Pagos WHERE id = @id');
-  return result.recordset[0] ?? null;
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE id_pago = ?`, [id]);
+  return (rows as unknown as Pago[])[0] ?? null;
 }
 
 export async function obtenerPorParqueo(parqueoId: number): Promise<Pago | null> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('parqueo_id', sql.Int, parqueoId)
-    .query('SELECT * FROM Pagos WHERE parqueo_id = @parqueo_id');
-  return result.recordset[0] ?? null;
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `${SELECT_BASE} WHERE parqueo_id = ? ORDER BY creado_en DESC LIMIT 1`,
+    [parqueoId],
+  );
+  return (rows as unknown as Pago[])[0] ?? null;
+}
+
+export async function obtenerPorReferencia(referencia: string): Promise<Pago | null> {
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `${SELECT_BASE} WHERE referencia = ? LIMIT 1`,
+    [referencia],
+  );
+  return (rows as unknown as Pago[])[0] ?? null;
 }
 
 export async function crear(data: Pago): Promise<number> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('parqueo_id', sql.Int, data.parqueo_id)
-    .input('monto', sql.Decimal(10, 2), data.monto)
-    .input('metodo', sql.NVarChar, data.metodo)
-    .input('procesado_por', sql.Int, data.procesado_por ?? null)
-    .query(`INSERT INTO Pagos (parqueo_id, monto, metodo, estado, procesado_por)
-            VALUES (@parqueo_id, @monto, @metodo, 'completado', @procesado_por);
-            SELECT SCOPE_IDENTITY() AS id;`);
-  return result.recordset[0]!.id;
+  const pool = getPool();
+  const [result] = await pool.execute<ResultSetHeader>(
+    `INSERT INTO pagos (parqueo_id, monto, metodo, estado, referencia, ip_inicio, ip_pago, procesado_por)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.parqueo_id,
+      data.monto,
+      data.metodo,
+      data.estado ?? 'pendiente',
+      data.referencia ?? null,
+      data.ip_inicio ?? null,
+      data.ip_pago ?? null,
+      data.procesado_por ?? null,
+    ],
+  );
+  return result.insertId;
+}
+
+export async function confirmar(id: number, referencia: string, ipPago: string): Promise<boolean> {
+  const pool = getPool();
+  const [result] = await pool.execute<ResultSetHeader>(
+    `UPDATE pagos SET estado = 'completado', referencia = ?, ip_pago = ?
+     WHERE id_pago = ? AND estado = 'pendiente'`,
+    [referencia, ipPago, id],
+  );
+  return result.affectedRows > 0;
+}
+
+export interface FilaReporteMensual {
+  mes: string;
+  cantidad_pagos: number;
+  total_cobrado: number;
+}
+
+export async function reporteMensual(): Promise<FilaReporteMensual[]> {
+  const pool = getPool();
+  const [rows] = await pool.query(
+    `SELECT DATE_FORMAT(creado_en, '%Y-%m') AS mes,
+            COUNT(*) AS cantidad_pagos,
+            COALESCE(SUM(monto), 0) AS total_cobrado
+     FROM pagos
+     WHERE estado = 'completado'
+     GROUP BY mes
+     ORDER BY mes DESC`,
+  );
+  return rows as FilaReporteMensual[];
 }

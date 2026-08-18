@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Credenciales } from '../../models';
 import { login, guardarToken } from '../../services/auth.service';
 import './Login.css';
@@ -98,6 +98,7 @@ const BASE = import.meta.env.BASE_URL;
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [identificador, setIdentificador] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
@@ -161,7 +162,8 @@ export default function Login() {
         if (resultado.usuario) {
           localStorage.setItem('usuario', JSON.stringify(resultado.usuario));
         }
-        navigate('/app/dashboard');
+        const redirect = searchParams.get('redirect');
+        navigate(redirect && redirect.startsWith('/') ? redirect : '/app/dashboard');
       } else {
         setError(resultado.mensaje || 'Error al iniciar sesión');
         triggerShake();

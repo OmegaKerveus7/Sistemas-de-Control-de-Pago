@@ -4,7 +4,7 @@ import * as auditoria from '../services/auditoria.service';
 import type { AuthRequest } from '../types';
 
 function ipDe(req: Request): string {
-  return req.headers['x-forwarded-for']?.toString() || req.ip || null;
+  return req.headers['x-forwarded-for']?.toString() || req.ip || 'desconocida';
 }
 
 export async function listar(_req: Request, res: Response) {

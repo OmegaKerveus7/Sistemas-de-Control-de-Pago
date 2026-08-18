@@ -5,11 +5,6 @@
 # Frontend -> http://localhost:5173
 
 dev:
-	@echo "=============================================="
-	@echo "  Frontend: http://localhost:5173"
-	@echo "  Backend : http://localhost:4000/api"
-	@echo "  Health  : http://localhost:4000/api/health"
-	@echo "=============================================="
 	cd backend && bun run dev & cd frontend && bun run dev & wait
 
 dev-backend:

@@ -5,6 +5,7 @@ import { Menu } from '../components/Menu';
 import { Login } from '../pages/Login';
 import { Dashboard } from '../pages/Dashboard';
 import { Placeholder } from '../pages/Placeholder';
+import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
 
 export const router = createHashRouter([
   {
@@ -14,6 +15,14 @@ export const router = createHashRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/pagar-parqueo',
+    element: <PagarParqueo />,
+  },
+  {
+    path: '/pagar-parqueo/resultado',
+    element: <ResultadoPago />,
   },
   {
     path: '/app',
@@ -27,7 +36,7 @@ export const router = createHashRouter([
       { path: 'auditoria', element: <Placeholder titulo="Auditoría" /> },
       { path: 'validar', element: <Placeholder titulo="Validar Parqueo" /> },
       { path: 'reportes', element: <Placeholder titulo="Reportes" /> },
-      { path: 'pagar', element: <Placeholder titulo="Pagar Parqueo" /> },
+      { path: 'pagar', element: <PagarParqueo /> },
     ],
   },
 ]);

@@ -1,64 +1,52 @@
-import { getPool, sql } from '../config/database';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
+import { getPool } from '../config/database';
 import type { Vehiculo } from '../models';
 
+const SELECT_BASE = `
+  SELECT id_vehiculo AS id, modelo_vehiculo AS modelo, foto_vehiculo
+  FROM vehiculos
+`;
+
 export async function listar(): Promise<Vehiculo[]> {
-  const pool = await getPool();
-  const result = await pool.request().query('SELECT * FROM Vehiculos ORDER BY id');
-  return result.recordset;
+  const pool = getPool();
+  const [rows] = await pool.query(`${SELECT_BASE} ORDER BY id_vehiculo`);
+  return rows as unknown as Vehiculo[];
 }
 
 export async function obtenerPorId(id: number): Promise<Vehiculo | null> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('id', sql.Int, id)
-    .query('SELECT * FROM Vehiculos WHERE id = @id');
-  return result.recordset[0] ?? null;
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE id_vehiculo = ?`, [id]);
+  return (rows as unknown as Vehiculo[])[0] ?? null;
 }
 
 export async function obtenerPorPlaca(placa: string): Promise<Vehiculo | null> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('placa', sql.NVarChar, placa)
-    .query('SELECT * FROM Vehiculos WHERE placa = @placa');
-  return result.recordset[0] ?? null;
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE modelo_vehiculo = ? LIMIT 1`, [placa]);
+  return (rows as unknown as Vehiculo[])[0] ?? null;
 }
 
 export async function crear(data: Vehiculo): Promise<number> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('placa', sql.NVarChar, data.placa.toUpperCase())
-    .input('marca', sql.NVarChar, data.marca)
-    .input('modelo', sql.NVarChar, data.modelo)
-    .input('color', sql.NVarChar, data.color)
-    .input('tipo', sql.NVarChar, data.tipo)
-    .input('propietario_dpi', sql.NVarChar, data.propietario_dpi)
-    .input('propietario_nombre', sql.NVarChar, data.propietario_nombre)
-    .query(`INSERT INTO Vehiculos (placa, marca, modelo, color, tipo, propietario_dpi, propietario_nombre)
-            VALUES (@placa, @marca, @modelo, @color, @tipo, @propietario_dpi, @propietario_nombre);
-            SELECT SCOPE_IDENTITY() AS id;`);
-  return result.recordset[0]!.id;
+  const pool = getPool();
+  const [result] = await pool.execute<ResultSetHeader>(
+    'INSERT INTO vehiculos (modelo_vehiculo, foto_vehiculo) VALUES (?, ?)',
+    [data.modelo || data.placa, ''],
+  );
+  return result.insertId;
 }
 
 export async function actualizar(id: number, data: Partial<Vehiculo>): Promise<boolean> {
-  const pool = await getPool();
-  const request = pool.request().input('id', sql.Int, id);
-  const sets: string[] = [];
-
-  if (data.placa !== undefined) { sets.push('placa = @placa'); request.input('placa', sql.NVarChar, data.placa.toUpperCase()); }
-  if (data.marca !== undefined) { sets.push('marca = @marca'); request.input('marca', sql.NVarChar, data.marca); }
-  if (data.modelo !== undefined) { sets.push('modelo = @modelo'); request.input('modelo', sql.NVarChar, data.modelo); }
-  if (data.color !== undefined) { sets.push('color = @color'); request.input('color', sql.NVarChar, data.color); }
-  if (data.tipo !== undefined) { sets.push('tipo = @tipo'); request.input('tipo', sql.NVarChar, data.tipo); }
-
-  if (sets.length === 0) return false;
-  await request.query(`UPDATE Vehiculos SET ${sets.join(', ')} WHERE id = @id`);
-  return true;
+  const pool = getPool();
+  if (data.modelo === undefined && data.placa === undefined) return false;
+  const modelo = (data.modelo ?? data.placa) as string;
+  const [result] = await pool.execute<ResultSetHeader>(
+    'UPDATE vehiculos SET modelo_vehiculo = ? WHERE id_vehiculo = ?',
+    [modelo, id],
+  );
+  return result.affectedRows > 0;
 }
 
 export async function eliminar(id: number): Promise<boolean> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('id', sql.Int, id)
-    .query('DELETE FROM Vehiculos WHERE id = @id');
-  return result.rowsAffected[0]! > 0;
+  const pool = getPool();
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM vehiculos WHERE id_vehiculo = ?', [id]);
+  return result.affectedRows > 0;
 }

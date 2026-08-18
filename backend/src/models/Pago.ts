@@ -8,6 +8,8 @@ export interface Pago {
   metodo: MetodoPago;
   estado: EstadoPago;
   referencia?: string;
+  ip_inicio?: string;
+  ip_pago?: string;
   procesado_por?: number;
   creado_en?: Date;
 }

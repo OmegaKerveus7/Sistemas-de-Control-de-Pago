@@ -43,6 +43,7 @@ export async function autenticar(creds: Credenciales, ip: string): Promise<Resul
     await conn.query('CALL loginN(?, ?, ?, @codigo, @mensaje, @data)', [creds.identificador, creds.password, ip]);
     const [rows] = await conn.query('SELECT @codigo AS pcodigo_s, @mensaje AS pmensaje, @data AS pdata');
     const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    if (!fila) return { exitoso: false, mensaje: 'Credenciales inválidas' };
 
     if (fila.pcodigo_s === 401) {
       return { exitoso: false, mensaje: 'Usuario desactivado' };

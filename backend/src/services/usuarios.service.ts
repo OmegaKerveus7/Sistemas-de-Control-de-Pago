@@ -72,7 +72,7 @@ export async function crear(data: Omit<UsuarioMySQL, 'id_usuario' | 'nombre_rol'
 export async function actualizar(id: number, data: Partial<UsuarioMySQL>): Promise<boolean> {
   const pool = getPool();
   const sets: string[] = [];
-  const values: unknown[] = [];
+  const values: Array<string | number | null> = [];
 
   if (data.rol !== undefined) { sets.push('rol = ?'); values.push(data.rol); }
   if (data.correo !== undefined) { sets.push('correo = ?'); values.push(data.correo); }
