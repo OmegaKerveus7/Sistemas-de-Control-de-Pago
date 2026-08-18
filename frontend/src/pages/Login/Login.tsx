@@ -161,7 +161,7 @@ export default function Login() {
         if (resultado.usuario) {
           localStorage.setItem('usuario', JSON.stringify(resultado.usuario));
         }
-        navigate('/');
+        navigate('/app/dashboard');
       } else {
         setError(resultado.mensaje || 'Error al iniciar sesión');
         triggerShake();

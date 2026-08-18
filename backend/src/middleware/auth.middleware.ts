@@ -26,7 +26,7 @@ export function verificarToken(req: Request, res: Response, next: NextFunction) 
 export function verificarRol(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     const usuario = (req as AuthRequest).usuario;
-    if (!usuario || !roles.includes(usuario.rol)) {
+    if (!usuario || !roles.some((r) => r.toLowerCase() === String(usuario.rol).toLowerCase())) {
       res.status(403).json({ error: 'No tienes permisos para esta acción' });
       return;
     }

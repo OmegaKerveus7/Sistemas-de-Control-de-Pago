@@ -1,8 +1,10 @@
 import { createHashRouter } from 'react-router-dom';
-// Deploy trigger
 
 import { Main } from '../components/Main';
+import { Menu } from '../components/Menu';
 import { Login } from '../pages/Login';
+import { Dashboard } from '../pages/Dashboard';
+import { Placeholder } from '../pages/Placeholder';
 
 export const router = createHashRouter([
   {
@@ -14,11 +16,18 @@ export const router = createHashRouter([
     element: <Login />,
   },
   {
-    path: '/pagar-parqueo',
-    element: <Main />,
-  },
-  {
-    path: '/validar-parqueo',
-    element: <Main />,
+    path: '/app',
+    element: <Menu />,
+    children: [
+      { path: 'dashboard', element: <Dashboard /> },
+      { path: 'usuarios', element: <Placeholder titulo="Usuarios" /> },
+      { path: 'parqueo', element: <Placeholder titulo="Parqueo" /> },
+      { path: 'pagos', element: <Placeholder titulo="Pagos" /> },
+      { path: 'tarifas', element: <Placeholder titulo="Tarifas" /> },
+      { path: 'auditoria', element: <Placeholder titulo="Auditoría" /> },
+      { path: 'validar', element: <Placeholder titulo="Validar Parqueo" /> },
+      { path: 'reportes', element: <Placeholder titulo="Reportes" /> },
+      { path: 'pagar', element: <Placeholder titulo="Pagar Parqueo" /> },
+    ],
   },
 ]);

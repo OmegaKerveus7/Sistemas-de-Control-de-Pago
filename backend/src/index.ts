@@ -8,7 +8,7 @@ import { parqueoRouter } from './routes/parqueo.routes';
 import { pagosRouter } from './routes/pagos.routes';
 import { tarifasRouter } from './routes/tarifas.routes';
 import { manejadorErrores } from './middleware/error.middleware';
-import { closePool } from './config/database';
+import { closePool, testConnection } from './config/database';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -17,8 +17,18 @@ app.use(cors());
 app.use(express.json());
 
 // Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ estado: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (_req, res) => {
+  try {
+    await testConnection();
+    res.json({ estado: 'ok', bd: 'ok', timestamp: new Date().toISOString() });
+  } catch (error) {
+    res.status(503).json({
+      estado: 'error',
+      bd: 'error',
+      error: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // Saludo

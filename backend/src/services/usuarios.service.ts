@@ -1,68 +1,104 @@
 import bcrypt from 'bcryptjs';
-import { getPool, sql } from '../config/database';
-import type { Usuario } from '../models';
+import type { ResultSetHeader } from 'mysql2/promise';
+import { getPool } from '../config/database';
 
-export async function listar(): Promise<Usuario[]> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .query('SELECT id, dpi, nombres, apellidos, correo, telefono, rol, activo, creado_en, actualizado_en FROM Usuarios ORDER BY id');
-  return result.recordset;
+export interface UsuarioMySQL {
+  id_usuario: number;
+  rol: number;
+  nombre_rol?: string;
+  correo: string;
+  contraseña?: string;
+  nombres: string;
+  apellidos: string;
+  dpi: string;
+  foto_perfil?: string | null;
+  vehiculo?: string | null;
+  activo: boolean;
+  dispositivo?: string | null;
 }
 
-export async function obtenerPorId(id: number): Promise<Usuario | null> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('id', sql.Int, id)
-    .query('SELECT id, dpi, nombres, apellidos, correo, telefono, rol, activo, creado_en, actualizado_en FROM Usuarios WHERE id = @id');
-  return result.recordset[0] ?? null;
+const CAMPOS_BASE = `
+  u.id_usuario, u.rol, r.rol AS nombre_rol, u.correo, u.nombres, u.apellidos, u.dpi,
+  u.foto_perfil, u.vehiculo, u.activo, u.dispositivo
+`;
+
+export async function listar(): Promise<UsuarioMySQL[]> {
+  const pool = getPool();
+  const [rows] = await pool.query(
+    `SELECT ${CAMPOS_BASE} FROM usuarios u JOIN roles r ON r.id_rol = u.rol ORDER BY u.id_usuario`,
+  );
+  return rows as UsuarioMySQL[];
 }
 
-export async function crear(data: Omit<Usuario, 'id' | 'creado_en' | 'actualizado_en'>): Promise<number> {
-  const pool = await getPool();
-  const hash = await bcrypt.hash(data.password_hash, 10);
-  const result = await pool.request()
-    .input('dpi', sql.NVarChar, data.dpi)
-    .input('nombres', sql.NVarChar, data.nombres)
-    .input('apellidos', sql.NVarChar, data.apellidos)
-    .input('correo', sql.NVarChar, data.correo)
-    .input('telefono', sql.NVarChar, data.telefono ?? null)
-    .input('password_hash', sql.NVarChar, hash)
-    .input('rol', sql.NVarChar, data.rol)
-    .query(`INSERT INTO Usuarios (dpi, nombres, apellidos, correo, telefono, password_hash, rol, activo)
-            VALUES (@dpi, @nombres, @apellidos, @correo, @telefono, @password_hash, @rol, 1);
-            SELECT SCOPE_IDENTITY() AS id;`);
-  return result.recordset[0]!.id;
+export async function obtenerPorId(id: number): Promise<UsuarioMySQL | null> {
+  const pool = getPool();
+  const [rows] = await pool.query(
+    `SELECT ${CAMPOS_BASE} FROM usuarios u JOIN roles r ON r.id_rol = u.rol WHERE u.id_usuario = ?`,
+    [id],
+  );
+  return (rows as UsuarioMySQL[])[0] ?? null;
 }
 
-export async function actualizar(id: number, data: Partial<Usuario>): Promise<boolean> {
-  const pool = await getPool();
-  const request = pool.request().input('id', sql.Int, id);
+export async function existeCorreoODpi(correo: string, dpi: string): Promise<boolean> {
+  const pool = getPool();
+  const [rows] = await pool.query(
+    'SELECT id_usuario FROM usuarios WHERE correo = ? OR dpi = ? LIMIT 1',
+    [correo, dpi],
+  );
+  return (rows as unknown[]).length > 0;
+}
+
+export async function crear(data: Omit<UsuarioMySQL, 'id_usuario' | 'nombre_rol'>): Promise<number> {
+  const pool = getPool();
+  const hash = await bcrypt.hash(data.contraseña ?? '', 10);
+  const [result] = await pool.execute(
+    `INSERT INTO usuarios (rol, correo, contraseña, nombres, apellidos, dpi, foto_perfil, vehiculo, activo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.rol,
+      data.correo,
+      hash,
+      data.nombres,
+      data.apellidos,
+      data.dpi,
+      data.foto_perfil ?? null,
+      data.vehiculo ?? null,
+      data.activo ? 1 : 0,
+    ],
+  );
+  return (result as ResultSetHeader).insertId;
+}
+
+export async function actualizar(id: number, data: Partial<UsuarioMySQL>): Promise<boolean> {
+  const pool = getPool();
   const sets: string[] = [];
+  const values: unknown[] = [];
 
-  if (data.dpi !== undefined) { sets.push('dpi = @dpi'); request.input('dpi', sql.NVarChar, data.dpi); }
-  if (data.nombres !== undefined) { sets.push('nombres = @nombres'); request.input('nombres', sql.NVarChar, data.nombres); }
-  if (data.apellidos !== undefined) { sets.push('apellidos = @apellidos'); request.input('apellidos', sql.NVarChar, data.apellidos); }
-  if (data.correo !== undefined) { sets.push('correo = @correo'); request.input('correo', sql.NVarChar, data.correo); }
-  if (data.telefono !== undefined) { sets.push('telefono = @telefono'); request.input('telefono', sql.NVarChar, data.telefono); }
-  if (data.rol !== undefined) { sets.push('rol = @rol'); request.input('rol', sql.NVarChar, data.rol); }
-  if (data.activo !== undefined) { sets.push('activo = @activo'); request.input('activo', sql.Bit, data.activo); }
-  if (data.password_hash !== undefined) {
-    const hash = await bcrypt.hash(data.password_hash, 10);
-    sets.push('password_hash = @password_hash');
-    request.input('password_hash', sql.NVarChar, hash);
+  if (data.rol !== undefined) { sets.push('rol = ?'); values.push(data.rol); }
+  if (data.correo !== undefined) { sets.push('correo = ?'); values.push(data.correo); }
+  if (data.nombres !== undefined) { sets.push('nombres = ?'); values.push(data.nombres); }
+  if (data.apellidos !== undefined) { sets.push('apellidos = ?'); values.push(data.apellidos); }
+  if (data.dpi !== undefined) { sets.push('dpi = ?'); values.push(data.dpi); }
+  if (data.foto_perfil !== undefined) { sets.push('foto_perfil = ?'); values.push(data.foto_perfil); }
+  if (data.vehiculo !== undefined) { sets.push('vehiculo = ?'); values.push(data.vehiculo); }
+  if (data.activo !== undefined) { sets.push('activo = ?'); values.push(data.activo ? 1 : 0); }
+  if (data.contraseña !== undefined && data.contraseña) {
+    sets.push('contraseña = ?');
+    values.push(await bcrypt.hash(data.contraseña, 10));
   }
 
   if (sets.length === 0) return false;
-  sets.push('actualizado_en = GETDATE()');
+  values.push(id);
 
-  await request.query(`UPDATE Usuarios SET ${sets.join(', ')} WHERE id = @id`);
-  return true;
+  const [result] = await pool.execute(
+    `UPDATE usuarios SET ${sets.join(', ')} WHERE id_usuario = ?`,
+    values,
+  );
+  return (result as ResultSetHeader).affectedRows > 0;
 }
 
 export async function eliminar(id: number): Promise<boolean> {
-  const pool = await getPool();
-  const result = await pool.request()
-    .input('id', sql.Int, id)
-    .query('DELETE FROM Usuarios WHERE id = @id');
-  return result.rowsAffected[0]! > 0;
+  const pool = getPool();
+  const [result] = await pool.execute('DELETE FROM usuarios WHERE id_usuario = ?', [id]);
+  return (result as ResultSetHeader).affectedRows > 0;
 }

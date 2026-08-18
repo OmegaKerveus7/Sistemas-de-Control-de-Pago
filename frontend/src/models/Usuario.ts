@@ -1,3 +1,5 @@
+export type NombreRol = 'ADMIN' | 'Administracion' | 'Guardia' | 'cliente' | 'gerente';
+
 export interface Credenciales {
   identificador: string;
   password: string;
@@ -9,23 +11,15 @@ export interface Usuario {
   nombres: string;
   apellidos: string;
   correo: string;
-  telefono?: string;
-  rol: 'admin' | 'cajero' | 'supervisor';
-  activo: boolean;
-  creado_en?: string;
-  actualizado_en?: string;
+  rol: NombreRol;
+  foto_perfil?: string | null;
+  vehiculo?: string | null;
+  activo?: boolean;
 }
 
 export interface ResultadoAutenticacion {
   exitoso: boolean;
-  usuario?: {
-    id: number;
-    nombres: string;
-    apellidos: string;
-    rol: string;
-    correo?: string;
-    dpi?: string;
-  };
+  usuario?: Usuario;
   mensaje?: string;
   token?: string;
 }

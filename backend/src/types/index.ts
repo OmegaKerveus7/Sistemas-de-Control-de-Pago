@@ -12,11 +12,13 @@ export interface ResultadoAutenticacion {
   token?: string;
 }
 
+export type NombreRol = 'ADMIN' | 'Administracion' | 'Guardia' | 'cliente' | 'gerente';
+
 export interface UsuarioPayload {
   id: number;
   nombres: string;
   apellidos: string;
-  rol: 'admin' | 'cajero' | 'supervisor';
+  rol: NombreRol;
   correo?: string;
   dpi?: string;
 }
