@@ -17,4 +17,6 @@ export const usuariosService = {
   crear: (data: Partial<Usuario> & { password: string }) => api.post<{ id: number }>('/usuarios', data),
   actualizar: (id: number, data: Partial<Usuario>) => api.put<void>(`/usuarios/${id}`, data),
   eliminar: (id: number) => api.delete<void>(`/usuarios/${id}`),
+  registroPublico: (data: { dpi: string; nombres: string; apellidos: string; correo: string; password: string }) =>
+    api.post<{ id: number; mensaje: string }>('/usuarios/registro', data),
 };

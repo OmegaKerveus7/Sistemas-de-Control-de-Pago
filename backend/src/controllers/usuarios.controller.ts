@@ -81,3 +81,44 @@ export async function eliminar(req: Request, res: Response) {
 
   res.json({ mensaje: 'Usuario eliminado' });
 }
+
+export async function registroPublico(req: Request, res: Response) {
+  const data = req.body;
+
+  const password = data.password || data.contraseña;
+
+  if (!data.correo || !password || !data.nombres || !data.apellidos || !data.dpi) {
+    res.status(400).json({ error: 'Faltan campos requeridos: correo, contraseña, nombres, apellidos, dpi' });
+    return;
+  }
+
+  if (password.length < 6) {
+    res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    return;
+  }
+
+  const existe = await usuariosService.existeCorreoODpi(data.correo, data.dpi);
+  if (existe) {
+    res.status(409).json({ error: 'Ya existe una cuenta con ese correo o DPI' });
+    return;
+  }
+
+  try {
+    const id = await usuariosService.crear({
+      rol: 4,
+      correo: data.correo,
+      contraseña: password,
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+      dpi: data.dpi,
+      foto_perfil: null,
+      vehiculo: null,
+      activo: true,
+    });
+
+    res.status(201).json({ id, mensaje: 'Cuenta creada exitosamente' });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Error desconocido';
+    res.status(500).json({ error: `Error al crear usuario: ${msg}` });
+  }
+}

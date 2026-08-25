@@ -6,6 +6,7 @@ import { usuariosRouter } from './routes/usuarios.routes';
 import { vehiculosRouter } from './routes/vehiculos.routes';
 import { parqueoRouter } from './routes/parqueo.routes';
 import { pagosRouter } from './routes/pagos.routes';
+import { recuperacionRouter } from './routes/recuperacion.routes';
 import { manejadorErrores } from './middleware/error.middleware';
 import { closePool, testConnection } from './config/database';
 
@@ -37,6 +38,7 @@ app.get('/api/saludo', (_req, res) => {
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/api/auth', recuperacionRouter);
 app.use('/api/usuarios', usuariosRouter);
 app.use('/api/vehiculos', vehiculosRouter);
 app.use('/api/parqueo', parqueoRouter);

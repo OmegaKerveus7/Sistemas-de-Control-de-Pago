@@ -3,7 +3,7 @@ import { getPool } from '../config/database';
 import type { Parqueo } from '../models';
 
 const SELECT_BASE = `
-  SELECT id_parqueo AS id, placa, hora_entrada, hora_salida, costo, estado, ticket,
+  SELECT id_parqueo AS id, placa, num_parqueo, hora_entrada, hora_salida, costo, estado, ticket,
          creado_en, actualizado_en
   FROM parqueo
 `;
@@ -29,13 +29,22 @@ export async function obtenerActivoPorPlaca(placa: string): Promise<Parqueo | nu
   return (rows as unknown as Parqueo[])[0] ?? null;
 }
 
-export async function registrarEntrada(placa: string): Promise<number> {
+export async function numParqueoOcupado(numParqueo: string): Promise<boolean> {
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT id_parqueo FROM parqueo WHERE num_parqueo = ? AND estado = 'activo' LIMIT 1`,
+    [numParqueo],
+  );
+  return (rows as unknown[]).length > 0;
+}
+
+export async function registrarEntrada(placa: string, numParqueo: string): Promise<number> {
   const pool = getPool();
   const ticket = `TKT-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
   const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO parqueo (placa, hora_entrada, estado, ticket)
-     VALUES (?, NOW(), 'activo', ?)`,
-    [placa.toUpperCase(), ticket],
+    `INSERT INTO parqueo (placa, num_parqueo, hora_entrada, estado, ticket)
+     VALUES (?, ?, NOW(), 'activo', ?)`,
+    [placa.toUpperCase(), numParqueo, ticket],
   );
   return result.insertId;
 }
@@ -57,4 +66,21 @@ export async function cancelar(id: number): Promise<boolean> {
     [id],
   );
   return result.affectedRows > 0;
+}
+
+export async function historialPorPlaca(
+  placa: string,
+  fechaInicio: string,
+  fechaFin: string,
+): Promise<unknown[]> {
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT id_historial, id_parqueo, placa, num_parqueo, fecha,
+            hora_entrada, hora_salida, costo, estado, ticket
+     FROM parqueo_historial
+     WHERE placa = ? AND fecha BETWEEN ? AND ?
+     ORDER BY fecha DESC, hora_entrada DESC`,
+    [placa.toUpperCase(), fechaInicio, fechaFin],
+  );
+  return rows as unknown[];
 }
