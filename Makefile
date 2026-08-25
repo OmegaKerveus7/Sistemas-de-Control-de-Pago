@@ -3,7 +3,6 @@
 # === DEVELOPMENT ===
 # Backend  -> http://localhost:4000
 # Frontend -> http://localhost:5173
-# cambio
 
 dev:
 	cd backend && bun run dev & cd frontend && bun run dev & wait
