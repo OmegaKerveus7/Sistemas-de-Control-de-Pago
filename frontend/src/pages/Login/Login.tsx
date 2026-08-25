@@ -76,6 +76,13 @@ const IconoFlecha = () => (
   </svg>
 );
 
+const IconoFlechaIzq = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+);
+
 const IconoEscudo = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -362,7 +369,7 @@ export default function Login() {
                 <span className="checkbox-custom" />
                 <span className="checkbox-label">Recordarme</span>
               </label>
-              <a href="#" className="link" onClick={(e) => e.preventDefault()}>
+              <a href="#" className="link" onClick={(e) => { e.preventDefault(); navigate('/forgot-password'); }}>
                 ¿Olvidó su contraseña?
               </a>
             </div>
@@ -388,11 +395,28 @@ export default function Login() {
 
           <div className="login-card-footer">
             <p>
-              ¿Necesita ayuda? <a href="#" className="link" onClick={(e) => e.preventDefault()}>Contacte al administrador</a>
+              ¿No tienes cuenta?{' '}
+              <Link to="/registro" className="link" style={{ fontWeight: 700 }}>
+                Crear usuario
+              </Link>
             </p>
-            <p style={{ marginTop: '8px', fontSize: '0.82rem', color: 'var(--color-texto-terciario)' }}>
-              Volver al <Link to="/" className="link">inicio</Link>
-            </p>
+            <div style={{ marginTop: 12 }}>
+              <Link
+                to="/"
+                className="link"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: '0.85rem',
+                  color: 'var(--color-texto-terciario)',
+                  fontWeight: 500,
+                }}
+              >
+                <IconoFlechaIzq />
+                Volver al inicio
+              </Link>
+            </div>
           </div>
         </div>
       </main>

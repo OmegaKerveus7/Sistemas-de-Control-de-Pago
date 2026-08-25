@@ -3,6 +3,8 @@ import { createHashRouter } from 'react-router-dom';
 import { Main } from '../components/Main';
 import { Menu } from '../components/Menu';
 import { Login } from '../pages/Login';
+import { Registro } from '../pages/Registro';
+import { ForgotPassword } from '../pages/ForgotPassword';
 import { Dashboard } from '../pages/Dashboard';
 import { Placeholder } from '../pages/Placeholder';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
@@ -15,6 +17,14 @@ export const router = createHashRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/registro',
+    element: <Registro />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPassword />,
   },
   {
     path: '/pagar-parqueo',

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import * as pagosService from '../services/pagos.service';
 import * as parqueoService from '../services/parqueo.service';
 import * as pasarelaService from '../services/pasarela.service';
-import { precioFijo } from '../config/precios';
+import { precioPorTipo } from '../config/precios';
 import type { AuthRequest } from '../types';
 import type { MetodoPago } from '../models';
 
@@ -32,9 +32,9 @@ export async function obtenerPorParqueo(req: Request, res: Response) {
 
 export async function precio(req: Request, res: Response) {
   const tipo = String(req.query.tipo ?? '').toLowerCase();
-  const online = precioFijo(tipo);
-  if (online === undefined) { res.status(404).json({ error: 'Precio no definido para este tipo de vehículo' }); return; }
-  res.json({ tipo, online });
+  const metodo = (req.query.metodo as 'efectivo' | 'online') ?? 'efectivo';
+  const monto = precioPorTipo(tipo, metodo);
+  res.json({ tipo, metodo, monto });
 }
 
 export async function crear(req: Request, res: Response) {
@@ -52,7 +52,7 @@ export async function crear(req: Request, res: Response) {
     return;
   }
 
-  const monto = precioFijo(String(tipo_vehiculo).toLowerCase());
+  const monto = precioPorTipo(String(tipo_vehiculo).toLowerCase(), metodo === 'tarjeta' ? 'online' : 'efectivo');
   if (monto === undefined) {
     res.status(404).json({ error: 'Precio no definido para este tipo de vehículo' });
     return;
