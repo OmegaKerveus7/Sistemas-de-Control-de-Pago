@@ -1,0 +1,539 @@
+/* ============================================
+   SHARED DESIGN TOKENS & STYLES
+   Paleta Colegio Belén: Dorado · Azul · Rojo
+   ============================================ */
+
+:root {
+  /* Identidad Colegio Belén */
+  --belen-dorado: #F9A825;
+  --belen-dorado-claro: #FBC02D;
+  --belen-dorado-oscuro: #F57F17;
+  --belen-azul: #1A237E;
+  --belen-azul-medio: #283593;
+  --belen-azul-claro: #3949AB;
+  --belen-rojo: #C62828;
+  --belen-rojo-oscuro: #B71C1C;
+
+  /* Sistema */
+  --color-fondo: #FBF8EF;
+  --color-fondo-input: #FAF7EE;
+  --color-blanco: #ffffff;
+  --color-texto: #1A237E;
+  --color-texto-suave: #283593;
+  --color-texto-secundario: #475569;
+  --color-texto-terciario: #94A3B8;
+  --color-borde: #E8E2D0;
+  --color-borde-suave: #F0E9D6;
+
+  /* Sombras */
+  --sombra-sm: 0 1px 2px rgba(26, 35, 126, 0.05);
+  --sombra-md: 0 4px 16px -2px rgba(26, 35, 126, 0.08);
+  --sombra-lg: 0 20px 60px -12px rgba(26, 35, 126, 0.18);
+  --sombra-dorada: 0 8px 24px -4px rgba(249, 168, 37, 0.35);
+
+  /* Bordes */
+  --radio-sm: 8px;
+  --radio-md: 12px;
+  --radio-lg: 20px;
+  --radio-xl: 28px;
+
+  /* Transiciones */
+  --transicion: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   RESETS GLOBALES
+   ============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--color-blanco) inset !important;
+  -webkit-text-fill-color: var(--color-texto) !important;
+  caret-color: var(--color-texto);
+}
+
+/* ============================================
+   FORMULARIOS COMPARTIDOS
+   ============================================ */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--belen-azul);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: var(--belen-azul-medio);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: color var(--transicion);
+  z-index: 1;
+}
+
+.form-input-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.form-input {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px 0 46px;
+  font-size: 0.95rem;
+  color: var(--belen-azul);
+  background: var(--color-fondo-input);
+  border: 1.5px solid var(--color-borde);
+  border-radius: var(--radio-md);
+  outline: none;
+  transition: all var(--transicion);
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+.form-input.has-suffix {
+  padding-right: 46px;
+}
+
+.form-input::placeholder {
+  color: var(--color-texto-terciario);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.form-input:hover:not(:disabled) {
+  border-color: var(--belen-dorado);
+  background: var(--color-blanco);
+}
+
+.form-input:focus {
+  border-color: var(--belen-dorado);
+  background: var(--color-blanco);
+  box-shadow: 0 0 0 4px rgba(249, 168, 37, 0.15);
+}
+
+.form-input:focus ~ .form-input-icon,
+.form-input-wrapper:focus-within .form-input-icon {
+  color: var(--belen-dorado-oscuro);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-input-suffix {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-texto-terciario);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all var(--transicion);
+  padding: 0;
+}
+
+.form-input-suffix svg {
+  width: 20px;
+  height: 20px;
+}
+
+.form-input-suffix:hover {
+  color: var(--belen-dorado-oscuro);
+  background: rgba(249, 168, 37, 0.1);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -2px;
+}
+
+/* ============================================
+   BOTÓN PRINCIPAL — Dorado del Colegio
+   ============================================ */
+.btn-primary {
+  position: relative;
+  height: 52px;
+  margin-top: 6px;
+  padding: 0 24px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--belen-azul);
+  background: linear-gradient(135deg, var(--belen-dorado-claro) 0%, var(--belen-dorado) 50%, var(--belen-dorado-oscuro) 100%);
+  border: none;
+  border-radius: var(--radio-md);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: inherit;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 4px 12px rgba(249, 168, 37, 0.3),
+    0 2px 4px rgba(26, 35, 126, 0.1);
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--belen-dorado) 0%, var(--belen-dorado-oscuro) 100%);
+  opacity: 0;
+  transition: opacity var(--transicion);
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.btn-primary > * {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-primary svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.25s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 8px 24px rgba(249, 168, 37, 0.45),
+    0 4px 8px rgba(26, 35, 126, 0.15);
+}
+
+.btn-primary:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.btn-primary:hover:not(:disabled)::after {
+  left: 100%;
+}
+
+.btn-primary:hover:not(:disabled) svg {
+  transform: translateX(4px);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   CHECKBOX PERSONALIZADO
+   ============================================ */
+.checkbox-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox-custom {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--color-borde);
+  border-radius: 5px;
+  background: var(--color-blanco);
+  transition: all var(--transicion);
+  flex-shrink: 0;
+}
+
+.checkbox-custom::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 5px;
+  height: 9px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.15s ease;
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked ~ .checkbox-custom {
+  background: var(--belen-dorado);
+  border-color: var(--belen-dorado);
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked ~ .checkbox-custom::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.checkbox-wrapper input[type="checkbox"]:focus-visible ~ .checkbox-custom {
+  box-shadow: 0 0 0 3px rgba(249, 168, 37, 0.25);
+}
+
+.checkbox-label {
+  font-size: 0.85rem;
+  color: var(--color-texto-secundario);
+  font-weight: 500;
+}
+
+/* ============================================
+   LINKS
+   ============================================ */
+.link {
+  font-size: 0.85rem;
+  color: var(--belen-azul);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transicion);
+}
+
+.link:hover {
+  color: var(--belen-dorado-oscuro);
+  text-decoration: underline;
+}
+
+/* ============================================
+   SPINNER
+   ============================================ */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(26, 35, 126, 0.25);
+  border-top-color: var(--belen-azul);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ============================================
+   ALERTAS
+   ============================================ */
+.alerta {
+  padding: 12px 14px;
+  border-radius: var(--radio-md);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slide-in 0.25s ease;
+}
+
+.alerta-error {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+  color: var(--belen-rojo);
+  border-left: 3px solid var(--belen-rojo);
+}
+
+.alerta svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   TARJETA COMPARTIDA
+   ============================================ */
+.card {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-md);
+}
+
+/* ============================================
+   BADGE COMPARTIDO
+   ============================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(249, 168, 37, 0.4);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--belen-dorado-claro);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.badge svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   ANIMACIONES COMPARTIDAS
+   ============================================ */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px rgba(249, 168, 37, 0.5),
+      0 0 0 6px rgba(198, 40, 40, 0.3),
+      0 10px 24px -6px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(249, 168, 37, 0.65),
+      0 0 0 8px rgba(198, 40, 40, 0.4),
+      0 10px 24px -6px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@keyframes indicator-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes gradient-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.shake {
+  animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* ============================================
+   UTILIDADES
+   ============================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

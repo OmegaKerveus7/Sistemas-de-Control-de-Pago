@@ -1,82 +1,19 @@
 /* ============================================
-   PALETA COLEGIO BELÉN
-   Dorado · Azul · Rojo
+   LOGIN PAGE — Layout y Componentes
    ============================================ */
-:root {
-  /* Identidad Colegio Belén */
-  --belen-dorado: #F9A825;
-  --belen-dorado-claro: #FBC02D;
-  --belen-dorado-oscuro: #F57F17;
-  --belen-azul: #1A237E;
-  --belen-azul-medio: #283593;
-  --belen-azul-claro: #3949AB;
-  --belen-rojo: #C62828;
-  --belen-rojo-oscuro: #B71C1C;
 
-  /* Sistema */
-  --color-fondo: #FBF8EF;
-  --color-fondo-input: #FAF7EE;
-  --color-blanco: #ffffff;
-  --color-texto: #1A237E;
-  --color-texto-suave: #283593;
-  --color-texto-secundario: #475569;
-  --color-texto-terciario: #94A3B8;
-  --color-borde: #E8E2D0;
-  --color-borde-suave: #F0E9D6;
-
-  --sombra-sm: 0 1px 2px rgba(26, 35, 126, 0.05);
-  --sombra-md: 0 4px 16px -2px rgba(26, 35, 126, 0.08);
-  --sombra-lg: 0 20px 60px -12px rgba(26, 35, 126, 0.18);
-  --sombra-dorada: 0 8px 24px -4px rgba(249, 168, 37, 0.35);
-
-  --radio-sm: 8px;
-  --radio-md: 12px;
-  --radio-lg: 20px;
-  --radio-xl: 28px;
-
-  --transicion: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  min-height: 100vh;
-  width: 100%;
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--belen-azul);
-  color: var(--color-texto);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* ============================================
-   LAYOUT PRINCIPAL
-   - Móvil/Tablet (default): fondo cubre toda la pantalla
-   - Desktop (≥1024px): layout dividido, fondo solo en la izquierda
-   ============================================ */
 .login-page {
   position: relative;
   min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
+  background-color: var(--belen-azul);
   isolation: isolate;
 }
 
 /* ============================================
    FONDO DEL CARRUSEL
-   - Móvil: fixed, cubre toda la pantalla
-   - Desktop: absolute, contenido en la columna izquierda
    ============================================ */
 .login-background {
   position: fixed;
@@ -187,33 +124,6 @@ body {
   display: block;
 }
 
-.brand-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 13px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(249, 168, 37, 0.4);
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--belen-dorado-claro);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.brand-badge svg {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-
 /* ============================================
    CONTENIDO DE MARCA — Mensajes rotativos
    ============================================ */
@@ -305,7 +215,6 @@ body {
   overflow: hidden;
 }
 
-/* Línea de gradiente superior — colores del Colegio */
 .login-card::before {
   content: "";
   position: absolute;
@@ -330,10 +239,6 @@ body {
   margin-bottom: 24px;
 }
 
-.login-card-badge {
-  display: none; /* No usado en esta versión, el badge está arriba en el header */
-}
-
 .login-title {
   font-size: 1.5rem;
   font-weight: 700;
@@ -353,205 +258,17 @@ body {
   gap: 16px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-label {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--belen-azul);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.form-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.form-input-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  color: var(--belen-azul-medio);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  transition: color var(--transicion);
-  z-index: 1;
-}
-
-.form-input-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.form-input {
-  width: 100%;
-  height: 50px;
-  padding: 0 16px 0 46px;
-  font-size: 0.95rem;
-  color: var(--belen-azul);
-  background: var(--color-fondo-input);
-  border: 1.5px solid var(--color-borde);
-  border-radius: var(--radio-md);
-  outline: none;
-  transition: all var(--transicion);
-  font-family: inherit;
-  letter-spacing: 0.02em;
-  font-weight: 500;
-}
-
-.form-input.has-suffix {
-  padding-right: 46px;
-}
-
-.form-input::placeholder {
-  color: var(--color-texto-terciario);
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
-.form-input:hover:not(:disabled) {
-  border-color: var(--belen-dorado);
-  background: var(--color-blanco);
-}
-
-.form-input:focus {
-  border-color: var(--belen-dorado);
-  background: var(--color-blanco);
-  box-shadow: 0 0 0 4px rgba(249, 168, 37, 0.15);
-}
-
-.form-input:focus ~ .form-input-icon,
-.form-input-wrapper:focus-within .form-input-icon {
-  color: var(--belen-dorado-oscuro);
-}
-
-.form-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.form-input-suffix {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--color-texto-terciario);
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all var(--transicion);
-  padding: 0;
-}
-
-.form-input-suffix svg {
-  width: 20px;
-  height: 20px;
-}
-
-.form-input-suffix:hover {
-  color: var(--belen-dorado-oscuro);
-  background: rgba(249, 168, 37, 0.1);
-}
-
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: -2px;
-}
-
-.checkbox-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-}
-
-.checkbox-wrapper input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-.checkbox-custom {
-  position: relative;
-  width: 18px;
-  height: 18px;
-  border: 1.5px solid var(--color-borde);
-  border-radius: 5px;
-  background: var(--color-blanco);
-  transition: all var(--transicion);
-  flex-shrink: 0;
-}
-
-.checkbox-custom::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 5px;
-  width: 5px;
-  height: 9px;
-  border: solid #ffffff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg) scale(0);
-  transition: transform 0.15s ease;
-}
-
-.checkbox-wrapper input[type="checkbox"]:checked ~ .checkbox-custom {
-  background: var(--belen-dorado);
-  border-color: var(--belen-dorado);
-}
-
-.checkbox-wrapper input[type="checkbox"]:checked ~ .checkbox-custom::after {
-  transform: rotate(45deg) scale(1);
-}
-
-.checkbox-wrapper input[type="checkbox"]:focus-visible ~ .checkbox-custom {
-  box-shadow: 0 0 0 3px rgba(249, 168, 37, 0.25);
-}
-
-.checkbox-label {
-  font-size: 0.85rem;
+.login-card-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-borde-suave);
+  text-align: center;
+  font-size: 0.82rem;
   color: var(--color-texto-secundario);
-  font-weight: 500;
-}
-
-.link {
-  font-size: 0.85rem;
-  color: var(--belen-azul);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color var(--transicion);
-}
-
-.link:hover {
-  color: var(--belen-dorado-oscuro);
-  text-decoration: underline;
 }
 
 /* ============================================
-   BOTÓN PRINCIPAL — Dorado del Colegio
+   BOTÓN LOGIN — Dorado del Colegio
    ============================================ */
 .login-button {
   position: relative;
@@ -641,48 +358,6 @@ body {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
-}
-
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2.5px solid rgba(26, 35, 126, 0.25);
-  border-top-color: var(--belen-azul);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-.login-card-footer {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--color-borde-suave);
-  text-align: center;
-  font-size: 0.82rem;
-  color: var(--color-texto-secundario);
-}
-
-.alerta {
-  padding: 12px 14px;
-  border-radius: var(--radio-md);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  animation: slide-in 0.25s ease;
-}
-
-.alerta-error {
-  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-  border: 1px solid #fecaca;
-  color: var(--belen-rojo);
-  border-left: 3px solid var(--belen-rojo);
-}
-
-.alerta svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
 }
 
 /* ============================================
@@ -779,60 +454,7 @@ body {
 }
 
 /* ============================================
-   ANIMACIONES
-   ============================================ */
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
-  20%, 40%, 60%, 80% { transform: translateX(6px); }
-}
-
-.shake {
-  animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow:
-      0 0 0 3px rgba(249, 168, 37, 0.5),
-      0 0 0 6px rgba(198, 40, 40, 0.3),
-      0 10px 24px -6px rgba(0, 0, 0, 0.5);
-  }
-  50% {
-    box-shadow:
-      0 0 0 4px rgba(249, 168, 37, 0.65),
-      0 0 0 8px rgba(198, 40, 40, 0.4),
-      0 10px 24px -6px rgba(0, 0, 0, 0.5);
-  }
-}
-
-@keyframes indicator-progress {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-
-@keyframes gradient-flow {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* ============================================
-   ESCRITORIO (≥1024px) — LAYOUT DIVIDIDO
+   ESCRITORIO (≥1024px)
    ============================================ */
 @media (min-width: 1024px) {
   .login-page {
@@ -864,11 +486,6 @@ body {
     width: 96px;
     height: 96px;
     padding: 10px;
-  }
-
-  .brand-badge {
-    font-size: 0.75rem;
-    padding: 8px 14px;
   }
 
   .login-brand-content {
@@ -921,10 +538,6 @@ body {
     gap: 18px;
   }
 
-  .form-input {
-    height: 52px;
-  }
-
   .login-button {
     height: 54px;
     font-size: 0.95rem;
@@ -954,7 +567,6 @@ body {
     font-size: 0.78rem;
   }
 
-  /* En desktop el indicador vacío del header y footer en la columna derecha */
   .login-page::before {
     content: "";
     grid-area: header;
@@ -982,12 +594,6 @@ body {
     width: 120px;
     height: 120px;
     padding: 14px;
-  }
-
-  .brand-badge {
-    font-size: 0.78rem;
-    padding: 9px 18px;
-    letter-spacing: 0.08em;
   }
 
   .login-brand-content {
@@ -1026,15 +632,6 @@ body {
 
   .login-title {
     font-size: 1.85rem;
-  }
-
-  .form-input {
-    height: 54px;
-    font-size: 1rem;
-  }
-
-  .form-label {
-    font-size: 0.82rem;
   }
 
   .login-button {
@@ -1107,10 +704,6 @@ body {
     font-size: 2rem;
   }
 
-  .form-input {
-    height: 58px;
-  }
-
   .login-button {
     height: 60px;
   }
@@ -1132,11 +725,6 @@ body {
     width: 56px;
     height: 56px;
     padding: 6px;
-  }
-  .brand-badge {
-    font-size: 0.65rem;
-    padding: 6px 10px;
-    letter-spacing: 0.04em;
   }
   .login-brand-content {
     padding: 4px 18px 12px;
@@ -1234,14 +822,12 @@ body {
 
   .brand-subtitle {
     font-size: 0.78rem;
-    display: -webkit-box;    
+    display: -webkit-box;
     -webkit-box-orient: vertical;
-    overflow: hidden;            
-
+    overflow: hidden;
     line-clamp: 2;
     -webkit-line-clamp: 2;
   }
-
 
   .login-form-panel {
     grid-area: form;
@@ -1271,10 +857,6 @@ body {
 
   .login-form {
     gap: 12px;
-  }
-
-  .form-input {
-    height: 42px;
   }
 
   .login-button {

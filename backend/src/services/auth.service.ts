@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getPool } from '../config/database';
+import * as usuariosRepo from '../repositories/usuarios.repository';
 import type { Credenciales, NombreRol, ResultadoAutenticacion } from '../types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'parqueo-zona19-secret-key-2026';
@@ -37,23 +37,18 @@ function emitirSesion(row: FilaLogin): ResultadoAutenticacion {
 }
 
 export async function autenticar(creds: Credenciales, ip: string): Promise<ResultadoAutenticacion> {
-  const conn = await getPool().getConnection();
-
   try {
-    await conn.query('CALL loginN(?, ?, ?, @codigo, @mensaje, @data)', [creds.identificador, creds.password, ip]);
-    const [rows] = await conn.query('SELECT @codigo AS pcodigo_s, @mensaje AS pmensaje, @data AS pdata');
-    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
-    if (!fila) return { exitoso: false, mensaje: 'Credenciales inválidas' };
+    const resultado = await usuariosRepo.loginSP(creds.identificador, creds.password, ip);
 
-    if (fila.pcodigo_s === 401) {
+    if (resultado.codigo === 401) {
       return { exitoso: false, mensaje: 'Usuario desactivado' };
     }
 
-    if (fila.pcodigo_s !== 200 || !fila.pdata) {
-      return { exitoso: false, mensaje: fila.pmensaje || 'Credenciales inválidas' };
+    if (resultado.codigo !== 200 || !resultado.data) {
+      return { exitoso: false, mensaje: resultado.mensaje || 'Credenciales inválidas' };
     }
 
-    const usuario = JSON.parse(fila.pdata) as FilaLogin;
+    const usuario = JSON.parse(resultado.data) as FilaLogin;
 
     const passwordValida = await bcrypt.compare(creds.password, usuario.contraseña ?? '');
     if (!passwordValida) {
@@ -64,7 +59,5 @@ export async function autenticar(creds: Credenciales, ip: string): Promise<Resul
   } catch (error) {
     console.error('[AuthService] Error:', error);
     return { exitoso: false, mensaje: 'Error interno del servidor' };
-  } finally {
-    conn.release();
   }
 }
