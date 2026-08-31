@@ -1,104 +1,38 @@
 import bcrypt from 'bcryptjs';
-import type { ResultSetHeader } from 'mysql2/promise';
-import { getPool } from '../config/database';
+import type { UsuarioMySQL } from '../models';
+import * as usuariosRepo from '../repositories/usuarios.repository';
 
-export interface UsuarioMySQL {
-  id_usuario: number;
-  rol: number;
-  nombre_rol?: string;
-  correo: string;
-  contraseña?: string;
-  nombres: string;
-  apellidos: string;
-  dpi: string;
-  foto_perfil?: string | null;
-  vehiculo?: string | null;
-  activo: boolean;
-  dispositivo?: string | null;
-}
-
-const CAMPOS_BASE = `
-  u.id_usuario, u.rol, r.rol AS nombre_rol, u.correo, u.nombres, u.apellidos, u.dpi,
-  u.foto_perfil, u.vehiculo, u.activo, u.dispositivo
-`;
+export type { UsuarioMySQL };
 
 export async function listar(): Promise<UsuarioMySQL[]> {
-  const pool = getPool();
-  const [rows] = await pool.query(
-    `SELECT ${CAMPOS_BASE} FROM usuarios u JOIN roles r ON r.id_rol = u.rol ORDER BY u.id_usuario`,
-  );
-  return rows as UsuarioMySQL[];
+  return usuariosRepo.listar();
 }
 
 export async function obtenerPorId(id: number): Promise<UsuarioMySQL | null> {
-  const pool = getPool();
-  const [rows] = await pool.query(
-    `SELECT ${CAMPOS_BASE} FROM usuarios u JOIN roles r ON r.id_rol = u.rol WHERE u.id_usuario = ?`,
-    [id],
-  );
-  return (rows as UsuarioMySQL[])[0] ?? null;
+  return usuariosRepo.obtenerPorId(id);
 }
 
 export async function existeCorreoODpi(correo: string, dpi: string): Promise<boolean> {
-  const pool = getPool();
-  const [rows] = await pool.query(
-    'SELECT id_usuario FROM usuarios WHERE correo = ? OR dpi = ? LIMIT 1',
-    [correo, dpi],
-  );
-  return (rows as unknown[]).length > 0;
+  return usuariosRepo.existeCorreoODpi(correo, dpi);
 }
 
 export async function crear(data: Omit<UsuarioMySQL, 'id_usuario' | 'nombre_rol'>): Promise<number> {
-  const pool = getPool();
   const hash = await bcrypt.hash(data.contraseña ?? '', 10);
-  const [result] = await pool.execute(
-    `INSERT INTO usuarios (rol, correo, contraseña, nombres, apellidos, dpi, foto_perfil, vehiculo, activo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      data.rol,
-      data.correo,
-      hash,
-      data.nombres,
-      data.apellidos,
-      data.dpi,
-      data.foto_perfil ?? null,
-      data.vehiculo ?? null,
-      data.activo ? 1 : 0,
-    ],
-  );
-  return (result as ResultSetHeader).insertId;
+  return usuariosRepo.crear({ ...data, contraseña: hash });
 }
 
 export async function actualizar(id: number, data: Partial<UsuarioMySQL>): Promise<boolean> {
-  const pool = getPool();
-  const sets: string[] = [];
-  const values: Array<string | number | null> = [];
-
-  if (data.rol !== undefined) { sets.push('rol = ?'); values.push(data.rol); }
-  if (data.correo !== undefined) { sets.push('correo = ?'); values.push(data.correo); }
-  if (data.nombres !== undefined) { sets.push('nombres = ?'); values.push(data.nombres); }
-  if (data.apellidos !== undefined) { sets.push('apellidos = ?'); values.push(data.apellidos); }
-  if (data.dpi !== undefined) { sets.push('dpi = ?'); values.push(data.dpi); }
-  if (data.foto_perfil !== undefined) { sets.push('foto_perfil = ?'); values.push(data.foto_perfil); }
-  if (data.vehiculo !== undefined) { sets.push('vehiculo = ?'); values.push(data.vehiculo); }
-  if (data.activo !== undefined) { sets.push('activo = ?'); values.push(data.activo ? 1 : 0); }
-  if (data.contraseña !== undefined && data.contraseña) {
-    sets.push('contraseña = ?');
-    values.push(await bcrypt.hash(data.contraseña, 10));
+  const actualizado = { ...data };
+  if (actualizado.contraseña && actualizado.contraseña.trim()) {
+    actualizado.contraseña = await bcrypt.hash(actualizado.contraseña, 10);
   }
-
-  if (sets.length === 0) return false;
-  values.push(id);
-
-  const [result] = await pool.execute(
-    `UPDATE usuarios SET ${sets.join(', ')} WHERE id_usuario = ?`,
-    values,
-  );
-  return (result as ResultSetHeader).affectedRows > 0;
+  return usuariosRepo.actualizar(id, actualizado);
 }
 
 export async function eliminar(id: number): Promise<boolean> {
-  const pool = getPool();
-  const [result] = await pool.execute('DELETE FROM usuarios WHERE id_usuario = ?', [id]);
-  return (result as ResultSetHeader).affectedRows > 0;
+  return usuariosRepo.eliminar(id);
+}
+
+export async function obtenerIdPorCorreo(correo: string): Promise<number | null> {
+  return usuariosRepo.obtenerIdPorCorreo(correo);
 }

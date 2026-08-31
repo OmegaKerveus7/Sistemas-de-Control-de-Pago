@@ -1,0 +1,9 @@
+export * as authService from './auth.service';
+export * as usuariosService from './usuarios.service';
+export * as vehiculosService from './vehiculos.service';
+export * as parqueoService from './parqueo.service';
+export * as pagosService from './pagos.service';
+export * as pasarelaService from './pasarela.service';
+export * as correoService from './correo.service';
+export * as tokenService from './token.service';
+export * as auditoriaService from './auditoria.service';

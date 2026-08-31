@@ -53,8 +53,6 @@ const IconoFlechaIzq = () => (
   </svg>
 );
 
-const BASE = import.meta.env.BASE_URL;
-
 type Paso = 'correo' | 'codigo' | 'nueva' | 'exito';
 
 export default function ForgotPassword() {

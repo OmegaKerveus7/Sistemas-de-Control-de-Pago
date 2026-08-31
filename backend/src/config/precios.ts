@@ -9,6 +9,7 @@ export const PRECIOS: Record<string, { efectivo: number; online: number }> = {
 };
 
 export function precioPorTipo(tipo: string, metodoPago: 'efectivo' | 'online' = 'efectivo'): number {
-  const precios = PRECIOS[tipo] ?? PRECIOS.automovil;
+  const precios = PRECIOS[tipo] ?? PRECIOS['automovil'];
+  if (!precios) return 20;
   return metodoPago === 'online' ? precios.online : precios.efectivo;
 }

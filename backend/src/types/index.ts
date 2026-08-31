@@ -33,3 +33,11 @@ export interface TokenPayload {
 export interface AuthRequest extends Request {
   usuario?: TokenPayload;
 }
+
+export interface RegistrarAuditoria {
+  id_usuario?: number | null;
+  accion: string;
+  entidad?: string | null;
+  detalle?: string | null;
+  ip?: string | null;
+}

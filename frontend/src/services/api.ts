@@ -4,6 +4,7 @@ interface RequestOptions {
   method?: string;
   body?: unknown;
   headers?: Record<string, string>;
+  params?: Record<string, string>;
 }
 
 function getToken(): string | null {
@@ -11,7 +12,13 @@ function getToken(): string | null {
 }
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, headers = {} } = options;
+  const { method = 'GET', body, headers = {}, params } = options;
+
+  let url = `${BASE_URL}${endpoint}`;
+  if (params) {
+    const searchParams = new URLSearchParams(params);
+    url += `?${searchParams.toString()}`;
+  }
 
   const token = getToken();
   if (token) {
@@ -30,7 +37,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     config.body = JSON.stringify(body);
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, config);
+  const response = await fetch(url, config);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Error de red' }));
@@ -42,7 +49,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 }
 
 export const api = {
-  get: <T>(endpoint: string) => request<T>(endpoint),
+  get: <T>(endpoint: string, options?: { params?: Record<string, string> }) =>
+    request<T>(endpoint, { params: options?.params }),
   post: <T>(endpoint: string, body: unknown) => request<T>(endpoint, { method: 'POST', body }),
   put: <T>(endpoint: string, body: unknown) => request<T>(endpoint, { method: 'PUT', body }),
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),

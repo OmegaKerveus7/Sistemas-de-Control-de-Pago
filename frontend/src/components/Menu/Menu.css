@@ -1,19 +1,6 @@
-:root {
-  --belen-dorado: #F9A825;
-  --belen-dorado-claro: #FBC02D;
-  --belen-dorado-oscuro: #F57F17;
-  --belen-azul: #1A237E;
-  --belen-azul-medio: #283593;
-  --belen-azul-claro: #3949AB;
-  --belen-rojo: #C62828;
-  --color-blanco: #ffffff;
-  --color-fondo: #F4F1E8;
-  --color-borde: #E8E2D0;
-  --color-texto-secundario: #475569;
-  --color-texto-terciario: #94A3B8;
-  --radio-md: 12px;
-  --sombra-md: 0 4px 16px -2px rgba(26, 35, 126, 0.08);
-}
+/* ============================================
+   MENU DASHBOARD — Layout y Componentes
+   ============================================ */
 
 .app-dashboard {
   min-height: 100vh;
