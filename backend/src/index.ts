@@ -7,7 +7,6 @@ import { vehiculosRouter } from './routes/vehiculos.routes';
 import { parqueoRouter } from './routes/parqueo.routes';
 import { pagosRouter } from './routes/pagos.routes';
 import { recuperacionRouter } from './routes/recuperacion.routes';
-import { guardianRouter } from './routes/guardian.routes';
 import { manejadorErrores } from './middleware/error.middleware';
 import { closePool, testConnection } from './config/database';
 
@@ -44,7 +43,6 @@ app.use('/api/usuarios', usuariosRouter);
 app.use('/api/vehiculos', vehiculosRouter);
 app.use('/api/parqueo', parqueoRouter);
 app.use('/api/pagos', pagosRouter);
-app.use('/api/guardian', guardianRouter);
 
 // Error handler
 app.use(manejadorErrores);
