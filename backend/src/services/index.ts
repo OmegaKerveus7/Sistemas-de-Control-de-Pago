@@ -7,3 +7,4 @@ export * as pasarelaService from './pasarela.service';
 export * as correoService from './correo.service';
 export * as tokenService from './token.service';
 export * as auditoriaService from './auditoria.service';
+export * as guardianService from './guardian.service';
