@@ -1,14 +1,8 @@
-import { useState, type FormEvent, type ChangeEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usuariosService } from '../../services/usuarios.service';
+import './Registro.css';
 import '../Login/Login.css';
-
-const IconoUsuario = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
 
 const IconoCandado = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,7 +47,58 @@ const IconoFlechaIzq = () => (
   </svg>
 );
 
+const IconoCamara = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <circle cx="12" cy="13" r="4" />
+  </svg>
+);
+
+const IconoSubir = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const IconoEliminar = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
 const BASE = import.meta.env.BASE_URL;
+
+interface Slide {
+  imagen: string;
+  frase: string;
+  subfrase?: string;
+}
+
+const SLIDES: Slide[] = [
+  {
+    imagen: 'edificio-principal-1',
+    frase: 'Virtud · Labor · Ciencia',
+    subfrase: 'Líderes en tecnología, formación académica, cívica y moral',
+  },
+  {
+    imagen: 'carousel8',
+    frase: 'Con nosotros tu vehículo está seguro',
+    subfrase: 'Sistema inteligente de control de acceso y monitoreo 24/7',
+  },
+  {
+    imagen: 'edificio-principal-1',
+    frase: 'Más de 65 años de excelencia educativa',
+    subfrase: 'Colegio Mixto Belén · Fundado en 1958',
+  },
+  {
+    imagen: 'carousel8',
+    frase: 'Educación con amor, enseñanza, respeto y ética',
+    subfrase: 'Formando generaciones con valores y conocimiento',
+  },
+];
 
 interface FormData {
   dpi: string;
@@ -62,10 +107,13 @@ interface FormData {
   email: string;
   password: string;
   confirmPassword: string;
+  foto_perfil: string | null;
 }
 
 export default function Registro() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormData>({
     dpi: '',
     nombres: '',
@@ -73,6 +121,7 @@ export default function Registro() {
     email: '',
     password: '',
     confirmPassword: '',
+    foto_perfil: null,
   });
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
@@ -80,6 +129,14 @@ export default function Registro() {
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const [exito, setExito] = useState(false);
+  const [slideActual, setSlideActual] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSlideActual((prev) => (prev + 1) % SLIDES.length);
+    }, 6000);
+    return () => clearInterval(id);
+  }, []);
 
   const manejarInput = (campo: keyof FormData) =>
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -94,7 +151,7 @@ export default function Registro() {
         valor = partes.join(' ');
       } else if (campo === 'nombres' || campo === 'apellidos') {
         valor = valor.slice(0, 100);
-      } else     if (campo === 'email') {
+      } else if (campo === 'email') {
         valor = valor.slice(0, 100);
       } else if (campo === 'password' || campo === 'confirmPassword') {
         valor = valor.slice(0, 200);
@@ -103,6 +160,40 @@ export default function Registro() {
       setForm((prev) => ({ ...prev, [campo]: valor }));
       if (error) setError('');
     };
+
+  const convertirABase64 = (archivo: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const lector = new FileReader();
+      lector.onload = () => resolve(lector.result as string);
+      lector.onerror = reject;
+      lector.readAsDataURL(archivo);
+    });
+
+  const manejarFoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+
+    if (archivo.size > 2 * 1024 * 1024) {
+      setError('La imagen no debe superar 2 MB');
+      triggerShake();
+      return;
+    }
+
+    try {
+      const base64 = await convertirABase64(archivo);
+      setForm((prev) => ({ ...prev, foto_perfil: base64 }));
+      if (error) setError('');
+    } catch {
+      setError('Error al procesar la imagen');
+      triggerShake();
+    }
+
+    e.target.value = '';
+  };
+
+  const eliminarFoto = () => {
+    setForm((prev) => ({ ...prev, foto_perfil: null }));
+  };
 
   const validarFormulario = (): boolean => {
     if (!form.dpi.trim() || !form.nombres.trim() || !form.apellidos.trim() ||
@@ -155,6 +246,7 @@ export default function Registro() {
         apellidos: form.apellidos.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
+        foto_perfil: form.foto_perfil,
       });
 
       setExito(true);
@@ -176,8 +268,20 @@ export default function Registro() {
 
   if (exito) {
     return (
-      <div className="login-page">
-        <div className="login-background" />
+      <div className="login-page registro-page">
+        <div className="login-background">
+          {SLIDES.map((slide, i) => (
+            <div key={i} className={`brand-slide ${i === slideActual ? 'activo' : ''}`} aria-hidden={i !== slideActual}>
+              <picture>
+                <source type="image/webp" srcSet={`${BASE}${slide.imagen}-640w.webp 640w, ${BASE}${slide.imagen}-960w.webp 960w, ${BASE}${slide.imagen}-1280w.webp 1280w, ${BASE}${slide.imagen}-1920w.webp 1920w`} sizes="100vw" />
+                <img src={`${BASE}${slide.imagen}-1280w.webp`} alt="" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />
+              </picture>
+            </div>
+          ))}
+          <div className="brand-overlay" />
+          <div className="brand-vignette" />
+          <div className="brand-stripe" />
+        </div>
         <header className="login-header">
           <div className="brand-logo">
             <picture>
@@ -201,11 +305,7 @@ export default function Registro() {
         <main className="login-form-panel">
           <div className="login-card">
             <div className="login-card-header" style={{ textAlign: 'center' }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: '50%', background: '#e8f5e9',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 16px', color: '#2e7d32'
-              }}>
+              <div className="exito-icono">
                 <IconoCheck />
               </div>
               <h2 className="login-title">Cuenta Creada</h2>
@@ -224,7 +324,8 @@ export default function Registro() {
             </button>
 
             <div className="login-card-footer" style={{ marginTop: 20 }}>
-              <Link to="/" className="link" style={{ fontSize: '0.88rem' }}>
+              <Link to="/" className="link-volver">
+                <IconoFlechaIzq />
                 Volver al inicio
               </Link>
             </div>
@@ -235,8 +336,20 @@ export default function Registro() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-background" />
+    <div className="login-page registro-page">
+      <div className="login-background">
+        {SLIDES.map((slide, i) => (
+          <div key={i} className={`brand-slide ${i === slideActual ? 'activo' : ''}`} aria-hidden={i !== slideActual}>
+            <picture>
+              <source type="image/webp" srcSet={`${BASE}${slide.imagen}-640w.webp 640w, ${BASE}${slide.imagen}-960w.webp 960w, ${BASE}${slide.imagen}-1280w.webp 1280w, ${BASE}${slide.imagen}-1920w.webp 1920w`} sizes="100vw" />
+              <img src={`${BASE}${slide.imagen}-1280w.webp`} alt="" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" fetchPriority={i === 0 ? 'high' : 'auto'} />
+            </picture>
+          </div>
+        ))}
+        <div className="brand-overlay" />
+        <div className="brand-vignette" />
+        <div className="brand-stripe" />
+      </div>
 
       <header className="login-header">
         <div className="brand-logo">
@@ -256,12 +369,6 @@ export default function Registro() {
             />
           </picture>
         </div>
-        <div className="brand-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 12, height: 12 }}>
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-          <span>Colegio Mixto Belén</span>
-        </div>
       </header>
 
       <main className="login-form-panel">
@@ -279,11 +386,68 @@ export default function Registro() {
               </div>
             )}
 
+            <div className="registro-foto-section">
+              {form.foto_perfil ? (
+                <div className="foto-preview">
+                  <img src={form.foto_perfil} alt="Foto de perfil" />
+                  <button
+                    type="button"
+                    className="foto-eliminar"
+                    onClick={eliminarFoto}
+                    aria-label="Eliminar foto"
+                  >
+                    <IconoEliminar />
+                  </button>
+                </div>
+              ) : (
+                <div className="foto-placeholder">
+                  <IconoCamara />
+                  <span>Foto de perfil</span>
+                  <div className="foto-botones">
+                    <button
+                      type="button"
+                      className="foto-btn"
+                      onClick={() => cameraInputRef.current?.click()}
+                    >
+                      <IconoCamara />
+                      <span>Cámara</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="foto-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <IconoSubir />
+                      <span>Subir</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="user"
+                onChange={manejarFoto}
+                hidden
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={manejarFoto}
+                hidden
+              />
+            </div>
+
             <div className="form-group">
               <label className="form-label" htmlFor="dpi">DPI</label>
               <div className="form-input-wrapper">
                 <span className="form-input-icon">
-                  <IconoUsuario />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
                 </span>
                 <input
                   id="dpi"
@@ -300,7 +464,7 @@ export default function Registro() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="registro-campos-fila">
               <div className="form-group">
                 <label className="form-label" htmlFor="nombres">Nombres</label>
                 <div className="form-input-wrapper">
@@ -339,7 +503,7 @@ export default function Registro() {
             </div>
 
             <div className="form-group">
-              <label className="form-label"                   htmlFor="email">Correo electrónico</label>
+              <label className="form-label" htmlFor="email">Correo electrónico</label>
               <div className="form-input-wrapper">
                 <span className="form-input-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -437,18 +601,7 @@ export default function Registro() {
               </Link>
             </p>
             <div style={{ marginTop: 12 }}>
-              <Link
-                to="/"
-                className="link"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: '0.85rem',
-                  color: 'var(--color-texto-terciario)',
-                  fontWeight: 500,
-                }}
-              >
+              <Link to="/" className="link-volver">
                 <IconoFlechaIzq />
                 Volver al inicio
               </Link>
