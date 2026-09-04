@@ -195,10 +195,10 @@ export default function Login() {
     };
 
   const handleIdentificadorChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const tipo = detectarTipo(e.target.value);
     let valor = e.target.value;
-    if (tipo === 'dpi') {
-      const limpio = valor.replace(/\D/g, '').slice(0, 13);
+    const esSoloDigitos = /^\d[\d\s]*$/.test(valor);
+    if (esSoloDigitos) {
+      const limpio = valor.replace(/\s/g, '').slice(0, 13);
       const partes: string[] = [];
       if (limpio.length > 0) partes.push(limpio.slice(0, 4));
       if (limpio.length > 4) partes.push(limpio.slice(4, 9));
@@ -211,8 +211,8 @@ export default function Login() {
     if (error) setError('');
   };
 
-  const inputType = tipoActual === 'correo' ? 'email' : 'text';
-  const inputMode = tipoActual === 'correo' ? 'email' : 'numeric';
+  const inputType = 'text';
+  const inputMode = 'text';
   const autoComplete = tipoActual === 'correo' ? 'email' : 'username';
   const maxLength = tipoActual === 'correo' ? 80 : 15;
 
