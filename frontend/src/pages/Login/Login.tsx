@@ -271,10 +271,6 @@ export default function Login() {
             />
           </picture>
         </div>
-        <div className="brand-badge">
-          <IconoEscudo />
-          <span>Colegio Mixto Belén</span>
-        </div>
       </header>
 
       {/* Brand messages */}
