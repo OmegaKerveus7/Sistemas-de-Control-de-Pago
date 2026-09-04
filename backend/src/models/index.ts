@@ -4,16 +4,16 @@ export * from './Parqueo';
 export * from './Pago';
 
 export interface UsuarioMySQL {
-  id_usuario: number;
-  rol: number;
-  nombre_rol?: string;
-  correo: string;
-  contraseña?: string;
+  id_usuarios: number;
+  id_rol: number;
+  nom_rol?: string;
+  email: string;
+  pass?: string;
   nombres: string;
   apellidos: string;
   dpi: string;
   foto_perfil?: string | null;
-  vehiculo?: string | null;
   activo: boolean;
-  dispositivo?: string | null;
+  fecha_nacimiento?: string | null;
+  fecha_creacion?: string;
 }

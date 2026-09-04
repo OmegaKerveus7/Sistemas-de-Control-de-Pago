@@ -10,7 +10,7 @@ export interface OpcionMenu {
 }
 
 const OPCIONES_POR_ROL: Record<NombreRol, OpcionMenu[]> = {
-  ADMIN: [
+  administrador: [
     { path: '/app/dashboard', etiqueta: 'Dashboard', icono: '📊' },
     { path: '/app/usuarios', etiqueta: 'Usuarios', icono: '👤' },
     { path: '/app/parqueo', etiqueta: 'Parqueo', icono: '🅿️' },
@@ -18,21 +18,11 @@ const OPCIONES_POR_ROL: Record<NombreRol, OpcionMenu[]> = {
     { path: '/app/tarifas', etiqueta: 'Tarifas', icono: '💰' },
     { path: '/app/auditoria', etiqueta: 'Auditoría', icono: '📋' },
   ],
-  Administracion: [
-    { path: '/app/dashboard', etiqueta: 'Dashboard', icono: '📊' },
-    { path: '/app/parqueo', etiqueta: 'Parqueo', icono: '🅿️' },
-    { path: '/app/pagos', etiqueta: 'Pagos', icono: '💳' },
-    { path: '/app/tarifas', etiqueta: 'Tarifas', icono: '💰' },
-  ],
-  Guardia: [
+  guardia: [
     { path: '/app/dashboard', etiqueta: 'Dashboard', icono: '📊' },
     { path: '/app/validar', etiqueta: 'Validar Parqueo', icono: '✅' },
   ],
-  gerente: [
-    { path: '/app/dashboard', etiqueta: 'Dashboard', icono: '📊' },
-    { path: '/app/reportes', etiqueta: 'Reportes', icono: '📈' },
-  ],
-  cliente: [
+  usuario: [
     { path: '/app/pagar', etiqueta: 'Pagar Parqueo', icono: '🅿️' },
     { path: '/app/validar', etiqueta: 'Validar Parqueo', icono: '✅' },
   ],

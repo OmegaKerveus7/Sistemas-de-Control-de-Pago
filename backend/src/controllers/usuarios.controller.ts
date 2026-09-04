@@ -16,19 +16,19 @@ export async function obtenerPorId(req: Request, res: Response) {
   const id = Number(req.params.id);
   const usuario = await usuariosService.obtenerPorId(id);
   if (!usuario) { res.status(404).json({ error: 'Usuario no encontrado' }); return; }
-  const { contraseña: _contraseña, ...data } = usuario;
+  const { pass: _pass, ...data } = usuario;
   res.json(data);
 }
 
 export async function crear(req: Request, res: Response) {
   const data = req.body;
 
-  if (!data.rol || !data.correo || !data.contraseña || !data.nombres || !data.apellidos || !data.dpi) {
-    res.status(400).json({ error: 'Faltan campos requeridos: rol, correo, contraseña, nombres, apellidos, dpi' });
+  if (!data.id_rol || !data.email || !data.pass || !data.nombres || !data.apellidos || !data.dpi) {
+    res.status(400).json({ error: 'Faltan campos requeridos: id_rol, email, pass, nombres, apellidos, dpi' });
     return;
   }
 
-  const existe = await usuariosService.existeCorreoODpi(data.correo, data.dpi);
+  const existe = await usuariosService.existeCorreoODpi(data.email, data.dpi);
   if (existe) {
     res.status(409).json({ error: 'Ya existe un usuario con ese correo o DPI' });
     return;
@@ -41,7 +41,7 @@ export async function crear(req: Request, res: Response) {
     id_usuario: usuario?.id ?? null,
     accion: 'CREAR_USUARIO',
     entidad: 'usuarios',
-    detalle: `Creó el usuario id ${id} (${data.correo})`,
+    detalle: `Creó el usuario id ${id} (${data.email})`,
     ip: ipDe(req),
   });
 
@@ -85,10 +85,10 @@ export async function eliminar(req: Request, res: Response) {
 export async function registroPublico(req: Request, res: Response) {
   const data = req.body;
 
-  const password = data.password || data.contraseña;
+  const password = data.password || data.pass;
 
-  if (!data.correo || !password || !data.nombres || !data.apellidos || !data.dpi) {
-    res.status(400).json({ error: 'Faltan campos requeridos: correo, contraseña, nombres, apellidos, dpi' });
+  if (!data.email || !password || !data.nombres || !data.apellidos || !data.dpi) {
+    res.status(400).json({ error: 'Faltan campos requeridos: email, contraseña, nombres, apellidos, dpi' });
     return;
   }
 
@@ -97,7 +97,7 @@ export async function registroPublico(req: Request, res: Response) {
     return;
   }
 
-  const existe = await usuariosService.existeCorreoODpi(data.correo, data.dpi);
+  const existe = await usuariosService.existeCorreoODpi(data.email, data.dpi);
   if (existe) {
     res.status(409).json({ error: 'Ya existe una cuenta con ese correo o DPI' });
     return;
@@ -105,14 +105,13 @@ export async function registroPublico(req: Request, res: Response) {
 
   try {
     const id = await usuariosService.crear({
-      rol: 4,
-      correo: data.correo,
-      contraseña: password,
+      id_rol: 3,
+      email: data.email,
+      pass: password,
       nombres: data.nombres,
       apellidos: data.apellidos,
       dpi: data.dpi,
       foto_perfil: null,
-      vehiculo: null,
       activo: true,
     });
 

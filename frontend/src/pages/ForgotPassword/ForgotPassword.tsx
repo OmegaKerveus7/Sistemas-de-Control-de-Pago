@@ -83,7 +83,7 @@ export default function ForgotPassword() {
     }
     setLoading(true);
     try {
-      const res = await api.post<{ mensaje: string; id_usuario: number }>('/auth/forgot-password', { correo: correo.trim().toLowerCase() });
+      const res = await api.post<{ mensaje: string; id_usuario: number }>('/auth/forgot-password', { email: correo.trim().toLowerCase() });
       setIdUsuario(res.id_usuario);
       setPaso('codigo');
     } catch (err) {
@@ -130,7 +130,7 @@ export default function ForgotPassword() {
       await api.post('/auth/reset-password', {
         id_usuario: idUsuario,
         codigo: codigo.trim(),
-        nueva_contraseña: nuevaContraseña,
+        nueva_password: nuevaContraseña,
       });
       setPaso('exito');
     } catch (err) {

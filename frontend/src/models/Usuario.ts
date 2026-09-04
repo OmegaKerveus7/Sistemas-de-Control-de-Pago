@@ -1,4 +1,4 @@
-export type NombreRol = 'ADMIN' | 'Administracion' | 'Guardia' | 'cliente' | 'gerente';
+export type NombreRol = 'administrador' | 'guardia' | 'usuario';
 
 export interface Credenciales {
   identificador: string;
@@ -10,10 +10,9 @@ export interface Usuario {
   dpi: string;
   nombres: string;
   apellidos: string;
-  correo: string;
+  email: string;
   rol: NombreRol;
   foto_perfil?: string | null;
-  vehiculo?: string | null;
   activo?: boolean;
 }
 
