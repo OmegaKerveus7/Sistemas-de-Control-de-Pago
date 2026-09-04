@@ -8,13 +8,12 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 
 interface FilaLogin {
   id_usuario: number;
-  rol: number;
-  nombre_rol?: string;
-  correo: string;
+  rol: string;
+  email: string;
   dpi: string;
   nombres: string;
   apellidos: string;
-  contraseña?: string;
+  pass?: string;
 }
 
 function emitirSesion(row: FilaLogin): ResultadoAutenticacion {
@@ -22,8 +21,8 @@ function emitirSesion(row: FilaLogin): ResultadoAutenticacion {
     id: Number(row.id_usuario),
     nombres: row.nombres,
     apellidos: row.apellidos,
-    rol: (row.nombre_rol ?? String(row.rol)) as NombreRol,
-    correo: row.correo,
+    rol: (row.rol ?? 'usuario') as NombreRol,
+    email: row.email,
     dpi: row.dpi,
   };
 
@@ -50,7 +49,7 @@ export async function autenticar(creds: Credenciales, ip: string): Promise<Resul
 
     const usuario = JSON.parse(resultado.data) as FilaLogin;
 
-    const passwordValida = await bcrypt.compare(creds.password, usuario.contraseña ?? '');
+    const passwordValida = await bcrypt.compare(creds.password, usuario.pass ?? '');
     if (!passwordValida) {
       return { exitoso: false, mensaje: 'Credenciales inválidas' };
     }

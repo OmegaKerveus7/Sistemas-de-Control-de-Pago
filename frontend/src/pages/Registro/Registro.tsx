@@ -59,8 +59,8 @@ interface FormData {
   dpi: string;
   nombres: string;
   apellidos: string;
-  correo: string;
-  contraseña: string;
+  email: string;
+  password: string;
   confirmPassword: string;
 }
 
@@ -70,8 +70,8 @@ export default function Registro() {
     dpi: '',
     nombres: '',
     apellidos: '',
-    correo: '',
-    contraseña: '',
+    email: '',
+    password: '',
     confirmPassword: '',
   });
   const [mostrarPassword, setMostrarPassword] = useState(false);
@@ -94,9 +94,9 @@ export default function Registro() {
         valor = partes.join(' ');
       } else if (campo === 'nombres' || campo === 'apellidos') {
         valor = valor.slice(0, 100);
-      } else if (campo === 'correo') {
+      } else     if (campo === 'email') {
         valor = valor.slice(0, 100);
-      } else if (campo === 'contraseña' || campo === 'confirmPassword') {
+      } else if (campo === 'password' || campo === 'confirmPassword') {
         valor = valor.slice(0, 200);
       }
 
@@ -106,7 +106,7 @@ export default function Registro() {
 
   const validarFormulario = (): boolean => {
     if (!form.dpi.trim() || !form.nombres.trim() || !form.apellidos.trim() ||
-        !form.correo.trim() || !form.contraseña || !form.confirmPassword) {
+        !form.email.trim() || !form.password || !form.confirmPassword) {
       setError('Por favor complete todos los campos');
       triggerShake();
       return false;
@@ -119,19 +119,19 @@ export default function Registro() {
       return false;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       setError('Ingrese un correo electrónico válido');
       triggerShake();
       return false;
     }
 
-    if (form.contraseña.length < 6) {
+    if (form.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres');
       triggerShake();
       return false;
     }
 
-    if (form.contraseña !== form.confirmPassword) {
+    if (form.password !== form.confirmPassword) {
       setError('Las contraseñas no coinciden');
       triggerShake();
       return false;
@@ -153,8 +153,8 @@ export default function Registro() {
         dpi: form.dpi.replace(/\s/g, ''),
         nombres: form.nombres.trim(),
         apellidos: form.apellidos.trim(),
-        correo: form.correo.trim().toLowerCase(),
-        password: form.contraseña,
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
       });
 
       setExito(true);
@@ -339,7 +339,7 @@ export default function Registro() {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="correo">Correo electrónico</label>
+              <label className="form-label"                   htmlFor="email">Correo electrónico</label>
               <div className="form-input-wrapper">
                 <span className="form-input-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -348,12 +348,12 @@ export default function Registro() {
                   </svg>
                 </span>
                 <input
-                  id="correo"
+                  id="email"
                   type="email"
                   className="form-input"
                   placeholder="correo@ejemplo.com"
-                  value={form.correo}
-                  onChange={manejarInput('correo')}
+                  value={form.email}
+                  onChange={manejarInput('email')}
                   disabled={loading}
                   autoComplete="off"
                   maxLength={100}
@@ -370,8 +370,8 @@ export default function Registro() {
                   type={mostrarPassword ? 'text' : 'password'}
                   className="form-input has-suffix"
                   placeholder="Mínimo 6 caracteres"
-                  value={form.contraseña}
-                  onChange={manejarInput('contraseña')}
+                  value={form.password}
+                  onChange={manejarInput('password')}
                   disabled={loading}
                   autoComplete="new-password"
                 />

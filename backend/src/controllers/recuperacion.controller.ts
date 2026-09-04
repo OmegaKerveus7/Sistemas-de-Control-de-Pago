@@ -4,7 +4,8 @@ import * as correoService from '../services/correo.service';
 import * as usuariosService from '../services/usuarios.service';
 
 export async function forgotPassword(req: Request, res: Response) {
-  const { correo } = req.body;
+  const { email } = req.body;
+  const correo = email || req.body.correo;
 
   if (!correo) {
     res.status(400).json({ error: 'El correo es requerido' });
@@ -39,14 +40,15 @@ export async function forgotPassword(req: Request, res: Response) {
 }
 
 export async function resetPassword(req: Request, res: Response) {
-  const { id_usuario, codigo, nueva_contraseña } = req.body;
+  const { id_usuario, codigo, nueva_contraseña, nueva_password } = req.body;
+  const password = nueva_password || nueva_contraseña;
 
-  if (!id_usuario || !codigo || !nueva_contraseña) {
+  if (!id_usuario || !codigo || !password) {
     res.status(400).json({ error: 'Se requieren: id_usuario, código y nueva contraseña' });
     return;
   }
 
-  if (nueva_contraseña.length < 6) {
+  if (password.length < 6) {
     res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
     return;
   }
@@ -57,7 +59,7 @@ export async function resetPassword(req: Request, res: Response) {
     return;
   }
 
-  const ok = await usuariosService.actualizar(id_usuario, { contraseña: nueva_contraseña });
+  const ok = await usuariosService.actualizar(id_usuario, { pass: password });
   if (!ok) {
     res.status(500).json({ error: 'No se pudo actualizar la contraseña' });
     return;

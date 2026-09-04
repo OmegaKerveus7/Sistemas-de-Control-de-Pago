@@ -19,7 +19,7 @@ export interface UsuarioPayload {
   nombres: string;
   apellidos: string;
   rol: NombreRol;
-  correo?: string;
+  email?: string;
   dpi?: string;
 }
 

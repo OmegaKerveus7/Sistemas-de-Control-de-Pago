@@ -1,13 +1,11 @@
 export interface Usuario {
-  id?: number;
+  id_usuarios?: number;
   dpi: string;
   nombres: string;
   apellidos: string;
-  correo: string;
-  telefono?: string;
+  email: string;
   password_hash: string;
-  rol: 'admin' | 'cajero' | 'supervisor';
+  id_rol: number;
   activo: boolean;
-  creado_en?: Date;
-  actualizado_en?: Date;
+  fecha_creacion?: Date;
 }

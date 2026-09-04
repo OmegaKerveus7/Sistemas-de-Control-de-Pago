@@ -3,14 +3,14 @@ import { getPool } from '../config/database';
 import type { UsuarioMySQL } from '../models';
 
 const CAMPOS_BASE = `
-  u.id_usuario, u.rol, r.rol AS nombre_rol, u.correo, u.nombres, u.apellidos, u.dpi,
-  u.foto_perfil, u.vehiculo, u.activo, u.dispositivo
+  u.id_usuarios, u.id_rol, r.nom_rol, u.email, u.nombres, u.apellidos, u.DPI,
+  u.foto_perfil, u.activo, u.fecha_nacimiento, u.fecha_creacion
 `;
 
 export async function listar(): Promise<UsuarioMySQL[]> {
   const pool = getPool();
   const [rows] = await pool.query(
-    `SELECT ${CAMPOS_BASE} FROM usuarios u JOIN roles r ON r.id_rol = u.rol ORDER BY u.id_usuario`,
+    `SELECT ${CAMPOS_BASE} FROM Usuarios u JOIN Roles r ON r.id_rol = u.id_rol ORDER BY u.id_usuarios`,
   );
   return rows as UsuarioMySQL[];
 }
@@ -18,35 +18,34 @@ export async function listar(): Promise<UsuarioMySQL[]> {
 export async function obtenerPorId(id: number): Promise<UsuarioMySQL | null> {
   const pool = getPool();
   const [rows] = await pool.query(
-    `SELECT ${CAMPOS_BASE} FROM usuarios u JOIN roles r ON r.id_rol = u.rol WHERE u.id_usuario = ?`,
+    `SELECT ${CAMPOS_BASE} FROM Usuarios u JOIN Roles r ON r.id_rol = u.id_rol WHERE u.id_usuarios = ?`,
     [id],
   );
   return (rows as UsuarioMySQL[])[0] ?? null;
 }
 
-export async function existeCorreoODpi(correo: string, dpi: string): Promise<boolean> {
+export async function existeCorreoODpi(email: string, dpi: string): Promise<boolean> {
   const pool = getPool();
   const [rows] = await pool.query(
-    'SELECT id_usuario FROM usuarios WHERE correo = ? OR dpi = ? LIMIT 1',
-    [correo, dpi],
+    'SELECT id_usuarios FROM Usuarios WHERE email = ? OR DPI = ? LIMIT 1',
+    [email, dpi],
   );
   return (rows as unknown[]).length > 0;
 }
 
-export async function crear(data: Omit<UsuarioMySQL, 'id_usuario' | 'nombre_rol'>): Promise<number> {
+export async function crear(data: Omit<UsuarioMySQL, 'id_usuarios' | 'nom_rol' | 'fecha_creacion'>): Promise<number> {
   const pool = getPool();
   const [result] = await pool.execute(
-    `INSERT INTO usuarios (rol, correo, contraseña, nombres, apellidos, dpi, foto_perfil, vehiculo, activo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO Usuarios (id_rol, email, pass, nombres, apellidos, DPI, foto_perfil, activo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      data.rol,
-      data.correo,
-      data.contraseña ?? '',
+      data.id_rol,
+      data.email,
+      data.pass ?? '',
       data.nombres,
       data.apellidos,
       data.dpi,
       data.foto_perfil ?? null,
-      data.vehiculo ?? null,
       data.activo ? 1 : 0,
     ],
   );
@@ -58,24 +57,23 @@ export async function actualizar(id: number, data: Partial<UsuarioMySQL>): Promi
   const sets: string[] = [];
   const values: Array<string | number | null> = [];
 
-  if (data.rol !== undefined) { sets.push('rol = ?'); values.push(data.rol); }
-  if (data.correo !== undefined) { sets.push('correo = ?'); values.push(data.correo); }
+  if (data.id_rol !== undefined) { sets.push('id_rol = ?'); values.push(data.id_rol); }
+  if (data.email !== undefined) { sets.push('email = ?'); values.push(data.email); }
   if (data.nombres !== undefined) { sets.push('nombres = ?'); values.push(data.nombres); }
   if (data.apellidos !== undefined) { sets.push('apellidos = ?'); values.push(data.apellidos); }
-  if (data.dpi !== undefined) { sets.push('dpi = ?'); values.push(data.dpi); }
+  if (data.dpi !== undefined) { sets.push('DPI = ?'); values.push(data.dpi); }
   if (data.foto_perfil !== undefined) { sets.push('foto_perfil = ?'); values.push(data.foto_perfil); }
-  if (data.vehiculo !== undefined) { sets.push('vehiculo = ?'); values.push(data.vehiculo); }
   if (data.activo !== undefined) { sets.push('activo = ?'); values.push(data.activo ? 1 : 0); }
-  if (data.contraseña !== undefined && data.contraseña) {
-    sets.push('contraseña = ?');
-    values.push(data.contraseña);
+  if (data.pass !== undefined && data.pass) {
+    sets.push('pass = ?');
+    values.push(data.pass);
   }
 
   if (sets.length === 0) return false;
   values.push(id);
 
   const [result] = await pool.execute(
-    `UPDATE usuarios SET ${sets.join(', ')} WHERE id_usuario = ?`,
+    `UPDATE Usuarios SET ${sets.join(', ')} WHERE id_usuarios = ?`,
     values,
   );
   return (result as ResultSetHeader).affectedRows > 0;
@@ -83,18 +81,18 @@ export async function actualizar(id: number, data: Partial<UsuarioMySQL>): Promi
 
 export async function eliminar(id: number): Promise<boolean> {
   const pool = getPool();
-  const [result] = await pool.execute('DELETE FROM usuarios WHERE id_usuario = ?', [id]);
+  const [result] = await pool.execute('UPDATE Usuarios SET activo = 0 WHERE id_usuarios = ?', [id]);
   return (result as ResultSetHeader).affectedRows > 0;
 }
 
-export async function obtenerIdPorCorreo(correo: string): Promise<number | null> {
+export async function obtenerIdPorCorreo(email: string): Promise<number | null> {
   const pool = getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    'SELECT id_usuario FROM usuarios WHERE correo = ? LIMIT 1',
-    [correo],
+    'SELECT id_usuarios FROM Usuarios WHERE email = ? LIMIT 1',
+    [email],
   );
   const fila = (rows as RowDataPacket[])[0];
-  return fila ? fila.id_usuario : null;
+  return fila ? fila.id_usuarios : null;
 }
 
 export interface ResultadoLoginSP {
