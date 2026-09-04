@@ -1,17 +1,11 @@
 import mysql from 'mysql2/promise';
 
-function requiredEnv(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) throw new Error(`La variable de entorno ${name} es requerida`);
-  return value;
-}
-
 const dbConfig: mysql.PoolOptions = {
-  host: requiredEnv('DB_HOST'),
-  port: Number(requiredEnv('DB_PORT')),
-  user: requiredEnv('DB_USER'),
-  password: requiredEnv('DB_PASSWORD'),
-  database: requiredEnv('DB_NAME'),
+  host: process.env.DB_HOST || 'localhost',
+  port: Number(process.env.DB_PORT) || 3306,
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'parqueo',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

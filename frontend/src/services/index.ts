@@ -3,4 +3,3 @@ export * from './usuarios.service';
 export * from './vehiculos.service';
 export * from './parqueo.service';
 export * from './pagos.service';
-export * from './guardian.service';

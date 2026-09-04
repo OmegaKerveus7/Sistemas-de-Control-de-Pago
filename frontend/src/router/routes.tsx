@@ -8,7 +8,6 @@ import { ForgotPassword } from '../pages/ForgotPassword';
 import { Dashboard } from '../pages/Dashboard';
 import { Placeholder } from '../pages/Placeholder';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
-import { Guardian } from '../pages/Guardian';
 
 export const router = createHashRouter([
   {
@@ -46,7 +45,6 @@ export const router = createHashRouter([
       { path: 'tarifas', element: <Placeholder titulo="Tarifas" /> },
       { path: 'auditoria', element: <Placeholder titulo="Auditoría" /> },
       { path: 'validar', element: <Placeholder titulo="Validar Parqueo" /> },
-      { path: 'guardian', element: <Guardian /> },
       { path: 'reportes', element: <Placeholder titulo="Reportes" /> },
       { path: 'pagar', element: <PagarParqueo /> },
     ],
