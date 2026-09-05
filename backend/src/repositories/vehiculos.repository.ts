@@ -1,41 +1,50 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
-import type { Vehiculo } from '../models';
+import type { Vehiculo, VehiculoConDueno } from '../models';
 
 const SELECT_BASE = `
-  SELECT id_vehiculo AS id, placa, marca, modelo, color, tipo, foto, creado_en
-  FROM vehiculos
+  SELECT
+    v.id_vehiculo AS id, v.placa, v.modelo, v.color, v.año, v.activo,
+    m.nom_marca AS marca, tv.nom_tipo_vehiculo AS tipo,
+    v.id_usuario AS id_dueno, u.nombres AS dueno_nombres, u.apellidos AS dueno_apellidos,
+    u.dpi AS dueno_dpi, u.email AS dueno_email
+  FROM Vehiculos v
+  JOIN Marca_vehiculos m ON m.id_marca = v.id_marca
+  JOIN Tipo_vehiculos tv ON tv.id_modelo = v.id_tipo_vehiculo
+  JOIN Usuarios u ON u.id_usuarios = v.id_usuario
 `;
 
-export async function listar(): Promise<Vehiculo[]> {
+export async function listar(): Promise<VehiculoConDueno[]> {
   const pool = getPool();
-  const [rows] = await pool.query(`${SELECT_BASE} ORDER BY id_vehiculo`);
-  return rows as unknown as Vehiculo[];
+  const [rows] = await pool.query(`${SELECT_BASE} ORDER BY v.id_vehiculo`);
+  return rows as unknown as VehiculoConDueno[];
 }
 
-export async function obtenerPorId(id: number): Promise<Vehiculo | null> {
+export async function obtenerPorId(id: number): Promise<VehiculoConDueno | null> {
   const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE id_vehiculo = ?`, [id]);
-  return (rows as unknown as Vehiculo[])[0] ?? null;
+  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE v.id_vehiculo = ?`, [id]);
+  return (rows as unknown as VehiculoConDueno[])[0] ?? null;
 }
 
-export async function obtenerPorPlaca(placa: string): Promise<Vehiculo | null> {
+export async function obtenerPorPlaca(placa: string): Promise<VehiculoConDueno | null> {
   const pool = getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    `${SELECT_BASE} WHERE placa = ? LIMIT 1`,
+    `${SELECT_BASE} WHERE v.placa = ? LIMIT 1`,
     [placa.toUpperCase()],
   );
-  return (rows as unknown as Vehiculo[])[0] ?? null;
+  return (rows as unknown as VehiculoConDueno[])[0] ?? null;
 }
 
-export async function buscar(filtro: string): Promise<Vehiculo[]> {
+export async function buscar(filtro: string): Promise<VehiculoConDueno[]> {
   const pool = getPool();
   const termino = `%${filtro}%`;
   const [rows] = await pool.query<RowDataPacket[]>(
-    `${SELECT_BASE} WHERE placa LIKE ? OR marca LIKE ? OR modelo LIKE ? OR color LIKE ? ORDER BY id_vehiculo`,
-    [termino, termino, termino, termino],
+    `${SELECT_BASE}
+     WHERE v.placa LIKE ? OR m.nom_marca LIKE ? OR v.modelo LIKE ? OR u.nombres LIKE ? OR u.apellidos LIKE ? OR u.dpi LIKE ?
+     ORDER BY v.id_vehiculo`,
+    [termino, termino, termino, termino, termino, termino],
   );
-  return rows as unknown as Vehiculo[];
+  return rows as unknown as VehiculoConDueno[];
 }
 
 export async function crear(data: Vehiculo): Promise<number> {

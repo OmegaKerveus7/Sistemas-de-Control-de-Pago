@@ -3,7 +3,7 @@ import { getPool } from '../config/database';
 import type { UsuarioMySQL } from '../models';
 
 const CAMPOS_BASE = `
-  u.id_usuarios, u.id_rol, r.nom_rol, u.email, u.nombres, u.apellidos, u.DPI,
+  u.id_usuarios, u.id_rol, r.nom_rol, u.email, u.nombres, u.apellidos, u.DPI AS dpi,
   u.foto_perfil, u.activo, u.fecha_nacimiento, u.fecha_creacion
 `;
 
@@ -46,7 +46,7 @@ export async function crear(data: Omit<UsuarioMySQL, 'id_usuarios' | 'nom_rol' |
       data.apellidos,
       data.dpi,
       data.foto_perfil ?? null,
-      data.activo ? 1 : 0,
+      data.activo === false ? 0 : 1,
     ],
   );
   return (result as ResultSetHeader).insertId;

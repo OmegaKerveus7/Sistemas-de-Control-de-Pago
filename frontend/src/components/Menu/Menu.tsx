@@ -6,26 +6,28 @@ import './Menu.css';
 export interface OpcionMenu {
   path: string;
   etiqueta: string;
-  icono: string;
 }
 
 const OPCIONES_POR_ROL: Record<NombreRol, OpcionMenu[]> = {
   administrador: [
-    { path: '/app/dashboard', etiqueta: 'Dashboard', icono: '📊' },
-    { path: '/app/usuarios', etiqueta: 'Usuarios', icono: '👤' },
-    { path: '/app/parqueo', etiqueta: 'Parqueo', icono: '🅿️' },
-    { path: '/app/pagos', etiqueta: 'Pagos', icono: '💳' },
-    { path: '/app/tarifas', etiqueta: 'Tarifas', icono: '💰' },
-    { path: '/app/auditoria', etiqueta: 'Auditoría', icono: '📋' },
-    { path: '/app/guardian', etiqueta: 'Control de acceso', icono: '🛡️' },
+    { path: '/app/dashboard', etiqueta: 'Dashboard' },
+    { path: '/app/usuarios', etiqueta: 'Usuarios' },
+    { path: '/app/parqueo', etiqueta: 'Parqueo' },
+    { path: '/app/pagos', etiqueta: 'Pagos' },
+    { path: '/app/tarifas', etiqueta: 'Tarifas' },
+    { path: '/app/auditoria', etiqueta: 'Auditoría' },
+    { path: '/app/guardian', etiqueta: 'Control de acceso' },
+    { path: '/app/buscar-vehiculo', etiqueta: 'Buscar vehículo' },
   ],
   guardia: [
-    { path: '/app/dashboard', etiqueta: 'Dashboard', icono: '📊' },
-    { path: '/app/guardian', etiqueta: 'Control de acceso', icono: '🛡️' },
+    { path: '/app/dashboard', etiqueta: 'Dashboard' },
+    { path: '/app/guardian', etiqueta: 'Control de acceso' },
+    { path: '/app/pagos', etiqueta: 'Pagos' },
+    { path: '/app/buscar-vehiculo', etiqueta: 'Buscar vehículo' },
   ],
   usuario: [
-    { path: '/app/pagar', etiqueta: 'Pagar Parqueo', icono: '🅿️' },
-    { path: '/app/validar', etiqueta: 'Validar Parqueo', icono: '✅' },
+    { path: '/app/pagar', etiqueta: 'Pagar Parqueo' },
+    { path: '/app/validar', etiqueta: 'Validar Parqueo' },
   ],
 };
 
@@ -89,7 +91,6 @@ export function Menu() {
               to={opcion.path}
               className={({ isActive }) => `app-menu-item ${isActive ? 'activo' : ''}`}
             >
-              <span className="app-menu-icon">{opcion.icono}</span>
               <span>{opcion.etiqueta}</span>
             </NavLink>
           ))}

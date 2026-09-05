@@ -3,52 +3,61 @@ import { getPool } from '../config/database';
 import type { Parqueo } from '../models';
 
 const SELECT_BASE = `
-  SELECT id_parqueo AS id, placa, num_parqueo, hora_entrada, hora_salida, costo, estado, ticket,
-         creado_en, actualizado_en
-  FROM parqueo
+  SELECT
+    p.id_parqueo AS id, p.id_lugar, l.lugar, z.nom_zona AS zona,
+    p.id_ticket, t.numero_ticket AS ticket, t.placa_automovil AS placa,
+    t.fecha_entrada, t.fecha_salida,
+    p.fecha_ocupacion, p.fecha_liberacion,
+    el.nom_estado AS estado_lugar,
+    pg.monto_total AS costo, pg.estado_pago,
+    CASE WHEN p.fecha_liberacion IS NULL THEN 'activo' ELSE 'completado' END AS estado
+  FROM Parqueos p
+  JOIN Lugares l ON l.id_lugar = p.id_lugar
+  JOIN Zonas z ON z.id_zona = l.id_zona
+  JOIN Estados_Lugares el ON el.id_estado_lugar = l.id_estado_lugar
+  LEFT JOIN Tickets t ON t.id_ticket = p.id_ticket
+  LEFT JOIN Pagos pg ON pg.id_ticket = t.id_ticket
 `;
 
 export async function listar(): Promise<Parqueo[]> {
   const pool = getPool();
-  const [rows] = await pool.query(`${SELECT_BASE} ORDER BY creado_en DESC`);
+  const [rows] = await pool.query(`${SELECT_BASE} ORDER BY p.id_parqueo DESC`);
   return rows as Parqueo[];
 }
 
 export async function obtenerPorId(id: number): Promise<Parqueo | null> {
   const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE id_parqueo = ?`, [id]);
+  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE p.id_parqueo = ?`, [id]);
   return (rows as unknown as Parqueo[])[0] ?? null;
 }
 
 export async function obtenerActivoPorPlaca(placa: string): Promise<Parqueo | null> {
   const pool = getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    `${SELECT_BASE} WHERE placa = ? AND estado = 'activo' ORDER BY id_parqueo DESC LIMIT 1`,
+    `${SELECT_BASE} WHERE t.placa_automovil = ? AND p.fecha_liberacion IS NULL ORDER BY p.id_parqueo DESC LIMIT 1`,
     [placa.toUpperCase()],
   );
   return (rows as unknown as Parqueo[])[0] ?? null;
 }
 
-export async function numParqueoOcupado(numParqueo: string): Promise<boolean> {
+export async function historialPorPlaca(
+  placa: string,
+  fechaInicio: string,
+  fechaFin: string,
+): Promise<Parqueo[]> {
   const pool = getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT id_parqueo FROM parqueo WHERE num_parqueo = ? AND estado = 'activo' LIMIT 1`,
-    [numParqueo],
+    `${SELECT_BASE}
+     WHERE t.placa_automovil = ? AND DATE(p.fecha_ocupacion) BETWEEN ? AND ?
+     ORDER BY p.fecha_ocupacion DESC`,
+    [placa.toUpperCase(), fechaInicio, fechaFin],
   );
-  return (rows as unknown[]).length > 0;
+  return rows as unknown as Parqueo[];
 }
 
-export async function registrarEntrada(placa: string, numParqueo: string): Promise<number> {
-  const pool = getPool();
-  const ticket = `TKT-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-  const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO parqueo (placa, num_parqueo, hora_entrada, estado, ticket)
-     VALUES (?, ?, NOW(), 'activo', ?)`,
-    [placa.toUpperCase(), numParqueo, ticket],
-  );
-  return result.insertId;
-}
-
+// TODO(pagos): pagos.controller.ts todavía depende de esta función legacy para su flujo de
+// pago online (gateway/tarjeta), que apunta a una tabla `parqueo` que no existe en la BD real.
+// Se corrige junto con el módulo de Pagos.
 export async function registrarSalida(id: number, costo: number): Promise<boolean> {
   const pool = getPool();
   const [result] = await pool.execute<ResultSetHeader>(
@@ -57,30 +66,4 @@ export async function registrarSalida(id: number, costo: number): Promise<boolea
     [costo, id],
   );
   return result.affectedRows > 0;
-}
-
-export async function cancelar(id: number): Promise<boolean> {
-  const pool = getPool();
-  const [result] = await pool.execute<ResultSetHeader>(
-    `UPDATE parqueo SET estado = 'cancelado' WHERE id_parqueo = ?`,
-    [id],
-  );
-  return result.affectedRows > 0;
-}
-
-export async function historialPorPlaca(
-  placa: string,
-  fechaInicio: string,
-  fechaFin: string,
-): Promise<unknown[]> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT id_historial, id_parqueo, placa, num_parqueo, fecha,
-            hora_entrada, hora_salida, costo, estado, ticket
-     FROM parqueo_historial
-     WHERE placa = ? AND fecha BETWEEN ? AND ?
-     ORDER BY fecha DESC, hora_entrada DESC`,
-    [placa.toUpperCase(), fechaInicio, fechaFin],
-  );
-  return rows as unknown[];
 }

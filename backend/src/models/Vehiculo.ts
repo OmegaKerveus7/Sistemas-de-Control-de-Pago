@@ -17,3 +17,19 @@ export interface UsuarioVehiculo {
   id_vehiculo: number;
   creado_en?: Date;
 }
+
+export interface VehiculoConDueno {
+  id: number;
+  placa: string;
+  marca: string;
+  modelo: string;
+  color: string | null;
+  año: number | null;
+  tipo: string;
+  activo: boolean;
+  id_dueno: number;
+  dueno_nombres: string;
+  dueno_apellidos: string;
+  dueno_dpi: string;
+  dueno_email: string;
+}
