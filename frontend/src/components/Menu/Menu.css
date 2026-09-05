@@ -193,6 +193,10 @@
   border-left-color: var(--belen-dorado);
 }
 
+.app-menu-icon {
+  font-size: 1rem;
+}
+
 @media (max-width: 768px) {
   .app-body {
     flex-direction: column-reverse;

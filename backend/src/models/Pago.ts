@@ -39,3 +39,9 @@ export interface PagoLegacy {
   procesado_por?: number;
   creado_en?: Date;
 }
+
+export interface FilaReporteMensual {
+  mes: string;
+  cantidad_pagos: number;
+  total_cobrado: number;
+}
