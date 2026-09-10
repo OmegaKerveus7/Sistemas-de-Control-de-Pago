@@ -4,6 +4,7 @@ import { verificarToken } from '../middleware/auth.middleware';
 
 export const pagosRouter = Router();
 
+pagosRouter.get('/mis-pagos', verificarToken, pagosController.misPagos);
 pagosRouter.get('/reporte-mensual', verificarToken, pagosController.reporteMensual);
 pagosRouter.get('/precio', verificarToken, pagosController.precio);
 pagosRouter.get('/confirmar', pagosController.confirmar);

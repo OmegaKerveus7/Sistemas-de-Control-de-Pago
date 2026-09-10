@@ -12,12 +12,20 @@ const ETIQUETAS: Record<TipoVehiculo, string> = {
   automovil: 'Automóvil',
 };
 
+const REGEX_PLACA = /^([PM])\d{3}[A-Z]{3}$/;
+
+function detectarTipoVehiculo(placa: string): TipoVehiculo | null {
+  const coincidencia = REGEX_PLACA.exec(placa.trim().toUpperCase());
+  if (!coincidencia) return null;
+  return coincidencia[1] === 'P' ? 'automovil' : 'motocicleta';
+}
+
 export function PagarParqueo() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
 
   const [placa, setPlaca] = useState('');
-  const [tipo, setTipo] = useState<TipoVehiculo>('motocicleta');
+  const tipo = detectarTipoVehiculo(placa);
   const [parqueo, setParqueo] = useState<Parqueo | null>(null);
   const [precio, setPrecio] = useState<PrecioInfo | null>(null);
   const [error, setError] = useState('');
@@ -39,11 +47,16 @@ export function PagarParqueo() {
       setError('Ingresa la placa de tu vehículo');
       return;
     }
+    const tipoDetectado = detectarTipoVehiculo(limpio);
+    if (!tipoDetectado) {
+      setError('La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras. Ej: P123ABC o M123ABC');
+      return;
+    }
 
     setLoading(true);
     try {
       const activo = await parqueoService.obtenerActivoPorPlaca(limpio);
-      const info = await pagosService.precio(tipo);
+      const info = await pagosService.precio(tipoDetectado);
       setParqueo(activo);
       setPrecio(info);
     } catch (err) {
@@ -54,7 +67,7 @@ export function PagarParqueo() {
   };
 
   const pagar = async () => {
-    if (!parqueo || !precio) return;
+    if (!parqueo || !precio || !tipo) return;
     setCargandoPago(true);
     setError('');
     try {
@@ -99,22 +112,20 @@ export function PagarParqueo() {
               value={placa}
               onChange={(e) => setPlaca(e.target.value.toUpperCase())}
               disabled={loading}
-              maxLength={15}
+              maxLength={7}
             />
 
-            <label className="pagar-label" htmlFor="tipo">Tipo de vehículo</label>
-            <select
-              id="tipo"
-              className="pagar-input"
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value as TipoVehiculo)}
-              disabled={loading}
-            >
-              <option value="motocicleta">Motocicleta</option>
-              <option value="automovil">Automóvil</option>
-            </select>
+            {placa && (
+              tipo ? (
+                <p className="pagar-tipo-detectado">Tipo detectado: <strong>{ETIQUETAS[tipo]}</strong></p>
+              ) : (
+                <p className="pagar-tipo-detectado pagar-tipo-detectado-error">
+                  La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras.
+                </p>
+              )
+            )}
 
-            <button type="submit" className="pagar-button" disabled={loading}>
+            <button type="submit" className="pagar-button" disabled={loading || !tipo}>
               {loading ? 'Consultando...' : 'Consultar mi parqueo'}
             </button>
           </form>
@@ -123,7 +134,7 @@ export function PagarParqueo() {
             <h2 className="pagar-resumen-titulo">Resumen de pago</h2>
             <p className="pagar-resumen-linea">
               <span>Vehículo</span>
-              <strong>{parqueo.placa} · {ETIQUETAS[tipo]}</strong>
+              <strong>{parqueo.placa} · {tipo ? ETIQUETAS[tipo] : ''}</strong>
             </p>
             <p className="pagar-resumen-linea">
               <span>Entrada</span>

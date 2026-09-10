@@ -44,15 +44,15 @@ function normalizarPlaca(placa: string): string {
   return placa.trim().toUpperCase();
 }
 
-function validarPlaca(placa: string, tipo?: TipoVehiculoGuardian): string {
+/** Valida el formato de placa y deriva el tipo de vehículo de su primera letra (P=carro, M=moto). */
+function validarPlaca(placa: string): { placaNormalizada: string; tipo: TipoVehiculoGuardian } {
   const normalizada = normalizarPlaca(placa);
-  if (!/^[PM][0-9]{3}[A-Z]{3}$/.test(normalizada)) {
-    throw new GuardianError(400, 'La placa debe tener el formato P123ABC para carro o M123ABC para moto', 'PLACA_INVALIDA');
+  const coincidencia = /^([PM])[0-9]{3}[A-Z]{3}$/.exec(normalizada);
+  if (!coincidencia) {
+    throw new GuardianError(400, 'La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras. Ej: P123ABC o M123ABC', 'PLACA_INVALIDA');
   }
-  if (tipo && !normalizada.startsWith(tipo === 'carro' ? 'P' : 'M')) {
-    throw new GuardianError(400, `La placa de ${tipo} debe iniciar con ${tipo === 'carro' ? 'P' : 'M'}`, 'PLACA_TIPO_INCOMPATIBLE');
-  }
-  return normalizada;
+  const tipo: TipoVehiculoGuardian = coincidencia[1] === 'P' ? 'carro' : 'moto';
+  return { placaNormalizada: normalizada, tipo };
 }
 
 function criterioConsulta(criterio: CriterioGuardian): { where: string; params: string[] } {
@@ -230,7 +230,7 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
       );
     }
 
-    const placaNormalizada = validarPlaca(registro.placa, registro.tipo);
+    const { placaNormalizada, tipo } = validarPlaca(registro.placa);
     const [vehiculos] = await conn.execute<VehiculoActivo[]>(
       `SELECT v.id_vehiculo, v.id_usuario, v.id_tipo_vehiculo, tv.nom_tipo_vehiculo AS tipo_vehiculo
        FROM Vehiculos v
@@ -249,21 +249,18 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
     if (vehiculo) {
       idTipoVehiculo = vehiculo.id_tipo_vehiculo;
       tipoVehiculo = vehiculo.tipo_vehiculo;
-      if (registro.tipo && registro.tipo !== vehiculo.tipo_vehiculo.toLowerCase()) {
-        throw new GuardianError(409, `El vehículo ya está registrado como ${vehiculo.tipo_vehiculo}`, 'TIPO_VEHICULO_DISTINTO');
+      if (tipo !== vehiculo.tipo_vehiculo.toLowerCase()) {
+        throw new GuardianError(409, `Esta placa ya está registrada como ${vehiculo.tipo_vehiculo}, no coincide con ${tipo}`, 'TIPO_VEHICULO_DISTINTO');
       }
     } else {
-      if (!registro.tipo) {
-        throw new GuardianError(404, 'El vehículo no está registrado. Selecciona moto o carro para registrarlo como visitante.', 'TIPO_REQUERIDO');
-      }
       const [tipos] = await conn.execute<TipoVehiculo[]>(
         'SELECT id_modelo, nom_tipo_vehiculo FROM Tipo_vehiculos WHERE nom_tipo_vehiculo = ? AND activo = 1 LIMIT 1',
-        [registro.tipo],
+        [tipo],
       );
-      const tipo = tipos[0];
-      if (!tipo) throw new GuardianError(503, 'No existe el tipo de vehículo solicitado en el catálogo', 'CATALOGO_INCOMPLETO');
-      idTipoVehiculo = tipo.id_modelo;
-      tipoVehiculo = tipo.nom_tipo_vehiculo;
+      const catalogoTipo = tipos[0];
+      if (!catalogoTipo) throw new GuardianError(503, 'No existe el tipo de vehículo solicitado en el catálogo', 'CATALOGO_INCOMPLETO');
+      idTipoVehiculo = catalogoTipo.id_modelo;
+      tipoVehiculo = catalogoTipo.nom_tipo_vehiculo;
       esExterno = 1;
     }
 

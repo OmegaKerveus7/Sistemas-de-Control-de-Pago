@@ -1,4 +1,4 @@
-import type { Pago, FilaReporteMensual } from '../models';
+import type { Pago, FilaReporteMensual, PagoHistorial } from '../models';
 import * as pagosRepo from '../repositories/pagos.repository';
 
 export async function listar(): Promise<Pago[]> {
@@ -27,4 +27,8 @@ export async function confirmar(id: number, referencia: string, ipPago: string):
 
 export async function reporteMensual(): Promise<FilaReporteMensual[]> {
   return pagosRepo.reporteMensual();
+}
+
+export async function listarPorUsuario(idUsuario: number): Promise<PagoHistorial[]> {
+  return pagosRepo.listarPorUsuario(idUsuario);
 }
