@@ -10,6 +10,12 @@ import { Placeholder } from '../pages/Placeholder';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
 import { Guardian } from '../pages/Guardian';
 import { HistorialPagos } from '../pages/HistorialPagos';
+import { Usuarios } from '../pages/Usuarios';
+import { BuscarVehiculo } from '../pages/BuscarVehiculo';
+import { Parqueo } from '../pages/Parqueo';
+import { Pagos } from '../pages/Pagos';
+import { Auditoria } from '../pages/Auditoria';
+import { Tarifas } from '../pages/Tarifas';
 
 export const router = createHashRouter([
   {
@@ -41,14 +47,15 @@ export const router = createHashRouter([
     element: <Menu />,
     children: [
       { path: 'dashboard', element: <Dashboard /> },
-      { path: 'usuarios', element: <Placeholder titulo="Usuarios" /> },
-      { path: 'parqueo', element: <Placeholder titulo="Parqueo" /> },
-      { path: 'pagos', element: <Placeholder titulo="Pagos" /> },
-      { path: 'tarifas', element: <Placeholder titulo="Tarifas" /> },
-      { path: 'auditoria', element: <Placeholder titulo="Auditoría" /> },
+      { path: 'usuarios', element: <Usuarios /> },
+      { path: 'parqueo', element: <Parqueo /> },
+      { path: 'pagos', element: <Pagos /> },
+      { path: 'tarifas', element: <Tarifas /> },
+      { path: 'auditoria', element: <Auditoria /> },
       { path: 'validar', element: <Placeholder titulo="Validar Parqueo" /> },
       { path: 'historial', element: <HistorialPagos /> },
       { path: 'guardian', element: <Guardian /> },
+      { path: 'buscar-vehiculo', element: <BuscarVehiculo /> },
       { path: 'reportes', element: <Placeholder titulo="Reportes" /> },
       { path: 'pagar', element: <PagarParqueo /> },
     ],

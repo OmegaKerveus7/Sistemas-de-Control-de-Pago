@@ -1,41 +1,29 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
-import type { Vehiculo } from '../models';
+import type { Vehiculo, VehiculoConDueno } from '../models';
 
-const SELECT_BASE = `
-  SELECT id_vehiculo AS id, placa, marca, modelo, color, tipo, foto, creado_en
-  FROM vehiculos
-`;
-
-export async function listar(): Promise<Vehiculo[]> {
+export async function listar(): Promise<VehiculoConDueno[]> {
   const pool = getPool();
-  const [rows] = await pool.query(`${SELECT_BASE} ORDER BY id_vehiculo`);
-  return rows as unknown as Vehiculo[];
+  const [results] = await pool.query('CALL sp_vehiculos_listar()');
+  return (results as unknown as [VehiculoConDueno[]])[0];
 }
 
-export async function obtenerPorId(id: number): Promise<Vehiculo | null> {
+export async function obtenerPorId(id: number): Promise<VehiculoConDueno | null> {
   const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE id_vehiculo = ?`, [id]);
-  return (rows as unknown as Vehiculo[])[0] ?? null;
+  const [results] = await pool.query('CALL sp_vehiculos_obtener_por_id(?)', [id]);
+  return (results as unknown as [VehiculoConDueno[]])[0][0] ?? null;
 }
 
-export async function obtenerPorPlaca(placa: string): Promise<Vehiculo | null> {
+export async function obtenerPorPlaca(placa: string): Promise<VehiculoConDueno | null> {
   const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `${SELECT_BASE} WHERE placa = ? LIMIT 1`,
-    [placa.toUpperCase()],
-  );
-  return (rows as unknown as Vehiculo[])[0] ?? null;
+  const [results] = await pool.query('CALL sp_vehiculos_obtener_por_placa(?)', [placa.toUpperCase()]);
+  return (results as unknown as [VehiculoConDueno[]])[0][0] ?? null;
 }
 
-export async function buscar(filtro: string): Promise<Vehiculo[]> {
+export async function buscar(filtro: string): Promise<VehiculoConDueno[]> {
   const pool = getPool();
-  const termino = `%${filtro}%`;
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `${SELECT_BASE} WHERE placa LIKE ? OR marca LIKE ? OR modelo LIKE ? OR color LIKE ? ORDER BY id_vehiculo`,
-    [termino, termino, termino, termino],
-  );
-  return rows as unknown as Vehiculo[];
+  const [results] = await pool.query('CALL sp_vehiculos_buscar(?)', [filtro]);
+  return (results as unknown as [VehiculoConDueno[]])[0];
 }
 
 export async function crear(data: Vehiculo): Promise<number> {

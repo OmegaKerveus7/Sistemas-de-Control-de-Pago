@@ -12,7 +12,7 @@ export interface ResultadoAutenticacion {
   token?: string;
 }
 
-export type NombreRol = 'ADMIN' | 'Administracion' | 'Guardia' | 'cliente' | 'gerente';
+export type NombreRol = 'administrador' | 'guardia' | 'usuario';
 
 export interface UsuarioPayload {
   id: number;

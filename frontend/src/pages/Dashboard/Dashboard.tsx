@@ -9,11 +9,12 @@ import './Dashboard.css';
 const DETALLE: Record<string, { descripcion: string }> = {
   '/app/dashboard': { descripcion: 'Vista general del sistema' },
   '/app/usuarios': { descripcion: 'Administra usuarios y roles' },
-  '/app/parqueo': { descripcion: 'Gestiona entradas y salidas' },
-  '/app/pagos': { descripcion: 'Registra y consulta pagos' },
-  '/app/tarifas': { descripcion: 'Administra tarifas' },
-  '/app/auditoria': { descripcion: 'Consulta el registro de auditoría' },
+  '/app/parqueo': { descripcion: 'Consulta la ocupación y el historial de parqueo' },
+  '/app/pagos': { descripcion: 'Registra pagos en efectivo y consulta el historial' },
+  '/app/tarifas': { descripcion: 'Configura precios por vehículo y método de pago' },
+  '/app/auditoria': { descripcion: 'Historial de acciones sobre usuarios, tickets, parqueo y pagos' },
   '/app/guardian': { descripcion: 'Registra entradas, salidas y valida pagos' },
+  '/app/buscar-vehiculo': { descripcion: 'Encuentra al dueño de un vehículo' },
   '/app/validar': { descripcion: 'Verifica el estado de un vehículo' },
   '/app/reportes': { descripcion: 'Consulta reportes' },
   '/app/pagar': { descripcion: 'Realiza el pago de tu estancia' },
@@ -73,7 +74,6 @@ export function Dashboard() {
       <div className="dashboard-cards">
         {opciones.map((opcion) => (
           <Link key={opcion.path} to={opcion.path} className="dashboard-card">
-            <span className="dashboard-card-icon">{opcion.icono}</span>
             <span className="dashboard-card-title">{opcion.etiqueta}</span>
             <span className="dashboard-card-desc">{DETALLE[opcion.path]?.descripcion ?? ''}</span>
           </Link>

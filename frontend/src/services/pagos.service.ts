@@ -5,14 +5,21 @@ export type MetodoPago = 'efectivo' | 'tarjeta' | 'transferencia';
 
 export interface Pago {
   id: number;
-  parqueo_id: number;
+  id_ticket: number;
+  ticket: string;
+  placa: string;
+  id_usuario: number;
+  pagador_nombres: string;
+  pagador_apellidos: string;
+  metodo: string;
   monto: number;
-  metodo: MetodoPago;
-  estado: 'pendiente' | 'completado' | 'reembolsado';
-  referencia?: string;
-  ip_inicio?: string;
-  ip_pago?: string;
-  procesado_por?: number;
+  estado: 'pendiente' | 'completado' | 'fallido' | 'reembolso';
+  codigo_pago: string;
+  fecha_pago: string;
+  fecha_confirmacion: string | null;
+  id_guardia: number | null;
+  guardia_nombres: string | null;
+  guardia_apellidos: string | null;
 }
 
 export interface PrecioInfo {
@@ -45,12 +52,16 @@ export interface FilaReporteMensual {
 export const pagosService = {
   listar: () => api.get<Pago[]>('/pagos'),
   obtenerPorId: (id: number) => api.get<Pago>(`/pagos/${id}`),
-  obtenerPorParqueo: (parqueoId: number) => api.get<Pago>(`/pagos/parqueo/${parqueoId}`),
+  obtenerPorTicket: (idTicket: number) => api.get<Pago>(`/pagos/ticket/${idTicket}`),
+  reporteMensual: () => api.get<FilaReporteMensual[]>('/pagos/reporte-mensual'),
+  registrarEfectivo: (data: { placa: string; id_tipo_vehiculo: number }) =>
+    api.post<{ id: number; monto: number }>('/pagos/efectivo', data),
+
+  // Legacy: flujo de pago en línea (pasarela), usado por PagarParqueo
   precio: (tipo: string) => api.get<PrecioInfo>(`/pagos/precio?tipo=${encodeURIComponent(tipo)}`),
   crear: (data: { parqueo_id: number; tipo_vehiculo: string; metodo: MetodoPago }) =>
     api.post<ResultadoCrearPago>('/pagos', data),
   confirmar: (referencia: string) =>
     api.get<ResultadoConfirmar>(`/pagos/confirmar?referencia=${encodeURIComponent(referencia)}`),
-  reporteMensual: () => api.get<FilaReporteMensual[]>('/pagos/reporte-mensual'),
   misPagos: () => api.get<PagoHistorial[]>('/pagos/mis-pagos'),
 };

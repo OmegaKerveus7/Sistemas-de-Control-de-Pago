@@ -3,6 +3,8 @@ export * from './Vehiculo';
 export * from './Parqueo';
 export * from './Pago';
 export * from './Guardian';
+export * from './Auditoria';
+export * from './Tarifa';
 
 export interface UsuarioMySQL {
   id_usuarios: number;

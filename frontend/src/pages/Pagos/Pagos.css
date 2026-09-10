@@ -1,0 +1,153 @@
+.pagos-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.pagos-title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--belen-azul);
+  margin-bottom: 6px;
+}
+
+.pagos-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-texto-secundario);
+}
+
+.pagos-form-card {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pagos-form-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--belen-azul);
+}
+
+.pagos-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.pagos-form .form-group {
+  min-width: 160px;
+}
+
+.pagos-btn-registrar {
+  height: 44px;
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--radio-sm);
+  background: var(--belen-azul);
+  color: var(--color-blanco);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transicion);
+}
+
+.pagos-btn-registrar:hover:not(:disabled) {
+  background: var(--belen-azul-medio);
+}
+
+.pagos-btn-registrar:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pagos-exito {
+  color: #1c8a4f;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pagos-card {
+  overflow: hidden;
+}
+
+.pagos-estado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 20px;
+  color: var(--color-texto-secundario);
+  font-size: 0.9rem;
+}
+
+.pagos-tabla-wrapper {
+  overflow-x: auto;
+}
+
+.pagos-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.pagos-tabla th {
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--color-fondo-input);
+  color: var(--belen-azul);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-borde);
+  white-space: nowrap;
+}
+
+.pagos-tabla td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-borde-suave);
+  color: var(--color-texto);
+  white-space: nowrap;
+}
+
+.pagos-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.pagos-tabla tbody tr:hover {
+  background: var(--color-fondo-input);
+}
+
+.pagos-placa {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.pagos-metodo {
+  text-transform: capitalize;
+}
+
+.pagos-estado-texto {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.pagos-estado-texto.completado {
+  color: #1c8a4f;
+}
+
+.pagos-estado-texto.pendiente {
+  color: var(--belen-dorado-oscuro);
+}
+
+.pagos-estado-texto.fallido,
+.pagos-estado-texto.reembolso {
+  color: var(--belen-rojo);
+}

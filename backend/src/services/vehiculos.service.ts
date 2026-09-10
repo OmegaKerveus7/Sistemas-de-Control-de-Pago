@@ -1,19 +1,19 @@
-import type { Vehiculo } from '../models';
+import type { Vehiculo, VehiculoConDueno } from '../models';
 import * as vehiculosRepo from '../repositories/vehiculos.repository';
 
-export async function listar(): Promise<Vehiculo[]> {
+export async function listar(): Promise<VehiculoConDueno[]> {
   return vehiculosRepo.listar();
 }
 
-export async function obtenerPorId(id: number): Promise<Vehiculo | null> {
+export async function obtenerPorId(id: number): Promise<VehiculoConDueno | null> {
   return vehiculosRepo.obtenerPorId(id);
 }
 
-export async function obtenerPorPlaca(placa: string): Promise<Vehiculo | null> {
+export async function obtenerPorPlaca(placa: string): Promise<VehiculoConDueno | null> {
   return vehiculosRepo.obtenerPorPlaca(placa);
 }
 
-export async function buscar(filtro: string): Promise<Vehiculo[]> {
+export async function buscar(filtro: string): Promise<VehiculoConDueno[]> {
   return vehiculosRepo.buscar(filtro);
 }
 
