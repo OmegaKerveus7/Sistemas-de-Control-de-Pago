@@ -18,6 +18,7 @@ const DETALLE: Record<string, { descripcion: string }> = {
   '/app/validar': { descripcion: 'Verifica el estado de un vehículo' },
   '/app/reportes': { descripcion: 'Consulta reportes' },
   '/app/pagar': { descripcion: 'Realiza el pago de tu estancia' },
+  '/app/historial': { descripcion: 'Consulta tus pagos anteriores' },
 };
 
 export function Dashboard() {

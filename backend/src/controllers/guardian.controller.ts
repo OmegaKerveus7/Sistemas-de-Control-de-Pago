@@ -53,8 +53,7 @@ export async function entrada(req: Request, res: Response) {
   try {
     const placa = typeof req.body?.placa === 'string' ? req.body.placa.trim() : '';
     if (!placa) throw new GuardianError(400, 'La placa es requerida', 'PLACA_REQUERIDA');
-    const tipo = req.body?.tipo === 'moto' || req.body?.tipo === 'carro' ? req.body.tipo : undefined;
-    const resultado = await guardianService.registrarEntrada({ placa, tipo } satisfies RegistroEntradaGuardian, guardiaAutenticado(req), ipDe(req));
+    const resultado = await guardianService.registrarEntrada({ placa } satisfies RegistroEntradaGuardian, guardiaAutenticado(req), ipDe(req));
     res.status(201).json(resultado);
   } catch (error) { responderError(error, res); }
 }

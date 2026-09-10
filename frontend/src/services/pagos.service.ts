@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { PagoHistorial } from '../models';
 
 export type MetodoPago = 'efectivo' | 'tarjeta' | 'transferencia';
 
@@ -62,4 +63,5 @@ export const pagosService = {
     api.post<ResultadoCrearPago>('/pagos', data),
   confirmar: (referencia: string) =>
     api.get<ResultadoConfirmar>(`/pagos/confirmar?referencia=${encodeURIComponent(referencia)}`),
+  misPagos: () => api.get<PagoHistorial[]>('/pagos/mis-pagos'),
 };

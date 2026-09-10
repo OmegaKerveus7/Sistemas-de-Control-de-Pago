@@ -1,6 +1,36 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
-import type { Pago, PagoLegacy, FilaReporteMensual } from '../models';
+import type { Pago, PagoLegacy, FilaReporteMensual, PagoHistorial } from '../models';
+
+// NOTA: las funciones de abajo (listar/crear/confirmar/...) apuntan a una tabla
+// `pagos` en minúscula que no existe en la base real (solo existe `Pagos`, con un
+// esquema normalizado distinto: Tickets, Tarifas, Tipos_pagos). listarPorUsuario()
+// sí usa el esquema real y es lo único de este archivo que funciona hoy contra la BD.
+const CAMPOS_HISTORIAL = `
+  p.id_pago AS id, p.codigo_pago, p.monto_total, p.comision, p.monto_neto,
+  p.estado_pago, p.fecha_pago, p.fecha_confirmacion,
+  tp.nom_tipo_pago AS tipo_pago,
+  t.numero_ticket, t.placa_automovil AS placa, t.fecha_entrada, t.fecha_salida,
+  l.lugar, z.nom_zona AS zona
+`;
+
+const FROM_HISTORIAL = `
+  FROM Pagos p
+  JOIN Tickets t ON t.id_ticket = p.id_ticket
+  JOIN Tipos_pagos tp ON tp.id_tipo_pago = p.id_tipo_pago
+  LEFT JOIN Lugares l ON l.id_lugar = t.id_lugar
+  LEFT JOIN Zonas z ON z.id_zona = l.id_zona
+`;
+
+/** Historial de pagos del usuario autenticado, contra el esquema real (Pagos.id_usuario). */
+export async function listarPorUsuario(idUsuario: number): Promise<PagoHistorial[]> {
+  const pool = getPool();
+  const [rows] = await pool.query(
+    `SELECT ${CAMPOS_HISTORIAL} ${FROM_HISTORIAL} WHERE p.id_usuario = ? ORDER BY p.fecha_pago DESC`,
+    [idUsuario],
+  );
+  return rows as PagoHistorial[];
+}
 
 export async function listar(): Promise<Pago[]> {
   const pool = getPool();

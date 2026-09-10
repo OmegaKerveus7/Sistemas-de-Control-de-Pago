@@ -92,6 +92,20 @@
   border-color: #2f6f4f;
 }
 
+.pagar-tipo-detectado {
+  margin-top: -6px;
+  font-size: 0.85rem;
+  color: #526070;
+}
+
+.pagar-tipo-detectado strong {
+  color: #1b2a41;
+}
+
+.pagar-tipo-detectado-error {
+  color: #b3261e;
+}
+
 .pagar-button {
   width: 100%;
   padding: 12px;

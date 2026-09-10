@@ -1,4 +1,4 @@
-import type { Pago, PagoLegacy, FilaReporteMensual } from '../models';
+import type { Pago, PagoLegacy, FilaReporteMensual, PagoHistorial } from '../models';
 import * as pagosRepo from '../repositories/pagos.repository';
 
 export async function listar(): Promise<Pago[]> {
@@ -15,6 +15,10 @@ export async function obtenerPorTicket(idTicket: number): Promise<Pago | null> {
 
 export async function reporteMensual(): Promise<FilaReporteMensual[]> {
   return pagosRepo.reporteMensual();
+}
+
+export async function listarPorUsuario(idUsuario: number): Promise<PagoHistorial[]> {
+  return pagosRepo.listarPorUsuario(idUsuario);
 }
 
 export async function crearEfectivo(datos: pagosRepo.DatosPagoEfectivo): Promise<{ id: number; monto: number }> {

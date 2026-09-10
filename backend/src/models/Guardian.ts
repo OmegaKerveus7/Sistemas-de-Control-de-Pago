@@ -8,9 +8,8 @@ export interface CriterioGuardian {
 export type TipoVehiculoGuardian = 'moto' | 'carro';
 
 export interface RegistroEntradaGuardian {
+  /** El tipo de vehículo se deriva de la placa: inicia con P (carro) o M (moto). */
   placa: string;
-  /** Solo se requiere cuando se registra un visitante que no posee vehículo previamente asociado. */
-  tipo?: TipoVehiculoGuardian;
 }
 
 export class GuardianError extends Error {

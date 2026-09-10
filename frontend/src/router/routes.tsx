@@ -9,6 +9,7 @@ import { Dashboard } from '../pages/Dashboard';
 import { Placeholder } from '../pages/Placeholder';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
 import { Guardian } from '../pages/Guardian';
+import { HistorialPagos } from '../pages/HistorialPagos';
 import { Usuarios } from '../pages/Usuarios';
 import { BuscarVehiculo } from '../pages/BuscarVehiculo';
 import { Parqueo } from '../pages/Parqueo';
@@ -52,6 +53,7 @@ export const router = createHashRouter([
       { path: 'tarifas', element: <Tarifas /> },
       { path: 'auditoria', element: <Auditoria /> },
       { path: 'validar', element: <Placeholder titulo="Validar Parqueo" /> },
+      { path: 'historial', element: <HistorialPagos /> },
       { path: 'guardian', element: <Guardian /> },
       { path: 'buscar-vehiculo', element: <BuscarVehiculo /> },
       { path: 'reportes', element: <Placeholder titulo="Reportes" /> },

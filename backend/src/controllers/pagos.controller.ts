@@ -139,6 +139,12 @@ export async function reporteMensual(_req: Request, res: Response) {
   res.json(await pagosService.reporteMensual());
 }
 
+export async function misPagos(req: Request, res: Response) {
+  const usuario = (req as AuthRequest).usuario;
+  if (!usuario) { res.status(401).json({ error: 'No autenticado' }); return; }
+  res.json(await pagosService.listarPorUsuario(usuario.id));
+}
+
 export async function mockCheckout(req: Request, res: Response) {
   if (!pasarelaService.esModoPrueba()) {
     res.status(404).send('No disponible');

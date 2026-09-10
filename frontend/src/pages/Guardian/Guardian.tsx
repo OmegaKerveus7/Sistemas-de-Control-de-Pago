@@ -46,6 +46,14 @@ function limiteBusqueda(tipo: TipoBusqueda): number {
   return 255;
 }
 
+const REGEX_PLACA = /^([PM])\d{3}[A-Z]{3}$/;
+
+function detectarTipoVehiculo(placa: string): 'carro' | 'moto' | null {
+  const coincidencia = REGEX_PLACA.exec(placa.trim().toUpperCase());
+  if (!coincidencia) return null;
+  return coincidencia[1] === 'P' ? 'carro' : 'moto';
+}
+
 function placeholderBusqueda(tipo: TipoBusqueda): string {
   if (tipo === 'placa') return 'P123ABC';
   if (tipo === 'ticket') return 'TK-...';
@@ -58,7 +66,6 @@ export function Guardian() {
   const [lugares, setLugares] = useState<LugarGuardian[]>([]);
   const [cargandoMapa, setCargandoMapa] = useState(true);
   const [placaEntrada, setPlacaEntrada] = useState('');
-  const [tipoEntrada, setTipoEntrada] = useState<'moto' | 'carro'>('carro');
   const [registrandoEntrada, setRegistrandoEntrada] = useState(false);
   const [tipoBusqueda, setTipoBusqueda] = useState<TipoBusqueda>('placa');
   const [valorBusqueda, setValorBusqueda] = useState('');
@@ -69,6 +76,8 @@ export function Guardian() {
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
   const [lectorActivo, setLectorActivo] = useState(false);
   const procesandoQr = useRef(false);
+
+  const tipoDetectado = useMemo(() => detectarTipoVehiculo(placaEntrada), [placaEntrada]);
 
   const cargarEstado = useCallback(async (silencioso = false) => {
     if (!silencioso) setCargandoMapa(true);
@@ -168,11 +177,18 @@ export function Guardian() {
       setMensaje({ tipo: 'error', texto: 'Ingresa la placa para registrar la entrada.' });
       return;
     }
+    if (!detectarTipoVehiculo(placa)) {
+      setMensaje({
+        tipo: 'error',
+        texto: 'La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras. Ej: P123ABC o M123ABC',
+      });
+      return;
+    }
 
     setRegistrandoEntrada(true);
     setMensaje(null);
     try {
-      const resultado = await guardianService.entrada(placa, tipoEntrada);
+      const resultado = await guardianService.entrada(placa);
       setPlacaEntrada('');
       setMensaje({
         tipo: 'exito',
@@ -270,17 +286,18 @@ export function Guardian() {
               disabled={registrandoEntrada}
               autoComplete="off"
             />
-            <label htmlFor="tipo-entrada">Tipo de vehículo</label>
-            <select
-              id="tipo-entrada"
-              value={tipoEntrada}
-              onChange={(event) => setTipoEntrada(event.target.value as 'moto' | 'carro')}
-              disabled={registrandoEntrada}
-            >
-              <option value="carro">Carro · placa P123ABC</option>
-              <option value="moto">Moto · placa M123ABC</option>
-            </select>
-            <button className="guardian-button guardian-button-primary" disabled={registrandoEntrada}>
+            {placaEntrada && (
+              tipoDetectado ? (
+                <p className="guardian-tipo-detectado">
+                  Tipo detectado: <strong>{tipoDetectado === 'carro' ? 'Carro' : 'Moto'}</strong>
+                </p>
+              ) : (
+                <p className="guardian-tipo-detectado guardian-tipo-detectado-error">
+                  La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras.
+                </p>
+              )
+            )}
+            <button className="guardian-button guardian-button-primary" disabled={registrandoEntrada || !tipoDetectado}>
               {registrandoEntrada ? 'Registrando...' : 'Registrar y asignar lugar'}
             </button>
           </form>

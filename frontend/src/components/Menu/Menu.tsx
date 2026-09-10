@@ -29,6 +29,7 @@ const OPCIONES_POR_ROL: Record<NombreRol, OpcionMenu[]> = {
   usuario: [
     { path: '/app/pagar', etiqueta: 'Pagar Parqueo', icono: '🅿️' },
     { path: '/app/validar', etiqueta: 'Validar Parqueo', icono: '✅' },
+    { path: '/app/historial', etiqueta: 'Mis Pagos', icono: '🧾' },
   ],
 };
 
