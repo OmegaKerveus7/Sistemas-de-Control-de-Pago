@@ -5,13 +5,6 @@ import { verificarToken, verificarRol } from '../middleware/auth.middleware';
 export const pagosRouter = Router();
 
 pagosRouter.get('/mis-pagos', verificarToken, pagosController.misPagos);
-// Legacy: pasarela de pago en línea (ver pagos.repository.ts)
-pagosRouter.get('/precio', verificarToken, pagosController.precio);
-pagosRouter.get('/confirmar', pagosController.confirmar);
-pagosRouter.get('/mock-checkout', pagosController.mockCheckout);
-pagosRouter.post('/', verificarToken, pagosController.crear);
-
-// Registro y consulta de pagos en efectivo
 pagosRouter.post('/efectivo', verificarToken, verificarRol('administrador', 'guardia'), pagosController.registrarEfectivo);
 pagosRouter.get('/reporte-mensual', verificarToken, verificarRol('administrador'), pagosController.reporteMensual);
 pagosRouter.get('/ticket/:idTicket', verificarToken, verificarRol('administrador', 'guardia'), pagosController.obtenerPorTicket);

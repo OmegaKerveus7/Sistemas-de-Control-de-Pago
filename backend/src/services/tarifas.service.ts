@@ -15,11 +15,7 @@ export async function crear(datos: tarifasRepo.DatosTarifa): Promise<number> {
 
 export async function actualizar(
   id: number,
-  datos: Partial<tarifasRepo.DatosTarifa> & { activo?: boolean },
+  datos: Partial<tarifasRepo.DatosTarifa>,
 ): Promise<boolean> {
   return tarifasRepo.actualizar(id, datos);
-}
-
-export async function existeCombinacion(idTipoVehiculo: number, idTipoPago: number): Promise<boolean> {
-  return tarifasRepo.existeCombinacion(idTipoVehiculo, idTipoPago);
 }

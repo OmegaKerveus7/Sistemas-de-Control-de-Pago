@@ -107,7 +107,7 @@ interface FormData {
   email: string;
   password: string;
   confirmPassword: string;
-  foto_perfil: string | null;
+  foto_perfil?: string | null;
 }
 
 export default function Registro() {
@@ -121,7 +121,6 @@ export default function Registro() {
     email: '',
     password: '',
     confirmPassword: '',
-    foto_perfil: null,
   });
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
@@ -246,7 +245,6 @@ export default function Registro() {
         apellidos: form.apellidos.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
-        foto_perfil: form.foto_perfil,
       });
 
       setExito(true);

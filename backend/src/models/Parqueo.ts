@@ -13,7 +13,6 @@ export interface Parqueo {
   fecha_ocupacion: string;
   fecha_liberacion: string | null;
   estado: EstadoParqueo;
-  estado_lugar: string;
   costo: number | null;
   estado_pago: string | null;
 }

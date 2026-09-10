@@ -147,7 +147,7 @@ export function Pagos() {
                       </span>
                     </td>
                     <td>{new Date(p.fecha_pago).toLocaleString()}</td>
-                    <td>{p.guardia_nombres ? `${p.guardia_nombres} ${p.guardia_apellidos}` : '—'}</td>
+                    <td>—</td>
                   </tr>
                 ))}
               </tbody>

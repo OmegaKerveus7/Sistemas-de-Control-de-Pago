@@ -7,7 +7,7 @@ export * from './Auditoria';
 export * from './Tarifa';
 
 export interface UsuarioMySQL {
-  id_usuarios: number;
+  id_usuario: number;
   id_rol: number;
   nom_rol?: string;
   email: string;
@@ -15,8 +15,7 @@ export interface UsuarioMySQL {
   nombres: string;
   apellidos: string;
   dpi: string;
-  foto_perfil?: string | null;
+  telefono?: string | null;
   activo: boolean;
-  fecha_nacimiento?: string | null;
   fecha_creacion?: string;
 }

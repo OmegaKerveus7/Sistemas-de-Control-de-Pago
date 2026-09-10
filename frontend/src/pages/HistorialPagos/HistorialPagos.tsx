@@ -7,7 +7,7 @@ const ETIQUETAS_ESTADO: Record<PagoHistorial['estado_pago'], string> = {
   completado: 'Completado',
   pendiente: 'Pendiente',
   fallido: 'Fallido',
-  reembolso: 'Reembolsado',
+  reembolsado: 'Reembolsado',
 };
 
 function formatearFecha(iso?: string | null): string {
@@ -44,7 +44,7 @@ export function HistorialPagos() {
   }, []);
 
   const totalPagado = useMemo(
-    () => pagos.filter((p) => p.estado_pago === 'completado').reduce((acc, p) => acc + Number(p.monto_total), 0),
+    () => pagos.filter((p) => p.estado_pago === 'completado').reduce((acc, p) => acc + Number(p.monto), 0),
     [pagos],
   );
 
@@ -74,7 +74,7 @@ export function HistorialPagos() {
             <li key={pago.id} className="historial-item">
               <div className="historial-item-info">
                 <div className="historial-item-fila">
-                  <span className="historial-item-codigo">{pago.codigo_pago}</span>
+                  <span className="historial-item-codigo">{pago.codigo_validacion}</span>
                   <span className={`historial-badge historial-badge--${pago.estado_pago}`}>
                     {ETIQUETAS_ESTADO[pago.estado_pago] ?? pago.estado_pago}
                   </span>
@@ -88,10 +88,10 @@ export function HistorialPagos() {
                   {pago.fecha_salida && <> · Salida: {formatearFecha(pago.fecha_salida)}</>}
                 </p>
                 <p className="historial-item-fechas">
-                  Pagado el {formatearFecha(pago.fecha_pago)} · {pago.tipo_pago}
+                  Pagado el {formatearFecha(pago.fecha_pago)} · {pago.metodo_pago}
                 </p>
               </div>
-              <div className="historial-item-monto">{formatearMonto(pago.monto_total)}</div>
+              <div className="historial-item-monto">{formatearMonto(pago.monto)}</div>
             </li>
           ))}
         </ul>

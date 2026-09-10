@@ -128,7 +128,7 @@ export function Usuarios() {
           activo: formulario.activo,
         };
         if (formulario.pass.trim()) cambios.pass = formulario.pass.trim();
-        await usuariosService.actualizar(usuarioEditando.id_usuarios, cambios);
+        await usuariosService.actualizar(usuarioEditando.id_usuario, cambios);
       } else {
         await usuariosService.crear({
           nombres: formulario.nombres.trim(),
@@ -152,9 +152,9 @@ export function Usuarios() {
   async function alternarEstado(usuario: Usuario) {
     try {
       if (usuario.activo) {
-        await usuariosService.eliminar(usuario.id_usuarios);
+        await usuariosService.eliminar(usuario.id_usuario);
       } else {
-        await usuariosService.actualizar(usuario.id_usuarios, { activo: true });
+        await usuariosService.actualizar(usuario.id_usuario, { activo: true });
       }
       await cargarUsuarios();
     } catch (err) {
@@ -205,7 +205,7 @@ export function Usuarios() {
               </thead>
               <tbody>
                 {usuariosFiltrados.map((usuario) => (
-                  <tr key={usuario.id_usuarios}>
+                  <tr key={usuario.id_usuario}>
                     <td>{usuario.nombres} {usuario.apellidos}</td>
                     <td>{usuario.dpi}</td>
                     <td>{usuario.email}</td>

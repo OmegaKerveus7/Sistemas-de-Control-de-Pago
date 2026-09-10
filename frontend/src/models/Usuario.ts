@@ -1,4 +1,4 @@
-export type NombreRol = 'administrador' | 'guardia' | 'usuario';
+export type NombreRol = 'administrador' | 'cobrador' | 'guardia' | 'usuario';
 
 export interface Credenciales {
   identificador: string;
@@ -12,7 +12,6 @@ export interface Usuario {
   apellidos: string;
   email: string;
   rol: NombreRol;
-  foto_perfil?: string | null;
   activo?: boolean;
 }
 

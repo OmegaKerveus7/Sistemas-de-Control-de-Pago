@@ -15,19 +15,17 @@ export async function obtenerPorId(id: number): Promise<Tarifa | null> {
 
 export interface DatosTarifa {
   id_tipo_vehiculo: number;
-  id_tipo_pago: number;
-  precio: number;
-  costo_transaccion: number | null;
+  precio_efectivo: number;
+  precio_linea: number;
 }
 
 export async function crear(datos: DatosTarifa): Promise<number> {
   const conn = await getPool().getConnection();
   try {
-    await conn.query('CALL sp_tarifas_crear(?, ?, ?, ?, @id_tarifa)', [
+    await conn.query('CALL sp_tarifas_crear(?, ?, ?, @id_tarifa)', [
       datos.id_tipo_vehiculo,
-      datos.id_tipo_pago,
-      datos.precio,
-      datos.costo_transaccion,
+      datos.precio_efectivo,
+      datos.precio_linea,
     ]);
     const [rows] = await conn.query('SELECT @id_tarifa AS id_tarifa');
     return (rows as Array<{ id_tarifa: number }>)[0]!.id_tarifa;
@@ -38,37 +36,23 @@ export async function crear(datos: DatosTarifa): Promise<number> {
 
 export async function actualizar(
   id: number,
-  datos: Partial<DatosTarifa> & { activo?: boolean },
+  datos: Partial<DatosTarifa>,
 ): Promise<boolean> {
   const actual = await obtenerPorId(id);
   if (!actual) return false;
 
-  const precio = datos.precio ?? actual.precio;
-  const costoTransaccion = datos.costo_transaccion !== undefined ? datos.costo_transaccion : actual.costo_transaccion;
-  const activoProvisto = datos.activo !== undefined;
+  const precioEfectivo = datos.precio_efectivo ?? actual.precio_efectivo;
+  const precioLinea = datos.precio_linea ?? actual.precio_linea;
 
   const conn = await getPool().getConnection();
   try {
-    await conn.query('CALL sp_tarifas_actualizar(?, ?, ?, ?, ?, @afectado)', [
+    await conn.query('CALL sp_tarifas_actualizar(?, ?, ?, @afectado)', [
       id,
-      precio,
-      costoTransaccion,
-      activoProvisto ? (datos.activo ? 1 : 0) : null,
-      activoProvisto ? 1 : 0,
+      precioEfectivo,
+      precioLinea,
     ]);
     const [rows] = await conn.query('SELECT @afectado AS afectado');
     return Boolean((rows as Array<{ afectado: number }>)[0]!.afectado);
-  } finally {
-    conn.release();
-  }
-}
-
-export async function existeCombinacion(idTipoVehiculo: number, idTipoPago: number): Promise<boolean> {
-  const conn = await getPool().getConnection();
-  try {
-    await conn.query('CALL sp_tarifas_existe_combinacion(?, ?, @existe)', [idTipoVehiculo, idTipoPago]);
-    const [rows] = await conn.query('SELECT @existe AS existe');
-    return Boolean((rows as Array<{ existe: number }>)[0]!.existe);
   } finally {
     conn.release();
   }

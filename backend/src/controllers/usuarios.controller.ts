@@ -111,7 +111,6 @@ export async function registroPublico(req: Request, res: Response) {
       nombres: data.nombres,
       apellidos: data.apellidos,
       dpi: data.dpi,
-      foto_perfil: data.foto_perfil ?? null,
       activo: true,
     });
 

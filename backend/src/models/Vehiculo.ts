@@ -1,31 +1,21 @@
-export type TipoVehiculo = 'automovil' | 'motocicleta' | 'camioneta' | 'otro';
+export type TipoVehiculo = 'moto' | 'carro' | 'camioneta';
 
 export interface Vehiculo {
-  id?: number;
   placa: string;
-  marca: string;
-  modelo: string;
-  color: string;
-  tipo: TipoVehiculo;
-  foto?: string;
-  creado_en?: Date;
-}
-
-export interface UsuarioVehiculo {
-  id?: number;
   id_usuario: number;
-  id_vehiculo: number;
-  creado_en?: Date;
+  id_tipo: number;
+  id_marca?: number | null;
+  color?: string | null;
+  activo?: boolean;
+  fecha_registro?: Date;
 }
 
 export interface VehiculoConDueno {
-  id: number;
   placa: string;
-  marca: string;
-  modelo: string;
-  color: string | null;
-  año: number | null;
+  id_tipo: number;
   tipo: string;
+  marca: string;
+  color: string | null;
   activo: boolean;
   id_dueno: number;
   dueno_nombres: string;

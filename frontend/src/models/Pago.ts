@@ -1,28 +1,29 @@
-export type MetodoPago = 'efectivo' | 'tarjeta' | 'transferencia';
-export type EstadoPago = 'pendiente' | 'completado' | 'reembolsado';
+export type MetodoPago = 'efectivo' | 'linea';
+export type EstadoPago = 'pendiente' | 'completado' | 'fallido' | 'reembolsado';
 
 export interface Pago {
   id?: number;
-  parqueo_id: number;
+  id_ticket: number;
+  ticket: string;
+  placa: string;
+  id_usuario: number;
+  pagador_nombres: string;
+  pagador_apellidos: string;
+  metodo: string;
   monto: number;
-  metodo: MetodoPago;
   estado: EstadoPago;
-  referencia?: string;
-  ip_inicio?: string;
-  ip_pago?: string;
-  procesado_por?: number;
-  creado_en?: string;
+  codigo_validacion: string;
+  fecha_pago: string;
+  fecha_confirmacion?: string;
 }
 
-/** Fila del historial de pagos del usuario (GET /pagos/mis-pagos). */
+/** Fila del historial de pagos del usuario. */
 export interface PagoHistorial {
   id: number;
-  codigo_pago: string;
-  monto_total: number;
-  comision?: number;
-  monto_neto?: number;
-  estado_pago: 'completado' | 'fallido' | 'pendiente' | 'reembolso';
-  tipo_pago: string;
+  codigo_validacion: string;
+  monto: number;
+  estado_pago: EstadoPago;
+  metodo_pago: MetodoPago;
   fecha_pago: string;
   fecha_confirmacion?: string;
   numero_ticket: string;

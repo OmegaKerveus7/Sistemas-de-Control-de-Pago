@@ -1,4 +1,8 @@
-import type { PagoLegacy as Pago } from '../models';
+interface PagoPasarela {
+  referencia?: string;
+  parqueo_id: number;
+  monto: number;
+}
 
 export interface CheckoutResultado {
   url_pago: string;
@@ -26,7 +30,7 @@ export function urlRetorno(referencia: string): string {
   return `${FRONTEND_BASE}/#/pagar-parqueo/resultado?referencia=${encodeURIComponent(referencia)}`;
 }
 
-async function crearCheckoutMock(pago: Pago): Promise<CheckoutResultado> {
+async function crearCheckoutMock(pago: PagoPasarela): Promise<CheckoutResultado> {
   return {
     url_pago: `${BACKEND_BASE}/api/pagos/mock-checkout?referencia=${encodeURIComponent(pago.referencia ?? '')}`,
   };
@@ -51,7 +55,7 @@ async function loginPayBi(): Promise<string> {
   return data.token;
 }
 
-async function crearCheckoutPayBi(pago: Pago): Promise<CheckoutResultado> {
+async function crearCheckoutPayBi(pago: PagoPasarela): Promise<CheckoutResultado> {
   const token = await loginPayBi();
 
   const redesRespuesta = await fetch(`${PAYBI_API_URL}/network/all`, {
@@ -101,7 +105,7 @@ async function verificarPayBi(referencia: string): Promise<VerificacionResultado
   };
 }
 
-export async function crearCheckout(pago: Pago): Promise<CheckoutResultado> {
+export async function crearCheckout(pago: PagoPasarela): Promise<CheckoutResultado> {
   return esModoPrueba() ? crearCheckoutMock(pago) : crearCheckoutPayBi(pago);
 }
 

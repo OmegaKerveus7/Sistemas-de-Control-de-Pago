@@ -1,8 +1,6 @@
 import { api } from './api';
 import type { PagoHistorial } from '../models';
 
-export type MetodoPago = 'efectivo' | 'tarjeta' | 'transferencia';
-
 export interface Pago {
   id: number;
   id_ticket: number;
@@ -13,40 +11,28 @@ export interface Pago {
   pagador_apellidos: string;
   metodo: string;
   monto: number;
-  estado: 'pendiente' | 'completado' | 'fallido' | 'reembolso';
-  codigo_pago: string;
+  estado: 'pendiente' | 'completado' | 'fallido' | 'reembolsado';
+  codigo_validacion: string;
   fecha_pago: string;
   fecha_confirmacion: string | null;
-  id_guardia: number | null;
-  guardia_nombres: string | null;
-  guardia_apellidos: string | null;
-}
-
-export interface PrecioInfo {
-  tipo: string;
-  online: number;
-}
-
-export interface ResultadoCrearPago {
-  id: number;
-  monto: number;
-  referencia: string;
-  url_pago: string;
-}
-
-export interface ResultadoConfirmar {
-  aprobado: boolean;
-  id?: number;
-  monto?: number;
-  referencia: string;
-  mensaje?: string;
-  ya_confirmado?: boolean;
 }
 
 export interface FilaReporteMensual {
   mes: string;
   cantidad_pagos: number;
   total_cobrado: number;
+}
+
+export interface PrecioInfo {
+  efectivo: number;
+  online: number;
+}
+
+export interface ResultadoConfirmar {
+  aprobado: boolean;
+  monto?: number;
+  referencia?: string;
+  mensaje?: string;
 }
 
 export const pagosService = {
@@ -56,12 +42,9 @@ export const pagosService = {
   reporteMensual: () => api.get<FilaReporteMensual[]>('/pagos/reporte-mensual'),
   registrarEfectivo: (data: { placa: string; id_tipo_vehiculo: number }) =>
     api.post<{ id: number; monto: number }>('/pagos/efectivo', data),
-
-  // Legacy: flujo de pago en línea (pasarela), usado por PagarParqueo
-  precio: (tipo: string) => api.get<PrecioInfo>(`/pagos/precio?tipo=${encodeURIComponent(tipo)}`),
-  crear: (data: { parqueo_id: number; tipo_vehiculo: string; metodo: MetodoPago }) =>
-    api.post<ResultadoCrearPago>('/pagos', data),
-  confirmar: (referencia: string) =>
-    api.get<ResultadoConfirmar>(`/pagos/confirmar?referencia=${encodeURIComponent(referencia)}`),
   misPagos: () => api.get<PagoHistorial[]>('/pagos/mis-pagos'),
+  precio: (tipo: string) => api.get<PrecioInfo>('/pagos/precio', { params: { tipo } }),
+  crear: (data: { parqueo_id: number; tipo_vehiculo: string; metodo: string }) =>
+    api.post<{ url_pago: string }>('/pagos', data),
+  confirmar: (referencia: string) => api.get<ResultadoConfirmar>(`/pagos/confirmar/${referencia}`),
 };

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { vehiculosService, type VehiculoConDueno } from '../../services/vehiculos.service';
+import type { VehiculoConDueno } from '../../models';
+import { vehiculosService } from '../../services/vehiculos.service';
 import './BuscarVehiculo.css';
 
 export function BuscarVehiculo() {
@@ -33,7 +34,7 @@ export function BuscarVehiculo() {
       <div>
         <h1 className="buscar-vehiculo-title">Buscar dueño de vehículo</h1>
         <p className="buscar-vehiculo-subtitle">
-          Busca por placa, marca, modelo, nombre o DPI del dueño.
+           Busca por placa, marca, nombre o DPI del dueño.
         </p>
       </div>
 
@@ -70,9 +71,9 @@ export function BuscarVehiculo() {
                 </thead>
                 <tbody>
                   {resultados.map((v) => (
-                    <tr key={v.id}>
+                    <tr key={v.placa}>
                       <td className="buscar-vehiculo-placa">{v.placa}</td>
-                      <td>{v.marca} {v.modelo} <span className="buscar-vehiculo-tipo">({v.tipo})</span></td>
+                      <td>{v.marca} <span className="buscar-vehiculo-tipo">({v.tipo})</span></td>
                       <td>{v.color ?? '—'}</td>
                       <td>{v.dueno_nombres} {v.dueno_apellidos}</td>
                       <td>{v.dueno_dpi}</td>
