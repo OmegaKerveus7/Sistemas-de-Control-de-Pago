@@ -127,7 +127,7 @@ export function PagarParqueo() {
             </p>
             <p className="pagar-resumen-linea">
               <span>Entrada</span>
-              <strong>{new Date(parqueo.hora_entrada).toLocaleString()}</strong>
+              <strong>{parqueo.fecha_entrada ? new Date(parqueo.fecha_entrada).toLocaleString() : '—'}</strong>
             </p>
             <p className="pagar-resumen-linea">
               <span>Precio a pagar (precio fijo)</span>

@@ -13,26 +13,11 @@ export async function obtenerActivoPorPlaca(placa: string): Promise<Parqueo | nu
   return parqueoRepo.obtenerActivoPorPlaca(placa);
 }
 
-export async function numParqueoOcupado(numParqueo: string): Promise<boolean> {
-  return parqueoRepo.numParqueoOcupado(numParqueo);
+export async function historialPorPlaca(placa: string, fechaInicio: string, fechaFin: string): Promise<Parqueo[]> {
+  return parqueoRepo.historialPorPlaca(placa, fechaInicio, fechaFin);
 }
 
-export async function registrarEntrada(placa: string, numParqueo: string): Promise<number> {
-  return parqueoRepo.registrarEntrada(placa, numParqueo);
-}
-
+// TODO(pagos): ver nota en parqueo.repository.ts — pendiente de arreglar junto con Pagos.
 export async function registrarSalida(id: number, costo: number): Promise<boolean> {
   return parqueoRepo.registrarSalida(id, costo);
-}
-
-export async function cancelar(id: number): Promise<boolean> {
-  return parqueoRepo.cancelar(id);
-}
-
-export async function historialPorPlaca(
-  placa: string,
-  fechaInicio: string,
-  fechaFin: string,
-): Promise<unknown[]> {
-  return parqueoRepo.historialPorPlaca(placa, fechaInicio, fechaFin);
 }

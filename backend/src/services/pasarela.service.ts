@@ -1,4 +1,4 @@
-import type { Pago } from '../models';
+import type { PagoLegacy as Pago } from '../models';
 
 export interface CheckoutResultado {
   url_pago: string;

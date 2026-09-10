@@ -1,29 +1,23 @@
 import { api } from './api';
 
-export type EstadoParqueo = 'activo' | 'completado' | 'cancelado';
+export type EstadoParqueo = 'activo' | 'completado';
 
 export interface Parqueo {
   id: number;
-  placa: string;
-  num_parqueo: string;
-  hora_entrada: string;
-  hora_salida?: string;
-  costo?: number;
+  id_lugar: number;
+  lugar: string;
+  zona: string;
+  id_ticket: number | null;
+  ticket: string | null;
+  placa: string | null;
+  fecha_entrada: string | null;
+  fecha_salida: string | null;
+  fecha_ocupacion: string;
+  fecha_liberacion: string | null;
   estado: EstadoParqueo;
-  ticket?: string;
-}
-
-export interface ParqueoHistorial {
-  id_historial: number;
-  id_parqueo: number;
-  placa: string;
-  num_parqueo: string;
-  fecha: string;
-  hora_entrada: string;
-  hora_salida?: string;
-  costo?: number;
-  estado: string;
-  ticket?: string;
+  estado_lugar: string;
+  costo: number | null;
+  estado_pago: string | null;
 }
 
 export const parqueoService = {
@@ -31,11 +25,7 @@ export const parqueoService = {
   obtenerPorId: (id: number) => api.get<Parqueo>(`/parqueo/${id}`),
   obtenerActivoPorPlaca: (placa: string) => api.get<Parqueo>(`/parqueo/placa/${placa}`),
   historialPorPlaca: (placa: string, fechaInicio: string, fechaFin: string) =>
-    api.get<ParqueoHistorial[]>(`/parqueo/historial/${placa}`, {
+    api.get<Parqueo[]>(`/parqueo/historial/${placa}`, {
       params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
     }),
-  registrarEntrada: (placa: string, numParqueo: string) =>
-    api.post<{ id: number }>('/parqueo/entrada', { placa, num_parqueo: numParqueo }),
-  registrarSalida: (id: number, costo: number) => api.put<void>(`/parqueo/${id}/salida`, { costo }),
-  cancelar: (id: number) => api.put<void>(`/parqueo/${id}/cancelar`, {}),
 };
