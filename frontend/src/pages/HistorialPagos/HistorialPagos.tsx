@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { PagoHistorial } from '../../models';
 import { pagosService } from '../../services/pagos.service';
 import './HistorialPagos.css';
@@ -88,8 +89,11 @@ export function HistorialPagos() {
                   {pago.fecha_salida && <> · Salida: {formatearFecha(pago.fecha_salida)}</>}
                 </p>
                 <p className="historial-item-fechas">
-                  Pagado el {formatearFecha(pago.fecha_pago)} · {pago.metodo_pago}
+                  Registrado el {formatearFecha(pago.fecha_pago)} · {pago.metodo_pago}
                 </p>
+                {pago.metodo_pago === 'linea' && /^P-[a-f0-9]{18}$/.test(pago.codigo_validacion) && (
+                  <Link to={`/pagar-parqueo/resultado?referencia=${encodeURIComponent(pago.codigo_validacion)}`}>Consultar o continuar pago</Link>
+                )}
               </div>
               <div className="historial-item-monto">{formatearMonto(pago.monto)}</div>
             </li>

@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { pagosService, type Pago } from '../../services/pagos.service';
 import './Pagos.css';
@@ -76,6 +77,14 @@ export function Pagos() {
             ? `${pagos.length} pago${pagos.length === 1 ? '' : 's'} registrados · Q${totalCobrado.toFixed(2)} cobrados`
             : 'Registra el cobro en efectivo de un ticket'}
         </p>
+      </div>
+
+      <div className="card pagos-form-card">
+        <h2 className="pagos-form-title">Pago con tarjeta</h2>
+        <p>Consulta la placa y revisa el monto antes de abrir el pago seguro de Recurrente.</p>
+        <Link className="pagos-btn-registrar" to={`/pagar-parqueo${placa.trim() ? `?placa=${encodeURIComponent(placa.trim().toUpperCase())}` : ''}`}>
+          Ir a pago con tarjeta
+        </Link>
       </div>
 
       <div className="card pagos-form-card">

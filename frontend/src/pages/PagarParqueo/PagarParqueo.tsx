@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { parqueoService, type Parqueo } from '../../services/parqueo.service';
 import { pagosService, type PrecioInfo } from '../../services/pagos.service';
 import './PagarParqueo.css';
+import { FormularioRecurrente } from './FormularioRecurrente';
 
 type TipoVehiculo = 'motocicleta' | 'automovil';
 
@@ -23,14 +24,16 @@ function detectarTipoVehiculo(placa: string): TipoVehiculo | null {
 export function PagarParqueo() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
 
-  const [placa, setPlaca] = useState('');
+  const [placa, setPlaca] = useState(() => (params.get('placa') || '').toUpperCase());
   const tipo = detectarTipoVehiculo(placa);
   const [parqueo, setParqueo] = useState<Parqueo | null>(null);
   const [precio, setPrecio] = useState<PrecioInfo | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [cargandoPago, setCargandoPago] = useState(false);
+  const [checkout, setCheckout] = useState<{ url_pago: string; referencia: string } | null>(null);
 
   if (!usuario) {
     return <Navigate to="/login?redirect=/pagar-parqueo" replace />;
@@ -56,7 +59,8 @@ export function PagarParqueo() {
     setLoading(true);
     try {
       const activo = await parqueoService.obtenerActivoPorPlaca(limpio);
-      const info = await pagosService.precio(tipoDetectado);
+      if (activo.estado_pago === 'completado') throw new Error('Este parqueo ya está pagado');
+      const info = await pagosService.precio(activo.id);
       setParqueo(activo);
       setPrecio(info);
     } catch (err) {
@@ -73,12 +77,13 @@ export function PagarParqueo() {
     try {
       const resultado = await pagosService.crear({
         parqueo_id: parqueo.id,
-        tipo_vehiculo: tipo,
-        metodo: 'tarjeta',
+        monto_esperado: precio.online,
       });
-      window.location.href = resultado.url_pago;
+      if (precio.modo === 'mock') window.location.href = resultado.url_pago;
+      else setCheckout(resultado);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar el pago');
+    } finally {
       setCargandoPago(false);
     }
   };
@@ -132,6 +137,9 @@ export function PagarParqueo() {
         ) : (
           <div className="pagar-card">
             <h2 className="pagar-resumen-titulo">Resumen de pago</h2>
+            {precio.modo !== 'live' && <p className="pagar-aviso-prueba" role="status">
+              {precio.modo === 'mock' ? 'Simulador local: no se hacen cobros ni se solicita tarjeta.' : 'Sandbox de Recurrente: utiliza únicamente tarjetas de prueba.'}
+            </p>}
             <p className="pagar-resumen-linea">
               <span>Vehículo</span>
               <strong>{parqueo.placa} · {tipo ? ETIQUETAS[tipo] : ''}</strong>
@@ -145,18 +153,20 @@ export function PagarParqueo() {
               <strong>Q{Number(precio.online).toFixed(2)}</strong>
             </p>
 
-            <button
+            {!checkout && <button
               type="button"
               className="pagar-button"
               onClick={pagar}
               disabled={cargandoPago}
             >
-              {cargandoPago ? 'Redirigiendo a la pasarela...' : 'Pagar con tarjeta'}
-            </button>
+              {cargandoPago ? 'Preparando pago...' : precio.modo === 'mock' ? 'Probar pago' : 'Abrir formulario de tarjeta'}
+            </button>}
+            {checkout && <FormularioRecurrente url={checkout.url_pago} referencia={checkout.referencia} sandbox={precio.modo === 'sandbox'} />}
             <button
               type="button"
               className="pagar-button pagar-button-secundario"
               onClick={() => {
+                setCheckout(null);
                 setParqueo(null);
                 setPrecio(null);
                 setPlaca('');

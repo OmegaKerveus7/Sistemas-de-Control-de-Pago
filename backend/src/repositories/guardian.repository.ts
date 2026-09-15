@@ -8,7 +8,8 @@ type Movimiento = 'entrada' | 'salida' | 'autorizacion_salida';
 
 interface VehiculoActivo extends RowDataPacket {
   placa: string;
-  id_usuario: number;
+  id_usuario: number | null;
+  activo: number;
   id_tipo: number;
   tipo_nombre: string;
 }
@@ -173,7 +174,7 @@ export async function estadisticas() {
 export async function lugares() {
   const pool = getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT l.id_lugar AS id, l.codigo, z.id_zona AS zona_id, z.nombre AS zona,
+    `SELECT l.id_lugar AS id, l.codigo, l.codigo AS lugar, z.id_zona AS zona_id, z.nombre AS zona,
             el.nombre AS estado, el.color,
             t.numero_ticket AS ticket, t.placa
      FROM Lugares l
@@ -191,7 +192,7 @@ export async function buscar(criterio: CriterioGuardian) {
   try {
     const ticket = await ticketActivo(conn, criterio);
     if (!ticket) throw new GuardianError(404, 'No se encontró un vehículo activo', 'VEHICULO_NO_ACTIVO');
-    return ticket;
+    return { ...ticket, lugar: ticket.codigo_lugar, zona: ticket.zona_nombre, tipo_vehiculo: ticket.tipo_nombre };
   } finally {
     conn.release();
   }
@@ -205,20 +206,23 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
     const { placaNormalizada, tipo } = validarPlaca(registro.placa);
 
     const [vehiculos] = await conn.execute<VehiculoActivo[]>(
-      `SELECT v.placa, v.id_usuario, v.id_tipo, tv.nombre AS tipo_nombre
+      `SELECT v.placa, v.id_usuario, v.id_tipo, v.activo, tv.nombre AS tipo_nombre
        FROM Vehiculos v
        JOIN Tipo_vehiculo tv ON tv.id_tipo = v.id_tipo
-       WHERE UPPER(v.placa) = ? AND v.activo = 1
+       WHERE UPPER(v.placa) = ?
        LIMIT 1 FOR UPDATE`,
       [placaNormalizada],
     );
     const vehiculo = vehiculos[0];
-    let idUsuario: number | null = vehiculo?.id_usuario ?? null;
+    const idUsuario = vehiculo?.id_usuario ?? null;
     let idTipo: number;
     let tipoNombre: string;
-    let esExterno = 0;
+    const esExterno = idUsuario === null ? 1 : 0;
 
     if (vehiculo) {
+      if (Number(vehiculo.activo) !== 1) {
+        throw new GuardianError(409, 'Este vehículo está desactivado', 'VEHICULO_INACTIVO');
+      }
       idTipo = vehiculo.id_tipo;
       tipoNombre = vehiculo.tipo_nombre;
       const tipoEsperado = tipo === 'carro' ? 'carro' : 'moto';
@@ -234,7 +238,13 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
       if (!catalogoTipo) throw new GuardianError(503, 'No existe el tipo de vehículo solicitado en el catálogo', 'CATALOGO_INCOMPLETO');
       idTipo = catalogoTipo.id_tipo;
       tipoNombre = catalogoTipo.nombre;
-      esExterno = 1;
+      // La FK del ticket requiere que la placa exista, incluso para visitantes.
+      // Se revierte junto con la entrada si falla cualquiera de los pasos siguientes.
+      await conn.execute(
+        `INSERT INTO Vehiculos (placa, id_usuario, id_tipo, activo)
+         VALUES (?, NULL, ?, 1)`,
+        [placaNormalizada, idTipo],
+      );
     }
 
     const [duplicados] = await conn.execute<RowDataPacket[]>(
@@ -334,7 +344,8 @@ export async function validarPago(criterio: CriterioGuardian, idGuardia: number,
       ],
     );
     await conn.commit();
-    return { ...ticket, autorizado, mensaje: autorizado ? 'Pago completado; salida disponible para confirmación del guardia' : 'Pago no completado; salida bloqueada' };
+    return { ...ticket, lugar: ticket.codigo_lugar, zona: ticket.zona_nombre, tipo_vehiculo: ticket.tipo_nombre,
+      autorizado, mensaje: autorizado ? 'Pago completado; salida disponible para confirmación del guardia' : 'Pago no completado; salida bloqueada' };
   } catch (error) {
     await conn.rollback();
     throw error;

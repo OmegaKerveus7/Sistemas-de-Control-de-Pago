@@ -16,8 +16,21 @@ export async function obtenerPorPlaca(placa: string): Promise<VehiculoConDueno |
 
 export async function buscar(filtro: string): Promise<VehiculoConDueno[]> {
   const pool = getPool();
-  const [results] = await pool.query('CALL sp_vehiculos_buscar(?)', [filtro]);
-  return (results as unknown as [VehiculoConDueno[]])[0];
+  const termino = filtro.trim().toUpperCase();
+  if (!termino) return [];
+  const [rows] = await pool.query<(VehiculoConDueno & RowDataPacket)[]>(
+    `SELECT v.placa, v.id_tipo, tv.nombre AS tipo, m.nombre AS marca, v.color, v.activo,
+            v.id_usuario AS id_dueno, u.nombres AS dueno_nombres, u.apellidos AS dueno_apellidos,
+            u.DPI AS dueno_dpi, u.email AS dueno_email
+     FROM Vehiculos v
+     LEFT JOIN Marcas m ON m.id_marca = v.id_marca
+     LEFT JOIN Tipo_vehiculo tv ON tv.id_tipo = v.id_tipo
+     LEFT JOIN Usuarios u ON u.id_usuario = v.id_usuario
+     WHERE LOCATE(?, UPPER(v.placa)) > 0 OR LOCATE(?, UPPER(m.nombre)) > 0
+        OR LOCATE(?, UPPER(CONCAT_WS(' ', u.nombres, u.apellidos))) > 0
+        OR LOCATE(?, u.DPI) > 0
+     ORDER BY v.placa`, [termino, termino, termino, termino]);
+  return rows;
 }
 
 export async function crear(data: Vehiculo): Promise<string> {

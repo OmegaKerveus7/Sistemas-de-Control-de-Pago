@@ -8,6 +8,7 @@ import { ForgotPassword } from '../pages/ForgotPassword';
 import { Dashboard } from '../pages/Dashboard';
 import { Placeholder } from '../pages/Placeholder';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
+import { SimuladorPago } from '../pages/PagarParqueo/Simulador';
 import { Guardian } from '../pages/Guardian';
 import { HistorialPagos } from '../pages/HistorialPagos';
 import { Usuarios } from '../pages/Usuarios';
@@ -37,6 +38,10 @@ export const router = createHashRouter([
   {
     path: '/pagar-parqueo',
     element: <PagarParqueo />,
+  },
+  {
+    path: '/pagar-parqueo/simulador',
+    element: <SimuladorPago />,
   },
   {
     path: '/pagar-parqueo/resultado',

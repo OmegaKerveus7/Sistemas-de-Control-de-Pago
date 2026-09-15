@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "tsc",
-    "start": "bun src/index.ts"
+    "start": "bun src/index.ts",
+    "test:pagos": "bun test src/services/pasarela.service.test.ts && bun test src/repositories/pagos-online.test.ts",
+    "check:pagos-db": "bun tools/verificar-esquema-pagos.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",

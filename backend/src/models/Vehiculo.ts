@@ -13,13 +13,13 @@ export interface Vehiculo {
 export interface VehiculoConDueno {
   placa: string;
   id_tipo: number;
-  tipo: string;
-  marca: string;
+  tipo: string | null;
+  marca: string | null;
   color: string | null;
   activo: boolean;
-  id_dueno: number;
-  dueno_nombres: string;
-  dueno_apellidos: string;
-  dueno_dpi: string;
-  dueno_email: string;
+  id_dueno: number | null;
+  dueno_nombres: string | null;
+  dueno_apellidos: string | null;
+  dueno_dpi: string | null;
+  dueno_email: string | null;
 }
