@@ -32,7 +32,7 @@ export function BuscarVehiculo() {
   return (
     <section className="buscar-vehiculo-page">
       <div>
-        <h1 className="buscar-vehiculo-title">Buscar dueño de vehículo</h1>
+        <h1 className="buscar-vehiculo-title">Buscar vehículo</h1>
         <p className="buscar-vehiculo-subtitle">
            Busca por placa, marca, nombre o DPI del dueño.
         </p>
@@ -73,11 +73,11 @@ export function BuscarVehiculo() {
                   {resultados.map((v) => (
                     <tr key={v.placa}>
                       <td className="buscar-vehiculo-placa">{v.placa}</td>
-                      <td>{v.marca} <span className="buscar-vehiculo-tipo">({v.tipo})</span></td>
+                      <td>{v.marca ?? 'Sin marca registrada'} <span className="buscar-vehiculo-tipo">({v.tipo ?? 'Sin tipo registrado'})</span></td>
                       <td>{v.color ?? '—'}</td>
-                      <td>{v.dueno_nombres} {v.dueno_apellidos}</td>
-                      <td>{v.dueno_dpi}</td>
-                      <td>{v.dueno_email}</td>
+                      <td>{v.id_dueno == null ? 'Visitante sin dueño registrado' : `${v.dueno_nombres ?? ''} ${v.dueno_apellidos ?? ''}`.trim()}</td>
+                      <td>{v.dueno_dpi ?? '—'}</td>
+                      <td>{v.dueno_email ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>

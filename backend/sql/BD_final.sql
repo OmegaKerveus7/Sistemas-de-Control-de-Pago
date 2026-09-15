@@ -333,7 +333,8 @@ INSERT INTO Movimientos (nombre, descripcion) VALUES
 ('entrada', 'Registro de ingreso del vehículo'),
 ('salida', 'Registro de salida del vehículo'),
 ('reasignacion', 'Reasignación de lugar'),
-('cancelacion', 'Cancelación del ticket');
+('cancelacion', 'Cancelación del ticket'),
+('autorizacion_salida', 'Validación de pago para autorizar la salida');
 
 INSERT INTO Tipo_vehiculo (nombre, precio_efectivo, precio_linea) VALUES
 ('moto', 15.00, 22.00),

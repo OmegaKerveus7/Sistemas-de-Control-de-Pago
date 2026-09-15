@@ -26,10 +26,15 @@ export interface FilaReporteMensual {
 export interface PrecioInfo {
   efectivo: number;
   online: number;
+  modo: 'mock' | 'sandbox' | 'live';
 }
 
 export interface ResultadoConfirmar {
   aprobado: boolean;
+  estado: 'pendiente' | 'completado' | 'fallido' | 'reembolsado';
+  modo: 'mock' | 'sandbox' | 'live';
+  placa: string;
+  url_pago?: string;
   monto?: number;
   referencia?: string;
   mensaje?: string;
@@ -43,8 +48,9 @@ export const pagosService = {
   registrarEfectivo: (data: { placa: string; id_tipo_vehiculo: number }) =>
     api.post<{ id: number; monto: number }>('/pagos/efectivo', data),
   misPagos: () => api.get<PagoHistorial[]>('/pagos/mis-pagos'),
-  precio: (tipo: string) => api.get<PrecioInfo>('/pagos/precio', { params: { tipo } }),
-  crear: (data: { parqueo_id: number; tipo_vehiculo: string; metodo: string }) =>
-    api.post<{ url_pago: string }>('/pagos', data),
+  precio: (parqueoId: number) => api.get<PrecioInfo>('/pagos/precio', { params: { parqueo_id: String(parqueoId) } }),
+  crear: (data: { parqueo_id: number; monto_esperado: number }) =>
+    api.post<{ url_pago: string; referencia: string; modo: 'mock' | 'sandbox' | 'live' }>('/pagos', data),
   confirmar: (referencia: string) => api.get<ResultadoConfirmar>(`/pagos/confirmar/${referencia}`),
+  simular: (referencia: string, estado: string) => api.post<ResultadoConfirmar>(`/pagos/simular/${referencia}`, { estado }),
 };

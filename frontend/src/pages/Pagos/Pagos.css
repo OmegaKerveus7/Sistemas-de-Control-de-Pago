@@ -44,6 +44,10 @@
 }
 
 .pagos-btn-registrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   height: 44px;
   padding: 0 20px;
   border: none;

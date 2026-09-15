@@ -1,4 +1,6 @@
-import type { RowDataPacket } from 'mysql2/promise';
+import { randomBytes } from 'node:crypto';
+import { PagoError } from '../services/pasarela.service';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
 import type { Pago, FilaReporteMensual, PagoHistorial } from '../models';
 
@@ -53,19 +55,38 @@ export interface DatosPagoEfectivo {
 }
 
 export async function crearEfectivo(datos: DatosPagoEfectivo): Promise<{ id: number; monto: number }> {
+  const placa = datos.placa.trim().toUpperCase();
+  if (!/^[PM][0-9]{3}[A-Z]{3}$/.test(placa)) throw new PagoError(400, 'Placa inválida. Ejemplo: P123ABC');
   const conn = await getPool().getConnection();
   try {
-    await conn.query('CALL sp_pagos_crear_efectivo(?, ?, ?, @id_pago, @monto, @mensaje)', [
-      datos.placa.toUpperCase(),
-      datos.id_tipo_vehiculo,
-      datos.id_guardia,
-    ]);
-    const [rows] = await conn.query<RowDataPacket[]>(
-      'SELECT @id_pago AS id_pago, @monto AS monto, @mensaje AS mensaje',
-    );
-    const fila = rows[0] as { id_pago: number | null; monto: string | null; mensaje: string };
-    if (fila.id_pago == null) throw new Error(fila.mensaje);
-    return { id: fila.id_pago, monto: Number(fila.monto) };
+    await conn.beginTransaction();
+    // El mismo bloqueo de ticket que utiliza el pago en línea evita cobros simultáneos.
+    const [tickets] = await conn.query<RowDataPacket[]>(
+      `SELECT t.id_ticket, t.id_usuario, t.id_tipo, tv.precio_efectivo
+       FROM Tickets t JOIN Tipo_vehiculo tv ON tv.id_tipo = t.id_tipo
+       WHERE t.placa = ? AND t.activo = 1 AND t.fecha_salida IS NULL
+       ORDER BY t.id_ticket DESC LIMIT 1 FOR UPDATE`, [placa]);
+    const ticket = tickets[0];
+    if (!ticket) throw new PagoError(404, 'No hay un ticket activo para esa placa');
+    const [pagos] = await conn.query<RowDataPacket[]>(
+      'SELECT id_pago, estado_pago FROM Pagos WHERE id_ticket = ? FOR UPDATE', [ticket.id_ticket]);
+    if (pagos.some(p => p.estado_pago === 'completado')) throw new PagoError(409, 'Este ticket ya está pagado; no se puede cobrar otra vez');
+    if (pagos.length) throw new PagoError(409, 'Este ticket ya tiene un pago registrado. Revisa ese pago antes de cobrar en efectivo');
+    if (Number(ticket.id_tipo) !== datos.id_tipo_vehiculo) throw new PagoError(400, 'El tipo seleccionado no coincide con el vehículo del ticket');
+    const monto = Number(ticket.precio_efectivo);
+    if (!Number.isFinite(monto) || monto <= 0) throw new PagoError(400, 'No existe una tarifa en efectivo válida para este vehículo');
+    const referencia = `E-${randomBytes(9).toString('hex')}`;
+    const [insert] = await conn.query<ResultSetHeader>(
+      `INSERT INTO Pagos (id_ticket, id_usuario, placa, id_tipo, metodo_pago, monto,
+        codigo_validacion, estado_pago, fecha_pago, fecha_confirmacion, observacion)
+       VALUES (?, ?, ?, ?, 'efectivo', ?, ?, 'completado', NOW(), NOW(), ?)`,
+      [ticket.id_ticket, ticket.id_usuario ?? datos.id_guardia, placa, ticket.id_tipo, monto,
+       referencia, `Cobro en efectivo registrado por guardia ${datos.id_guardia}`]);
+    await conn.commit();
+    return { id: insert.insertId, monto };
+  } catch (error) {
+    await conn.rollback();
+    throw error;
   } finally {
     conn.release();
   }

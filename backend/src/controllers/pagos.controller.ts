@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import * as pagosService from '../services/pagos.service';
 import type { AuthRequest } from '../types';
+import { PagoError } from '../services/pasarela.service';
 
 export async function listar(_req: Request, res: Response) {
   res.json(await pagosService.listar());
@@ -41,8 +42,12 @@ export async function registrarEfectivo(req: Request, res: Response) {
     });
     res.status(201).json(resultado);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Error al registrar el pago';
-    res.status(400).json({ error: msg });
+    if (err instanceof PagoError) {
+      res.status(err.status).json({ error: err.message });
+    } else {
+      console.error('[Pagos efectivo]', err);
+      res.status(500).json({ error: 'No se pudo registrar el pago en efectivo. Consulta con administración.' });
+    }
   }
 }
 
