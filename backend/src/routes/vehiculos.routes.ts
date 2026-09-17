@@ -4,7 +4,7 @@ import { verificarToken, verificarRol } from '../middleware/auth.middleware';
 
 export const vehiculosRouter = Router();
 
-const soloPersonal = verificarRol('administrador', 'guardia');
+const soloPersonal = verificarRol('administrador', 'cobrador', 'guardia');
 
 vehiculosRouter.get('/', verificarToken, soloPersonal, vehiculosController.listar);
 vehiculosRouter.get('/buscar', verificarToken, soloPersonal, vehiculosController.buscar);

@@ -1,5 +1,5 @@
 import { afterEach, expect, mock, test } from 'bun:test';
-let ticket: Record<string, unknown> | null = { id_ticket: 1, id_usuario: null, id_tipo: 2, precio_efectivo: '20.00' };
+let ticket: Record<string, unknown> | null = { id_ticket: 1, id_usuario: null, id_tipo: 2, precio_efectivo: '20.00', numero_ticket: 'TK-001', lugar: 'A1', zona: 'Zona A' };
 let pagos: Record<string, unknown>[] = [];
 let insertArgs: unknown[] | undefined;
 let committed = false;
@@ -12,6 +12,7 @@ const conn = {
     if (sql.includes('FROM Tickets')) { expect(sql).toContain('FOR UPDATE'); return [ticket ? [ticket] : []]; }
     if (sql.includes('FROM Pagos')) { expect(sql).toContain('FOR UPDATE'); return [pagos]; }
     if (sql.includes('INSERT INTO Pagos')) { if (failInsert) throw new Error('fallo de escritura'); insertArgs = args; return [{ insertId: 3 }]; }
+    if (sql.includes('FROM Usuarios')) { return [[]]; }
     throw new Error('Consulta inesperada');
   },
 };
@@ -19,11 +20,11 @@ mock.module('../config/database', () => ({ getPool: () => ({ getConnection: asyn
 const { crearEfectivo } = await import('./pagos.repository');
 const datos = { placa: 'p123abc', id_tipo_vehiculo: 2, id_guardia: 7 };
 afterEach(() => {
-  ticket = { id_ticket: 1, id_usuario: null, id_tipo: 2, precio_efectivo: '20.00' };
+  ticket = { id_ticket: 1, id_usuario: null, id_tipo: 2, precio_efectivo: '20.00', numero_ticket: 'TK-001', lugar: 'A1', zona: 'Zona A' };
   pagos = []; insertArgs = undefined; committed = rolledBack = failInsert = false;
 });
 test('cobra la tarifa del ticket y admite visitantes', async () => {
-  expect(await crearEfectivo(datos)).toEqual({ id: 3, monto: 20 });
+  expect(await crearEfectivo(datos)).toEqual({ id: 3, monto: 20, dueno_email: null, dueno_nombre: null, placa: 'P123ABC', ticket: 'TK-001', lugar: 'A1', zona: 'Zona A', codigo_validacion: expect.stringMatching(/^E-/) });
   expect(insertArgs?.slice(0, 5)).toEqual([1, 7, 'P123ABC', 2, 20]);
   expect(committed).toBe(true);
 });

@@ -15,15 +15,13 @@ const OPCIONES_POR_ROL: Record<NombreRol, OpcionMenu[]> = {
     { path: '/app/usuarios', etiqueta: 'Usuarios', icono: '👤' },
     { path: '/app/parqueo', etiqueta: 'Parqueo', icono: '🅿️' },
     { path: '/app/pagos', etiqueta: 'Pagos', icono: '💳' },
-    { path: '/app/tarifas', etiqueta: 'Tarifas', icono: '💰' },
-    { path: '/app/auditoria', etiqueta: 'Auditoría', icono: '📋' },
+    { path: '/app/reportes', etiqueta: 'Reportes', icono: '📈' },
     { path: '/app/guardian', etiqueta: 'Control de acceso', icono: '🛡️' },
     { path: '/app/buscar-vehiculo', etiqueta: 'Buscar vehículo', icono: '🔍' },
   ],
   guardia: [
     { path: '/app/dashboard', etiqueta: 'Dashboard', icono: '📊' },
     { path: '/app/guardian', etiqueta: 'Control de acceso', icono: '🛡️' },
-    { path: '/app/pagos', etiqueta: 'Pagos', icono: '💳' },
     { path: '/app/buscar-vehiculo', etiqueta: 'Buscar vehículo', icono: '🔍' },
   ],
   cobrador: [

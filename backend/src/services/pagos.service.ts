@@ -17,10 +17,14 @@ export async function reporteMensual(): Promise<FilaReporteMensual[]> {
   return pagosRepo.reporteMensual();
 }
 
+export async function reporteDetallado(anio: number, mes: number): Promise<pagosRepo.FilaReporteDetallado[]> {
+  return pagosRepo.reporteDetallado(anio, mes);
+}
+
 export async function listarPorUsuario(idUsuario: number): Promise<PagoHistorial[]> {
   return pagosRepo.listarPorUsuario(idUsuario);
 }
 
-export async function crearEfectivo(datos: pagosRepo.DatosPagoEfectivo): Promise<{ id: number; monto: number }> {
+export async function crearEfectivo(datos: pagosRepo.DatosPagoEfectivo): Promise<pagosRepo.ResultadoPagoEfectivo> {
   return pagosRepo.crearEfectivo(datos);
 }

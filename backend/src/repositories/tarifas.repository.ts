@@ -1,16 +1,33 @@
 import { getPool } from '../config/database';
+import type { RowDataPacket } from 'mysql2/promise';
 import type { Tarifa } from '../models';
 
 export async function listar(): Promise<Tarifa[]> {
   const pool = getPool();
-  const [results] = await pool.query('CALL sp_tarifas_listar()');
-  return (results as unknown as [Tarifa[]])[0];
+  const [rows] = await pool.query(
+    `SELECT t.id_tarifa, tv.nombre AS tipo_vehiculo,
+            t.precio_efectivo, t.precio_linea,
+            (t.precio_linea - t.precio_efectivo) AS diferencia
+     FROM Tarifas t
+     JOIN Tipo_vehiculo tv ON tv.id_tipo = t.id_tipo_vehiculo
+     ORDER BY t.id_tarifa`,
+  );
+  return rows as Tarifa[] & RowDataPacket[];
 }
 
 export async function obtenerPorId(id: number): Promise<Tarifa | null> {
   const pool = getPool();
-  const [results] = await pool.query('CALL sp_tarifas_obtener_por_id(?)', [id]);
-  return (results as unknown as [Tarifa[]])[0][0] ?? null;
+  const [rows] = await pool.query(
+    `SELECT t.id_tarifa, tv.nombre AS tipo_vehiculo,
+            t.precio_efectivo, t.precio_linea,
+            (t.precio_linea - t.precio_efectivo) AS diferencia
+     FROM Tarifas t
+     JOIN Tipo_vehiculo tv ON tv.id_tipo = t.id_tipo_vehiculo
+     WHERE t.id_tarifa = ?
+     LIMIT 1`,
+    [id],
+  );
+  return (rows as (Tarifa & RowDataPacket)[])[0] ?? null;
 }
 
 export interface DatosTarifa {
@@ -20,18 +37,12 @@ export interface DatosTarifa {
 }
 
 export async function crear(datos: DatosTarifa): Promise<number> {
-  const conn = await getPool().getConnection();
-  try {
-    await conn.query('CALL sp_tarifas_crear(?, ?, ?, @id_tarifa)', [
-      datos.id_tipo_vehiculo,
-      datos.precio_efectivo,
-      datos.precio_linea,
-    ]);
-    const [rows] = await conn.query('SELECT @id_tarifa AS id_tarifa');
-    return (rows as Array<{ id_tarifa: number }>)[0]!.id_tarifa;
-  } finally {
-    conn.release();
-  }
+  const pool = getPool();
+  const [result] = await pool.query(
+    'INSERT INTO Tarifas (id_tipo_vehiculo, precio_efectivo, precio_linea) VALUES (?, ?, ?)',
+    [datos.id_tipo_vehiculo, datos.precio_efectivo, datos.precio_linea],
+  );
+  return (result as { insertId: number }).insertId;
 }
 
 export async function actualizar(
@@ -44,16 +55,10 @@ export async function actualizar(
   const precioEfectivo = datos.precio_efectivo ?? actual.precio_efectivo;
   const precioLinea = datos.precio_linea ?? actual.precio_linea;
 
-  const conn = await getPool().getConnection();
-  try {
-    await conn.query('CALL sp_tarifas_actualizar(?, ?, ?, @afectado)', [
-      id,
-      precioEfectivo,
-      precioLinea,
-    ]);
-    const [rows] = await conn.query('SELECT @afectado AS afectado');
-    return Boolean((rows as Array<{ afectado: number }>)[0]!.afectado);
-  } finally {
-    conn.release();
-  }
+  const pool = getPool();
+  const [result] = await pool.query(
+    'UPDATE Tarifas SET precio_efectivo = ?, precio_linea = ? WHERE id_tarifa = ?',
+    [precioEfectivo, precioLinea, id],
+  );
+  return (result as { affectedRows: number }).affectedRows > 0;
 }

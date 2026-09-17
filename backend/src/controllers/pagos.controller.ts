@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as pagosService from '../services/pagos.service';
+import * as correoService from '../services/correo.service';
 import type { AuthRequest } from '../types';
 import { PagoError } from '../services/pasarela.service';
 
@@ -40,7 +41,21 @@ export async function registrarEfectivo(req: Request, res: Response) {
       id_tipo_vehiculo: Number(id_tipo_vehiculo),
       id_guardia: usuario.id,
     });
-    res.status(201).json(resultado);
+    res.status(201).json({ id: resultado.id, monto: resultado.monto });
+
+    if (resultado.dueno_email && resultado.dueno_nombre) {
+      correoService.enviarComprobantePago({
+        correoDestino: resultado.dueno_email,
+        nombreUsuario: resultado.dueno_nombre,
+        placa: resultado.placa,
+        ticket: resultado.ticket,
+        monto: resultado.monto,
+        fechaPago: new Date().toLocaleString('es-GT'),
+        lugar: resultado.lugar,
+        zona: resultado.zona,
+        codigoValidacion: resultado.codigo_validacion,
+      }).catch((err) => console.error('[Correo comprobante]', err));
+    }
   } catch (err) {
     if (err instanceof PagoError) {
       res.status(err.status).json({ error: err.message });
@@ -53,6 +68,16 @@ export async function registrarEfectivo(req: Request, res: Response) {
 
 export async function reporteMensual(_req: Request, res: Response) {
   res.json(await pagosService.reporteMensual());
+}
+
+export async function reporteDetallado(req: Request, res: Response) {
+  const anio = Number(req.query.anio);
+  const mes = Number(req.query.mes);
+  if (!anio || !mes || mes < 1 || mes > 12) {
+    res.status(400).json({ error: 'Se requieren parámetros anio y mes (1-12)' });
+    return;
+  }
+  res.json(await pagosService.reporteDetallado(anio, mes));
 }
 
 export async function misPagos(req: Request, res: Response) {

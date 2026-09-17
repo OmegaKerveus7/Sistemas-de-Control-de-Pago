@@ -15,7 +15,7 @@ import { Usuarios } from '../pages/Usuarios';
 import { BuscarVehiculo } from '../pages/BuscarVehiculo';
 import { Parqueo } from '../pages/Parqueo';
 import { Pagos } from '../pages/Pagos';
-import { Auditoria } from '../pages/Auditoria';
+import { Reportes } from '../pages/Reportes';
 import { Tarifas } from '../pages/Tarifas';
 
 export const router = createHashRouter([
@@ -56,12 +56,11 @@ export const router = createHashRouter([
       { path: 'parqueo', element: <Parqueo /> },
       { path: 'pagos', element: <Pagos /> },
       { path: 'tarifas', element: <Tarifas /> },
-      { path: 'auditoria', element: <Auditoria /> },
+      { path: 'reportes', element: <Reportes /> },
       { path: 'validar', element: <Placeholder titulo="Validar Parqueo" /> },
       { path: 'historial', element: <HistorialPagos /> },
       { path: 'guardian', element: <Guardian /> },
       { path: 'buscar-vehiculo', element: <BuscarVehiculo /> },
-      { path: 'reportes', element: <Placeholder titulo="Reportes" /> },
       { path: 'pagar', element: <PagarParqueo /> },
     ],
   },

@@ -1,3 +1,7 @@
+/* ============================================
+   PAGOS PAGE — Mobile-First Responsive
+   ============================================ */
+
 .pagos-page {
   max-width: 1080px;
   margin: 0 auto;
@@ -19,6 +23,7 @@
   color: var(--color-texto-secundario);
 }
 
+/* --- Form Card --- */
 .pagos-form-card {
   padding: 22px;
   display: flex;
@@ -41,13 +46,119 @@
 
 .pagos-form .form-group {
   min-width: 160px;
+  flex: 1;
 }
 
+.pagos-placa-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pagos-tipo-detectado {
+  margin-top: -4px;
+  font-size: 0.85rem;
+  color: var(--color-texto-secundario);
+}
+
+.pagos-tipo-detectado strong {
+  color: var(--belen-azul);
+  font-weight: 700;
+}
+
+.pagos-tipo-error {
+  color: var(--belen-rojo);
+}
+
+.pagos-precio-estimado {
+  font-weight: 700;
+  color: var(--belen-azul);
+}
+
+/* --- Price List --- */
+.pagos-precios {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-sm);
+  padding: 18px 22px;
+}
+
+.pagos-precios-titulo {
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--belen-azul);
+  margin-bottom: 12px;
+}
+
+.pagos-precios-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pagos-precio-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border-radius: var(--radio-md);
+  background: var(--color-fondo-input);
+  border: 1px solid var(--color-borde-suave);
+}
+
+.pagos-precio-tipo {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pagos-precio-monto {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--belen-azul);
+}
+
+/* --- Buttons --- */
 .pagos-btn-registrar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  height: 48px;
+  padding: 0 24px;
+  border: none;
+  border-radius: var(--radio-sm);
+  background: linear-gradient(135deg, var(--belen-dorado-claro), var(--belen-dorado));
+  color: var(--belen-azul);
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transicion);
+  box-shadow: 0 2px 8px rgba(249, 168, 37, 0.25);
+}
+
+.pagos-btn-registrar:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-dorada);
+}
+
+.pagos-btn-registrar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pagos-btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 44px;
   padding: 0 20px;
   border: none;
@@ -57,25 +168,26 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
+  text-decoration: none;
   transition: background var(--transicion);
 }
 
-.pagos-btn-registrar:hover:not(:disabled) {
+.pagos-btn-link:hover {
   background: var(--belen-azul-medio);
 }
 
-.pagos-btn-registrar:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
+/* --- Success --- */
 .pagos-exito {
   color: #1c8a4f;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
+  padding: 10px 14px;
+  background: #ecfdf3;
+  border-radius: var(--radio-sm);
+  border-left: 3px solid #22c55e;
 }
 
+/* --- Table Card --- */
 .pagos-card {
   overflow: hidden;
 }
@@ -92,6 +204,7 @@
 
 .pagos-tabla-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pagos-tabla {
@@ -138,20 +251,132 @@
 }
 
 .pagos-estado-texto {
-  font-size: 0.82rem;
-  font-weight: 600;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
   text-transform: capitalize;
 }
 
 .pagos-estado-texto.completado {
-  color: #1c8a4f;
+  background: #dcfce7;
+  color: #166534;
 }
 
 .pagos-estado-texto.pendiente {
-  color: var(--belen-dorado-oscuro);
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .pagos-estado-texto.fallido,
 .pagos-estado-texto.reembolso {
+  background: #fef2f2;
   color: var(--belen-rojo);
+}
+
+/* ============================================
+   TABLET — <= 768px
+   ============================================ */
+@media (max-width: 768px) {
+  .pagos-page {
+    gap: 14px;
+    padding-bottom: 24px;
+  }
+
+  .pagos-form-card {
+    padding: 18px;
+    border-radius: var(--radio-md);
+  }
+
+  .pagos-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pagos-form .form-group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .pagos-btn-registrar {
+    width: 100%;
+    height: 50px;
+    font-size: 0.95rem;
+  }
+
+  .pagos-precios-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .pagos-precio-item {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 12px 16px;
+  }
+}
+
+/* ============================================
+   SMALL MOBILE — <= 480px
+   ============================================ */
+@media (max-width: 480px) {
+  .pagos-page {
+    gap: 12px;
+  }
+
+  .pagos-title {
+    font-size: 1.3rem;
+  }
+
+  .pagos-form-card {
+    padding: 16px;
+    border-radius: var(--radio-sm);
+  }
+
+  .pagos-form-card p {
+    font-size: 0.82rem;
+  }
+
+  .form-input {
+    min-height: 52px;
+    font-size: 1rem;
+  }
+
+  .pagos-btn-registrar {
+    min-height: 54px;
+    font-size: 1rem;
+    border-radius: var(--radio-md);
+  }
+
+  .pagos-precios {
+    padding: 14px 16px;
+    border-radius: var(--radio-md);
+  }
+
+  .pagos-precio-item {
+    padding: 10px 14px;
+  }
+
+  .pagos-precio-monto {
+    font-size: 1.15rem;
+  }
+
+  .pagos-exito {
+    font-size: 0.84rem;
+    padding: 10px 12px;
+  }
+
+  .pagos-tabla {
+    font-size: 0.8rem;
+  }
+
+  .pagos-tabla th {
+    padding: 12px 10px;
+    font-size: 0.68rem;
+  }
+
+  .pagos-tabla td {
+    padding: 10px;
+  }
 }

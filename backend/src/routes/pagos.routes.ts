@@ -11,8 +11,9 @@ pagosRouter.get('/confirmar/:referencia', verificarToken, online.confirmar);
 pagosRouter.post('/simular/:referencia', verificarToken, online.simular);
 
 pagosRouter.get('/mis-pagos', verificarToken, pagosController.misPagos);
-pagosRouter.post('/efectivo', verificarToken, verificarRol('administrador', 'guardia'), pagosController.registrarEfectivo);
+pagosRouter.post('/efectivo', verificarToken, verificarRol('administrador', 'cobrador', 'guardia'), pagosController.registrarEfectivo);
 pagosRouter.get('/reporte-mensual', verificarToken, verificarRol('administrador'), pagosController.reporteMensual);
-pagosRouter.get('/ticket/:idTicket', verificarToken, verificarRol('administrador', 'guardia'), pagosController.obtenerPorTicket);
+pagosRouter.get('/reporte-detallado', verificarToken, verificarRol('administrador'), pagosController.reporteDetallado);
+pagosRouter.get('/ticket/:idTicket', verificarToken, verificarRol('administrador', 'cobrador', 'guardia'), pagosController.obtenerPorTicket);
 pagosRouter.get('/:id', verificarToken, verificarRol('administrador'), pagosController.obtenerPorId);
 pagosRouter.get('/', verificarToken, verificarRol('administrador'), pagosController.listar);

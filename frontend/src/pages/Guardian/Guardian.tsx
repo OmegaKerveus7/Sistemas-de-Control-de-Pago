@@ -70,7 +70,6 @@ export function Guardian() {
   const [tipoBusqueda, setTipoBusqueda] = useState<TipoBusqueda>('placa');
   const [valorBusqueda, setValorBusqueda] = useState('');
   const [buscando, setBuscando] = useState(false);
-  const [validandoPago, setValidandoPago] = useState(false);
   const [registrandoSalida, setRegistrandoSalida] = useState(false);
   const [vehiculo, setVehiculo] = useState<BusquedaGuardian | null>(null);
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
@@ -111,8 +110,8 @@ export function Guardian() {
       setMensaje({
         tipo: esPagoCompletado(encontrado) ? 'exito' : 'bloqueo',
         texto: esPagoCompletado(encontrado)
-          ? 'Pago completado detectado. El guardia puede validarlo y confirmar la salida.'
-          : 'El vehículo tiene un pago pendiente, fallido o inexistente. La salida permanece bloqueada.',
+          ? 'Pago confirmado. Puede liberar el lugar.'
+          : 'El vehículo tiene un pago pendiente. La salida permanece bloqueada.',
       });
     } catch (error) {
       setMensaje({ tipo: 'error', texto: error instanceof Error ? error.message : 'No se pudo buscar el vehículo.' });
@@ -212,24 +211,6 @@ export function Guardian() {
     await consultarVehiculo(criterio(tipoBusqueda, valor));
   };
 
-  const validarPago = async () => {
-    if (!vehiculo) return;
-    setValidandoPago(true);
-    setMensaje(null);
-    try {
-      const validado = await guardianService.validarPago({ ticket: vehiculo.numero_ticket });
-      setVehiculo(validado);
-      setMensaje({
-        tipo: validado.autorizado ? 'exito' : 'bloqueo',
-        texto: validado.mensaje ?? (validado.autorizado ? 'Pago validado.' : 'Pago no completado.'),
-      });
-    } catch (error) {
-      setMensaje({ tipo: 'error', texto: error instanceof Error ? error.message : 'No se pudo validar el pago.' });
-    } finally {
-      setValidandoPago(false);
-    }
-  };
-
   const confirmarSalida = async () => {
     if (!vehiculo || !esPagoCompletado(vehiculo)) return;
     setRegistrandoSalida(true);
@@ -253,7 +234,7 @@ export function Guardian() {
         <div>
           <p className="guardian-eyebrow">Control de acceso</p>
           <h1>Vista del guardián</h1>
-          <p>Registra accesos, verifica pagos y consulta la ocupación en tiempo real.</p>
+          <p>Registra accesos, valida salidas y consulta la ocupación en tiempo real.</p>
         </div>
         <button type="button" className="guardian-refresh" onClick={() => void cargarEstado()} disabled={cargandoMapa}>
           {cargandoMapa ? 'Actualizando...' : '↻ Actualizar'}
@@ -305,7 +286,7 @@ export function Guardian() {
         </article>
 
         <article className="guardian-card guardian-exit-card">
-          <div className="guardian-card-title"><span>🛡️</span><div><h2>Validar salida</h2><p>Busca por placa, ticket, referencia o QR y confirma el pago antes de liberar el lugar.</p></div></div>
+          <div className="guardian-card-title"><span>🛡️</span><div><h2>Validar salida</h2><p>Busca por placa, ticket, referencia o QR para confirmar la salida del vehículo.</p></div></div>
           <form onSubmit={buscarVehiculo} className="guardian-search-row">
             <select aria-label="Tipo de búsqueda" value={tipoBusqueda} onChange={(event) => setTipoBusqueda(event.target.value as TipoBusqueda)} disabled={buscando}>
               <option value="placa">Placa</option>
@@ -338,14 +319,11 @@ export function Guardian() {
                 {esPagoCompletado(vehiculo) ? 'Pago completado' : (vehiculo.pago_estado ?? 'Sin pago')}
               </span>
               <div className="guardian-result-actions">
-                <button type="button" className="guardian-button guardian-button-secondary" onClick={() => void validarPago()} disabled={validandoPago || registrandoSalida}>
-                  {validandoPago ? 'Validando...' : 'Validar pago'}
-                </button>
                 <button
                   type="button"
                   className="guardian-button guardian-button-danger"
                   onClick={() => void confirmarSalida()}
-                  disabled={!esPagoCompletado(vehiculo) || registrandoSalida || validandoPago}
+                  disabled={!esPagoCompletado(vehiculo) || registrandoSalida}
                   title={!esPagoCompletado(vehiculo) ? 'La salida requiere un pago completado' : 'Confirmar salida y liberar lugar'}
                 >
                   {registrandoSalida ? 'Registrando salida...' : 'Confirmar salida'}

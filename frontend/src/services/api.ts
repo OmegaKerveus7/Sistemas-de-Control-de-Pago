@@ -41,6 +41,11 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Error de red' }));
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.hash = '#/login';
+    }
     throw new Error(errorData.error || `HTTP ${response.status}`);
   }
 

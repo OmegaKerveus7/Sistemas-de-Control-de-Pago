@@ -191,44 +191,72 @@ export function Usuarios() {
         ) : usuariosFiltrados.length === 0 ? (
           <div className="usuarios-estado">No se encontraron usuarios.</div>
         ) : (
-          <div className="usuarios-tabla-wrapper">
-            <table className="usuarios-tabla">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>DPI</th>
-                  <th>Correo</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuariosFiltrados.map((usuario) => (
-                  <tr key={usuario.id_usuario}>
-                    <td>{usuario.nombres} {usuario.apellidos}</td>
-                    <td>{usuario.dpi}</td>
-                    <td>{usuario.email}</td>
-                    <td className="usuarios-rol">{usuario.nom_rol ?? '—'}</td>
-                    <td>
+          <>
+            <div className="usuarios-tabla-wrapper">
+              <table className="usuarios-tabla">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>DPI</th>
+                    <th>Correo</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usuariosFiltrados.map((usuario) => (
+                    <tr key={usuario.id_usuario}>
+                      <td>{usuario.nombres} {usuario.apellidos}</td>
+                      <td>{usuario.dpi}</td>
+                      <td>{usuario.email}</td>
+                      <td className="usuarios-rol">{usuario.nom_rol ?? '—'}</td>
+                      <td>
+                        <span className={`usuarios-estado-texto ${usuario.activo ? 'activo' : 'inactivo'}`}>
+                          {usuario.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="usuarios-acciones">
+                        <button className="usuarios-btn-accion" onClick={() => abrirEditar(usuario)}>Editar</button>
+                        <button
+                          className={`usuarios-btn-accion ${usuario.activo ? 'usuarios-btn-desactivar' : 'usuarios-btn-activar'}`}
+                          onClick={() => alternarEstado(usuario)}
+                        >
+                          {usuario.activo ? 'Desactivar' : 'Activar'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="usuarios-cards-mobile">
+              {usuariosFiltrados.map((usuario) => (
+                <div className="usuarios-card-item" key={usuario.id_usuario}>
+                  <div className="usuarios-card-info">
+                    <strong className="usuarios-card-nombre">{usuario.nombres} {usuario.apellidos}</strong>
+                    <span className="usuarios-card-email">{usuario.email}</span>
+                    <div className="usuarios-card-meta">
                       <span className={`usuarios-estado-texto ${usuario.activo ? 'activo' : 'inactivo'}`}>
                         {usuario.activo ? 'Activo' : 'Inactivo'}
                       </span>
-                    </td>
-                    <td className="usuarios-acciones">
-                      <button className="usuarios-btn-accion" onClick={() => abrirEditar(usuario)}>Editar</button>
-                      <button
-                        className={`usuarios-btn-accion ${usuario.activo ? 'usuarios-btn-desactivar' : 'usuarios-btn-activar'}`}
-                        onClick={() => alternarEstado(usuario)}
-                      >
-                        {usuario.activo ? 'Desactivar' : 'Activar'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <span className="usuarios-rol">{usuario.nom_rol ?? '—'}</span>
+                    </div>
+                  </div>
+                  <div className="usuarios-card-acciones">
+                    <button className="usuarios-btn-accion" onClick={() => abrirEditar(usuario)}>Editar</button>
+                    <button
+                      className={`usuarios-btn-accion ${usuario.activo ? 'usuarios-btn-desactivar' : 'usuarios-btn-activar'}`}
+                      onClick={() => alternarEstado(usuario)}
+                    >
+                      {usuario.activo ? 'Desactivar' : 'Activar'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

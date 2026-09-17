@@ -1,11 +1,10 @@
 // Precios fijos de parqueo en quetzales
-// Efectivo: 15 moto, 20 vehículo
-// Pago online: se suma comisión de la API de pagos
+// Efectivo y online: mismo precio
 export const PRECIOS: Record<string, { efectivo: number; online: number }> = {
-  motocicleta: { efectivo: 15, online: 20 },
-  automovil: { efectivo: 20, online: 25 },
-  camioneta: { efectivo: 20, online: 25 },
-  otro: { efectivo: 20, online: 25 },
+  motocicleta: { efectivo: 22, online: 22 },
+  automovil: { efectivo: 27, online: 27 },
+  camioneta: { efectivo: 27, online: 27 },
+  otro: { efectivo: 27, online: 27 },
 };
 
 export function precioPorTipo(tipo: string, metodoPago: 'efectivo' | 'online' = 'efectivo'): number {
