@@ -6,11 +6,13 @@ import { Login } from '../pages/Login';
 import { Registro } from '../pages/Registro';
 import { ForgotPassword } from '../pages/ForgotPassword';
 import { Dashboard } from '../pages/Dashboard';
-import { Placeholder } from '../pages/Placeholder';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
 import { SimuladorPago } from '../pages/PagarParqueo/Simulador';
 import { Guardian } from '../pages/Guardian';
 import { HistorialPagos } from '../pages/HistorialPagos';
+import { RegistrarVehiculo } from '../pages/RegistrarVehiculo';
+import { ValidarParqueo } from '../pages/ValidarParqueo';
+import { ValidarParqueoPublico } from '../pages/ValidarParqueoPublico';
 import { Usuarios } from '../pages/Usuarios';
 import { BuscarVehiculo } from '../pages/BuscarVehiculo';
 import { Parqueo } from '../pages/Parqueo';
@@ -40,6 +42,10 @@ export const router = createHashRouter([
     element: <PagarParqueo />,
   },
   {
+    path: '/validar-parqueo',
+    element: <ValidarParqueoPublico />,
+  },
+  {
     path: '/pagar-parqueo/simulador',
     element: <SimuladorPago />,
   },
@@ -57,8 +63,9 @@ export const router = createHashRouter([
       { path: 'pagos', element: <Pagos /> },
       { path: 'tarifas', element: <Tarifas /> },
       { path: 'reportes', element: <Reportes /> },
-      { path: 'validar', element: <Placeholder titulo="Validar Parqueo" /> },
+      { path: 'validar', element: <ValidarParqueo /> },
       { path: 'historial', element: <HistorialPagos /> },
+      { path: 'mis-vehiculos', element: <RegistrarVehiculo /> },
       { path: 'guardian', element: <Guardian /> },
       { path: 'buscar-vehiculo', element: <BuscarVehiculo /> },
       { path: 'pagar', element: <PagarParqueo /> },

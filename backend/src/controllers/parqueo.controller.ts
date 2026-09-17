@@ -35,3 +35,29 @@ export async function historialPorPlaca(req: Request, res: Response) {
   );
   res.json(historial);
 }
+
+export async function validarPorPlaca(req: Request, res: Response) {
+  const placa = (req.params.placa as string) ?? '';
+  try {
+    const resultado = await parqueoService.validarParqueoPorPlaca(placa);
+    const data = (resultado.data ?? {}) as { estado?: string };
+    const estadosNegocio = new Set(['con_parqueo', 'sin_pago', 'sin_parqueo', 'no_registrada']);
+    const esErrorValidacion = resultado.codigo === 400 && placa.trim() === '';
+    if (esErrorValidacion) {
+      res.status(400).json({ error: resultado.mensaje });
+      return;
+    }
+    if (data.estado && estadosNegocio.has(data.estado)) {
+      res.status(200).json({ mensaje: resultado.mensaje, data: resultado.data });
+      return;
+    }
+    if (resultado.codigo === 200 || resultado.codigo === 402) {
+      res.status(200).json({ mensaje: resultado.mensaje, data: resultado.data });
+      return;
+    }
+    res.status(resultado.codigo).json({ error: resultado.mensaje });
+  } catch (error) {
+    console.error('[Parqueo validar]', error);
+    res.status(500).json({ error: 'No se pudo validar el parqueo. Inténtalo nuevamente.' });
+  }
+}

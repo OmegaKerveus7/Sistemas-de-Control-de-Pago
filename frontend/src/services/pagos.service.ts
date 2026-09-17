@@ -47,7 +47,15 @@ export const pagosService = {
   reporteMensual: () => api.get<FilaReporteMensual[]>('/pagos/reporte-mensual'),
   registrarEfectivo: (data: { placa: string; id_tipo_vehiculo: number }) =>
     api.post<{ id: number; monto: number }>('/pagos/efectivo', data),
-  misPagos: () => api.get<PagoHistorial[]>('/pagos/mis-pagos'),
+  misPagos: (filtros?: { fechaInicio?: string; fechaFin?: string }) =>
+    api.get<PagoHistorial[]>('/pagos/mis-pagos', {
+      params: filtros?.fechaInicio || filtros?.fechaFin
+        ? {
+            ...(filtros.fechaInicio ? { fecha_inicio: filtros.fechaInicio } : {}),
+            ...(filtros.fechaFin ? { fecha_fin: filtros.fechaFin } : {}),
+          }
+        : undefined,
+    }),
   precio: (parqueoId: number) => api.get<PrecioInfo>('/pagos/precio', { params: { parqueo_id: String(parqueoId) } }),
   crear: (data: { parqueo_id: number; monto_esperado: number }) =>
     api.post<{ url_pago: string; referencia: string; modo: 'mock' | 'sandbox' | 'live' }>('/pagos', data),

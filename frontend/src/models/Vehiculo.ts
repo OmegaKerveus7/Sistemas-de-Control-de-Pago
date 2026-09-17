@@ -1,4 +1,14 @@
-export type TipoVehiculo = 'moto' | 'carro' | 'camioneta';
+export interface Marca {
+  id_marca: number;
+  nombre: string;
+}
+
+export interface TipoVehiculoCatalogo {
+  id_tipo: number;
+  nombre: string;
+  precio_efectivo: number;
+  precio_linea: number;
+}
 
 export interface Vehiculo {
   placa: string;
@@ -7,6 +17,8 @@ export interface Vehiculo {
   id_marca?: number;
   color?: string;
   activo?: boolean;
+  tipo?: string;
+  marca?: string;
 }
 
 export interface VehiculoConDueno {
@@ -21,4 +33,9 @@ export interface VehiculoConDueno {
   dueno_apellidos: string | null;
   dueno_dpi: string | null;
   dueno_email: string | null;
+}
+
+export interface ResultadoVehiculo {
+  mensaje?: string;
+  data?: unknown;
 }

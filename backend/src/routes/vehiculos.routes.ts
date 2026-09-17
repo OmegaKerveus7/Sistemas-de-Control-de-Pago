@@ -9,6 +9,8 @@ const soloPersonal = verificarRol('administrador', 'cobrador', 'guardia');
 vehiculosRouter.get('/', verificarToken, soloPersonal, vehiculosController.listar);
 vehiculosRouter.get('/buscar', verificarToken, soloPersonal, vehiculosController.buscar);
 vehiculosRouter.get('/placa/:placa', verificarToken, soloPersonal, vehiculosController.obtenerPorPlaca);
+vehiculosRouter.get('/tipos', verificarToken, vehiculosController.listarTiposVehiculo);
+vehiculosRouter.get('/marcas', verificarToken, vehiculosController.marcasPorTipo);
 vehiculosRouter.get('/usuario/:idUsuario', verificarToken, vehiculosController.vehiculosPorUsuario);
 vehiculosRouter.post('/', verificarToken, vehiculosController.crear);
 vehiculosRouter.put('/:id', verificarToken, vehiculosController.actualizar);

@@ -2,6 +2,24 @@ import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
 import type { Vehiculo, VehiculoConDueno } from '../models';
 
+export interface ResultadoSP {
+  codigo: number;
+  mensaje: string;
+  data: unknown;
+}
+
+export interface Marca {
+  id_marca: number;
+  nombre: string;
+}
+
+export interface TipoVehiculoCatalogo {
+  id_tipo: number;
+  nombre: string;
+  precio_efectivo: number;
+  precio_linea: number;
+}
+
 export async function listar(): Promise<VehiculoConDueno[]> {
   const pool = getPool();
   const [results] = await pool.query('CALL sp_vehiculos_listar()');
@@ -33,50 +51,118 @@ export async function buscar(filtro: string): Promise<VehiculoConDueno[]> {
   return rows;
 }
 
-export async function crear(data: Vehiculo): Promise<string> {
-  const pool = getPool();
-  await pool.execute(
-    `INSERT INTO Vehiculos (placa, id_usuario, id_tipo, id_marca, color, activo)
-     VALUES (?, ?, ?, ?, ?, 1)`,
-    [
-      data.placa.toUpperCase(),
-      data.id_usuario,
-      data.id_tipo,
-      data.id_marca ?? null,
-      data.color ?? null,
-    ],
-  );
-  return data.placa.toUpperCase();
+export async function crear(
+  data: Vehiculo,
+  idUsuarioAccion: number,
+  ip: string,
+): Promise<ResultadoSP> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.query(
+      'CALL sp_vehiculos_crear(?, ?, ?, ?, ?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      [
+        data.placa.toUpperCase(),
+        data.id_usuario,
+        data.id_tipo,
+        data.id_marca ?? null,
+        data.color ?? null,
+        idUsuarioAccion,
+        ip,
+      ],
+    );
+    const [rows] = await conn.query(
+      'SELECT @pcodigo_s AS pcodigo_s, @pmensaje AS pmensaje, @pdata AS pdata',
+    );
+    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    return {
+      codigo: fila?.pcodigo_s ?? 500,
+      mensaje: fila?.pmensaje ?? 'Error interno',
+      data: fila?.pdata ? JSON.parse(fila.pdata) : null,
+    };
+  } finally {
+    conn.release();
+  }
 }
 
-export async function actualizar(placa: string, data: Partial<Vehiculo>): Promise<boolean> {
-  const pool = getPool();
-  const sets: string[] = [];
-  const values: Array<string | number | null> = [];
-
-  if (data.id_usuario !== undefined) { sets.push('id_usuario = ?'); values.push(data.id_usuario); }
-  if (data.id_tipo !== undefined) { sets.push('id_tipo = ?'); values.push(data.id_tipo); }
-  if (data.id_marca !== undefined) { sets.push('id_marca = ?'); values.push(data.id_marca); }
-  if (data.color !== undefined) { sets.push('color = ?'); values.push(data.color); }
-  if (data.activo !== undefined) { sets.push('activo = ?'); values.push(data.activo ? 1 : 0); }
-
-  if (sets.length === 0) return false;
-  values.push(placa.toUpperCase());
-
-  const [result] = await pool.execute<ResultSetHeader>(
-    `UPDATE Vehiculos SET ${sets.join(', ')} WHERE UPPER(placa) = ?`,
-    values,
-  );
-  return result.affectedRows > 0;
+export async function actualizar(
+  placa: string,
+  data: Partial<Vehiculo>,
+  idUsuarioAccion: number,
+  ip: string,
+): Promise<ResultadoSP> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.query(
+      'CALL sp_vehiculos_actualizar(?, ?, ?, ?, ?, ?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      [
+        placa.toUpperCase(),
+        data.id_usuario ?? null,
+        data.id_tipo ?? null,
+        data.id_marca ?? null,
+        data.color ?? null,
+        data.activo === undefined ? null : data.activo ? 1 : 0,
+        idUsuarioAccion,
+        ip,
+      ],
+    );
+    const [rows] = await conn.query(
+      'SELECT @pcodigo_s AS pcodigo_s, @pmensaje AS pmensaje, @pdata AS pdata',
+    );
+    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    return {
+      codigo: fila?.pcodigo_s ?? 500,
+      mensaje: fila?.pmensaje ?? 'Error interno',
+      data: fila?.pdata ? JSON.parse(fila.pdata) : null,
+    };
+  } finally {
+    conn.release();
+  }
 }
 
-export async function eliminar(placa: string): Promise<boolean> {
+export async function eliminar(
+  placa: string,
+  idUsuarioAccion: number,
+  ip: string,
+): Promise<ResultadoSP> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.query(
+      'CALL sp_vehiculos_desactivar(?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      [placa.toUpperCase(), idUsuarioAccion, ip],
+    );
+    const [rows] = await conn.query(
+      'SELECT @pcodigo_s AS pcodigo_s, @pmensaje AS pmensaje, @pdata AS pdata',
+    );
+    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    return {
+      codigo: fila?.pcodigo_s ?? 500,
+      mensaje: fila?.pmensaje ?? 'Error interno',
+      data: fila?.pdata ? JSON.parse(fila.pdata) : null,
+    };
+  } finally {
+    conn.release();
+  }
+}
+
+/** Catálogo de tipos de vehículo desde la tabla Tipo_vehiculo. */
+export async function listarTiposVehiculo(): Promise<TipoVehiculoCatalogo[]> {
   const pool = getPool();
-  const [result] = await pool.execute<ResultSetHeader>(
-    'UPDATE Vehiculos SET activo = 0 WHERE UPPER(placa) = ?',
-    [placa.toUpperCase()],
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT id_tipo, nombre, precio_efectivo, precio_linea FROM Tipo_vehiculo ORDER BY id_tipo',
   );
-  return result.affectedRows > 0;
+  return rows as unknown as TipoVehiculoCatalogo[];
+}
+
+/** Marcas agrupadas por tipo de vehículo usando la vista v_marcas_por_tipo. */
+export async function marcasPorTipo(): Promise<Array<{ tipo_vehiculo: string; marcas: Marca[] }>> {
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT tipo_vehiculo, marcas FROM v_marcas_por_tipo',
+  );
+  return rows.map((r) => ({
+    tipo_vehiculo: String(r.tipo_vehiculo),
+    marcas: typeof r.marcas === 'string' ? JSON.parse(r.marcas) : (r.marcas as Marca[]),
+  }));
 }
 
 /** Obtener vehículos de un usuario (por id_usuario en la tabla Vehiculos). */

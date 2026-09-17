@@ -123,6 +123,40 @@ export async function listarPorUsuario(idUsuario: number): Promise<PagoHistorial
   return rows as PagoHistorial[];
 }
 
+/** Historial de pagos del usuario vía SP sp_historial_pagos_usuario (con info anidada del vehículo, ticket y parqueo). */
+export async function historialUsuario(
+  idUsuario: number,
+  fechaInicio?: string | null,
+  fechaFin?: string | null,
+): Promise<{ codigo: number; mensaje: string; data: PagoHistorial[] }> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.query(
+      'CALL sp_historial_pagos_usuario(?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      [idUsuario, fechaInicio ?? null, fechaFin ?? null],
+    );
+    const [rows] = await conn.query(
+      'SELECT @pcodigo_s AS pcodigo_s, @pmensaje AS pmensaje, @pdata AS pdata',
+    );
+    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    const rawData = fila?.pdata;
+    let data: PagoHistorial[] = [];
+    if (typeof rawData === 'string' && rawData.trim() && rawData !== 'null') {
+      try { data = JSON.parse(rawData) as PagoHistorial[]; }
+      catch { data = []; }
+    } else if (Array.isArray(rawData)) {
+      data = rawData as PagoHistorial[];
+    }
+    return {
+      codigo: fila?.pcodigo_s ?? 500,
+      mensaje: fila?.pmensaje ?? 'Error interno',
+      data,
+    };
+  } finally {
+    conn.release();
+  }
+}
+
 export interface DatosPagoEfectivo {
   placa: string;
   id_tipo_vehiculo: number;

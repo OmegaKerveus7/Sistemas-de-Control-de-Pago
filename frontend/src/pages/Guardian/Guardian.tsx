@@ -48,6 +48,14 @@ function limiteBusqueda(tipo: TipoBusqueda): number {
 
 const REGEX_PLACA = /^([PM])\d{3}[A-Z]{3}$/;
 
+const QR_VEHICULO_PREFIX = 'BELEN-VEH|v1|';
+
+function extraerPlacaDeQrVehiculo(texto: string): string | null {
+  if (!texto.startsWith(QR_VEHICULO_PREFIX)) return null;
+  const candidata = texto.slice(QR_VEHICULO_PREFIX.length).trim().toUpperCase();
+  return REGEX_PLACA.test(candidata) ? candidata : null;
+}
+
 function detectarTipoVehiculo(placa: string): 'carro' | 'moto' | null {
   const coincidencia = REGEX_PLACA.exec(placa.trim().toUpperCase());
   if (!coincidencia) return null;
@@ -138,6 +146,21 @@ export function Guardian() {
             if (procesandoQr.current) return;
             procesandoQr.current = true;
             setLectorActivo(false);
+
+            const placa = extraerPlacaDeQrVehiculo(texto);
+            if (placa) {
+              setPlacaEntrada(placa);
+              setTipoBusqueda('placa');
+              setValorBusqueda('');
+              setVehiculo(null);
+              setMensaje({
+                tipo: 'exito',
+                texto: `QR de vehículo detectado: ${placa}. Confirma la entrada o ajusta la placa.`,
+              });
+              procesandoQr.current = false;
+              return;
+            }
+
             setTipoBusqueda('qr');
             setValorBusqueda(texto);
             void consultarVehiculo({ qr: texto }).finally(() => { procesandoQr.current = false; });
@@ -308,7 +331,9 @@ export function Guardian() {
             <button type="button" className="guardian-button guardian-button-camera" onClick={() => setLectorActivo((activo) => !activo)} disabled={buscando}>
               {lectorActivo ? 'Cerrar cámara' : '▣ Escanear QR con cámara'}
             </button>
-            <span>Referencia: código del comprobante de pago; sirve para buscar una salida sin placa ni ticket.</span>
+            <span>
+              Escanea el QR del vehículo del usuario para llenar la placa automáticamente, o usa la cámara/búsqueda para localizar una salida por referencia de pago.
+            </span>
           </div>
           {lectorActivo && <div className="guardian-qr-reader-wrap"><div id="guardian-qr-reader" /><p>Enfoca el código QR. La cámara se cerrará al detectarlo.</p></div>}
 

@@ -1,0 +1,365 @@
+.mis-vehiculos-page {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.mis-vehiculos-header {
+  margin-bottom: 20px;
+}
+
+.mis-vehiculos-title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--belen-azul, #1A237E);
+  margin-bottom: 8px;
+}
+
+.mis-vehiculos-subtitle {
+  font-size: 0.95rem;
+  color: var(--color-texto-secundario, #475569);
+}
+
+.mis-vehiculos-card {
+  background: #ffffff;
+  border: 1px solid var(--color-borde, #E8E2D0);
+  border-radius: var(--radio-md, 12px);
+  box-shadow: var(--sombra-md, 0 4px 16px -2px rgba(26, 35, 126, 0.08));
+  padding: 22px;
+  margin-bottom: 22px;
+}
+
+.mis-vehiculos-card h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--belen-azul, #1A237E);
+  margin-bottom: 14px;
+}
+
+.mis-vehiculos-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.mis-vehiculos-form-grid .form-group {
+  margin-bottom: 0;
+}
+
+.mis-vehiculos-form-grid .form-group.span-2 {
+  grid-column: 1 / -1;
+}
+
+.mis-vehiculos-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.mis-vehiculos-mensaje {
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.mis-vehiculos-mensaje.exito {
+  background: rgba(34, 164, 93, 0.12);
+  color: #15803d;
+  border: 1px solid rgba(34, 164, 93, 0.3);
+}
+
+.mis-vehiculos-mensaje.error {
+  background: rgba(198, 40, 40, 0.1);
+  color: var(--belen-rojo, #C62828);
+  border: 1px solid rgba(198, 40, 40, 0.3);
+}
+
+.mis-vehiculos-ayuda {
+  font-size: 0.78rem;
+  color: var(--color-texto-secundario, #475569);
+  margin-top: 4px;
+}
+
+.mis-vehiculos-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mis-vehiculos-lista-vacia {
+  color: var(--color-texto-secundario, #475569);
+  font-size: 0.9rem;
+  padding: 30px 0;
+  text-align: center;
+}
+
+.mis-vehiculos-item {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid var(--color-borde, #E8E2D0);
+  border-radius: var(--radio-md, 12px);
+  box-shadow: var(--sombra-sm, 0 1px 2px rgba(26, 35, 126, 0.05));
+}
+
+.mis-vehiculos-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mis-vehiculos-item-placa {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--belen-azul, #1A237E);
+  letter-spacing: 0.04em;
+}
+
+.mis-vehiculos-item-detalle {
+  font-size: 0.85rem;
+  color: var(--color-texto-secundario, #475569);
+}
+
+.mis-vehiculos-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(34, 164, 93, 0.12);
+  color: #15803d;
+  width: fit-content;
+}
+
+.mis-vehiculos-estado.inactivo {
+  background: rgba(100, 116, 139, 0.15);
+  color: #475569;
+}
+
+.mis-vehiculos-qr-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.mis-vehiculos-qr-svg {
+  background: #ffffff;
+  padding: 6px;
+  border: 1px solid var(--color-borde, #E8E2D0);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mis-vehiculos-qr-svg svg {
+  display: block;
+}
+
+.mis-vehiculos-qr-acciones {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mis-vehiculos-qr-block .mis-vehiculos-ayuda {
+  text-align: center;
+  max-width: 220px;
+  margin-top: 2px;
+}
+
+.mis-vehiculos-item-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  min-width: 110px;
+}
+
+.mis-vehiculos-btn-eliminar {
+  background: transparent;
+  border: 1px solid rgba(198, 40, 40, 0.4);
+  color: var(--belen-rojo, #C62828);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.mis-vehiculos-btn-eliminar:hover {
+  background: rgba(198, 40, 40, 0.08);
+}
+
+.mis-vehiculos-btn-eliminar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mis-vehiculos-btn-primary {
+  background: var(--belen-azul, #1A237E);
+  color: #ffffff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.05s ease;
+}
+
+.mis-vehiculos-btn-primary:hover {
+  background: #0f1659;
+}
+
+.mis-vehiculos-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mis-vehiculos-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--color-borde, #E8E2D0);
+  color: var(--belen-azul, #1A237E);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.mis-vehiculos-btn-secondary:hover {
+  background: rgba(26, 35, 126, 0.05);
+  border-color: var(--belen-azul, #1A237E);
+}
+
+.mis-vehiculos-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mis-vehiculos-bloque-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: rgba(26, 35, 126, 0.05);
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.mis-vehiculos-bloque-info span {
+  color: var(--color-texto-secundario, #475569);
+}
+
+.mis-vehiculos-bloque-info strong {
+  color: var(--belen-azul, #1A237E);
+}
+
+.tarifas-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 22, 89, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.tarifas-modal {
+  width: 100%;
+  max-width: 460px;
+  background: #ffffff;
+  padding: 22px;
+}
+
+.tarifas-modal-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--belen-azul, #1A237E);
+  margin-bottom: 14px;
+}
+
+.tarifas-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tarifas-modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.tarifas-btn-cancelar {
+  background: transparent;
+  border: 1px solid var(--color-borde, #E8E2D0);
+  color: var(--color-texto-secundario, #475569);
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.tarifas-btn-guardar {
+  background: var(--belen-azul, #1A237E);
+  color: #ffffff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.tarifas-btn-guardar:disabled,
+.tarifas-btn-cancelar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.alerta {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+}
+
+.alerta-error {
+  background: rgba(198, 40, 40, 0.1);
+  color: var(--belen-rojo, #C62828);
+  border: 1px solid rgba(198, 40, 40, 0.3);
+}
+
+@media (max-width: 720px) {
+  .mis-vehiculos-item {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .mis-vehiculos-item-info,
+  .mis-vehiculos-qr-block,
+  .mis-vehiculos-item-acciones {
+    align-items: center;
+    justify-items: center;
+  }
+  .mis-vehiculos-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

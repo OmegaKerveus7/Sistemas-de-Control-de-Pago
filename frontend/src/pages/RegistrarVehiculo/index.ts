@@ -1,0 +1,1 @@
+export { RegistrarVehiculo } from './RegistrarVehiculo';

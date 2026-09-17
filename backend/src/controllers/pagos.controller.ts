@@ -83,5 +83,22 @@ export async function reporteDetallado(req: Request, res: Response) {
 export async function misPagos(req: Request, res: Response) {
   const usuario = (req as AuthRequest).usuario;
   if (!usuario) { res.status(401).json({ error: 'No autenticado' }); return; }
-  res.json(await pagosService.listarPorUsuario(usuario.id));
+
+  const fechaInicio = typeof req.query.fecha_inicio === 'string' && req.query.fecha_inicio.trim()
+    ? req.query.fecha_inicio.trim()
+    : null;
+  const fechaFin = typeof req.query.fecha_fin === 'string' && req.query.fecha_fin.trim()
+    ? req.query.fecha_fin.trim()
+    : null;
+
+  const resultado = await pagosService.historialUsuario(usuario.id, fechaInicio, fechaFin);
+  if (resultado.codigo === 404) {
+    res.status(200).json([]);
+    return;
+  }
+  if (resultado.codigo >= 400) {
+    res.status(resultado.codigo).json({ error: resultado.mensaje });
+    return;
+  }
+  res.json(resultado.data);
 }

@@ -1,7 +1,6 @@
 import { getPool } from '../config/database';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { Parqueo } from '../models';
-
 export async function listar(): Promise<Parqueo[]> {
   const pool = getPool();
   const [rows] = await pool.query(
@@ -94,4 +93,65 @@ export async function historialPorPlaca(
     [placa.toUpperCase(), fechaInicio, fechaFin],
   );
   return (rows as Parqueo[] & RowDataPacket[]);
+}
+
+export interface ResultadoValidarParqueoSP {
+  codigo: number;
+  mensaje: string;
+  data: unknown;
+}
+
+/** Verifica si una placa tiene cualquier registro en el sistema (Vehiculos o Tickets históricos). */
+export async function placaExiste(placa: string): Promise<boolean> {
+  const limpia = placa.trim().toUpperCase();
+  if (!/^[PM][0-9]{3}[A-Z]{3}$/.test(limpia)) return false;
+  const pool = getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT
+       (SELECT COUNT(*) FROM Vehiculos WHERE UPPER(placa) = ?) +
+       (SELECT COUNT(*) FROM Tickets WHERE UPPER(placa) = ?) AS total`,
+    [limpia, limpia],
+  );
+  return Number(rows[0]?.total ?? 0) > 0;
+}
+
+/**
+ * Llama al SP sp_validar_parqueo_por_placa. Es público: solo requiere la placa,
+ * no necesita autenticación. La autorización de salida la decide siempre el guardia.
+ */
+export async function validarParqueoPorPlaca(
+  placa: string,
+): Promise<ResultadoValidarParqueoSP> {
+  const limpia = placa.trim().toUpperCase();
+  if (!/^[PM][0-9]{3}[A-Z]{3}$/.test(limpia)) {
+    return {
+      codigo: 400,
+      mensaje: 'Placa inválida. Debe iniciar con P o M, seguido de 3 números y 3 letras.',
+      data: null,
+    };
+  }
+  const conn = await getPool().getConnection();
+  try {
+    await conn.query(
+      'CALL sp_validar_parqueo_por_placa(?, @pcodigo_s, @pmensaje, @pdata)',
+      [limpia],
+    );
+    const [rows] = await conn.query(
+      'SELECT @pcodigo_s AS pcodigo_s, @pmensaje AS pmensaje, @pdata AS pdata',
+    );
+    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    const rawData = fila?.pdata;
+    let data: unknown = null;
+    if (typeof rawData === 'string' && rawData.trim() && rawData !== 'null') {
+      try { data = JSON.parse(rawData); }
+      catch { data = rawData; }
+    }
+    return {
+      codigo: fila?.pcodigo_s ?? 500,
+      mensaje: fila?.pmensaje ?? 'Error interno',
+      data,
+    };
+  } finally {
+    conn.release();
+  }
 }
