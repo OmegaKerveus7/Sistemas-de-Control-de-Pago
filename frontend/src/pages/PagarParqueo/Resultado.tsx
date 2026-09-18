@@ -6,7 +6,8 @@ import './PagarParqueo.css';
 
 export function ResultadoPago() {
   const [params] = useSearchParams();
-  const ruta = useLocation().pathname;
+  const location = useLocation();
+  const ruta = location.pathname;
   const integrado = ruta.startsWith('/app/');
   const volver = integrado ? ruta.replace(/\/resultado$/, '') : '/pagar-parqueo';
   const referencia = params.get('referencia') || '';
@@ -40,7 +41,10 @@ export function ResultadoPago() {
     return () => { activo = false; clearTimeout(timer); };
   }, [referencia, usuario, revision]);
 
-  if (!usuario) return <Navigate to={`/login?redirect=${encodeURIComponent(`/pagar-parqueo/resultado?${params.toString()}`)}`} replace />;
+  if (!usuario) {
+    const redirect = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
+  }
 
   const estado = cargando ? 'verificando' : error ? 'error' : resultado?.aprobado ? 'aprobado'
     : resultado?.estado === 'reembolsado' ? 'reembolsado' : resultado?.estado === 'fallido' ? 'rechazado' : 'pendiente';

@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { parqueoService, type Parqueo } from '../../services/parqueo.service';
 import { pagosService, type PrecioInfo } from '../../services/pagos.service';
+import { vehiculosService } from '../../services/vehiculos.service';
+import type { Vehiculo } from '../../models';
 import './PagarParqueo.css';
 import { FormularioRecurrente } from './FormularioRecurrente';
 
@@ -24,7 +26,8 @@ function detectarTipoVehiculo(placa: string): TipoVehiculo | null {
 export function PagarParqueo() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
-  const integrado = useLocation().pathname.startsWith('/app/');
+  const location = useLocation();
+  const integrado = location.pathname.startsWith('/app/');
   const [params] = useSearchParams();
 
   const [placa, setPlaca] = useState(() => (params.get('placa') || '').toUpperCase());
@@ -35,9 +38,21 @@ export function PagarParqueo() {
   const [loading, setLoading] = useState(false);
   const [cargandoPago, setCargandoPago] = useState(false);
   const [checkout, setCheckout] = useState<{ url_pago: string; referencia: string } | null>(null);
+  const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
+
+  useEffect(() => {
+    if (!usuario) return;
+    let activo = true;
+    vehiculosService
+      .vehiculosPorUsuario(usuario.id)
+      .then((data) => { if (activo) setVehiculos(data.filter((v) => v.activo !== false)); })
+      .catch(() => { if (activo) setVehiculos([]); });
+    return () => { activo = false; };
+  }, [usuario]);
 
   if (!usuario) {
-    return <Navigate to="/login?redirect=/pagar-parqueo" replace />;
+    const redirect = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
 
   const buscar = async (e: FormEvent<HTMLFormElement>) => {
@@ -109,32 +124,52 @@ export function PagarParqueo() {
         {error && <div className="pagar-alerta pagar-alerta-error" role="alert">{error}</div>}
 
         {!parqueo || !precio ? (
-          <form className="pagar-card" onSubmit={buscar}>
-            <label className="pagar-label" htmlFor="placa">Placa del vehículo</label>
-            <input
-              id="placa"
-              className="pagar-input"
-              placeholder="Ej. P123ABC"
-              value={placa}
-              onChange={(e) => setPlaca(e.target.value.toUpperCase())}
-              disabled={loading}
-              maxLength={7}
-            />
-
-            {placa && (
-              tipo ? (
-                <p className="pagar-tipo-detectado">Tipo detectado: <strong>{ETIQUETAS[tipo]}</strong></p>
-              ) : (
-                <p className="pagar-tipo-detectado pagar-tipo-detectado-error">
-                  La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras.
-                </p>
-              )
+          <>
+            {vehiculos.length > 0 && (
+              <div className="pagar-mis-vehiculos">
+                <span className="pagar-mis-vehiculos-titulo">Mis vehículos registrados</span>
+                <div className="pagar-mis-vehiculos-lista">
+                  {vehiculos.map((v) => (
+                    <button
+                      key={v.placa}
+                      type="button"
+                      className={`pagar-chip${placa === v.placa ? ' pagar-chip-activo' : ''}`}
+                      onClick={() => setPlaca(v.placa)}
+                      disabled={loading}
+                    >
+                      {v.placa}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
+            <form className="pagar-card" onSubmit={buscar}>
+              <label className="pagar-label" htmlFor="placa">Placa del vehículo</label>
+              <input
+                id="placa"
+                className="pagar-input"
+                placeholder="Ej. P123ABC"
+                value={placa}
+                onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+                disabled={loading}
+                maxLength={7}
+              />
 
-            <button type="submit" className="pagar-button" disabled={loading || !tipo}>
-              {loading ? 'Consultando...' : 'Consultar mi parqueo'}
-            </button>
-          </form>
+              {placa && (
+                tipo ? (
+                  <p className="pagar-tipo-detectado">Tipo detectado: <strong>{ETIQUETAS[tipo]}</strong></p>
+                ) : (
+                  <p className="pagar-tipo-detectado pagar-tipo-detectado-error">
+                    La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras.
+                  </p>
+                )
+              )}
+
+              <button type="submit" className="pagar-button" disabled={loading || !tipo}>
+                {loading ? 'Consultando...' : 'Consultar mi parqueo'}
+              </button>
+            </form>
+          </>
         ) : (
           <div className={checkout ? 'pagar-checkout-layout' : undefined}>
           <div className="pagar-card pagar-resumen">

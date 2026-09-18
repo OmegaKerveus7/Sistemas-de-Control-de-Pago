@@ -111,6 +111,46 @@
   color: #b3261e;
 }
 
+.pagar-mis-vehiculos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto 12px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+.pagar-integrado .pagar-mis-vehiculos { padding: 0; max-width: none; margin-bottom: 12px; }
+.pagar-mis-vehiculos-titulo {
+  font-size: .8rem;
+  color: #5a6472;
+  font-weight: 600;
+}
+.pagar-mis-vehiculos-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pagar-chip {
+  border: 1px solid #cfd6e0;
+  background: #fff;
+  color: #1b2a41;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: .04em;
+}
+.pagar-chip:hover:not(:disabled) { background: #f4f6fa; }
+.pagar-chip:disabled { opacity: .6; cursor: not-allowed; }
+.pagar-chip-activo {
+  background: #2f6f4f;
+  border-color: #2f6f4f;
+  color: #fff;
+}
+
 .pagar-button {
   width: 100%;
   padding: 12px;
