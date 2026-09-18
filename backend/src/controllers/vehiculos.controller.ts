@@ -28,9 +28,13 @@ export async function obtenerPorPlaca(req: Request, res: Response) {
 }
 
 export async function buscar(req: Request, res: Response) {
-  const q = req.query.q as string;
-  if (!q) { res.status(400).json({ error: 'Parámetro de búsqueda requerido' }); return; }
-  res.json(await vehiculosService.buscar(q));
+  const placa = typeof req.query.q === 'string' ? req.query.q.trim().toUpperCase() : '';
+  if (!placa) { res.status(400).json({ error: 'La placa es requerida' }); return; }
+  if (!/^[PM]\d{3}[A-Z]{3}$/.test(placa)) {
+    res.status(400).json({ error: 'La placa debe tener el formato P123ABC o M123ABC' });
+    return;
+  }
+  res.json(await vehiculosService.buscar(placa));
 }
 
 export async function crear(req: Request, res: Response) {

@@ -62,6 +62,12 @@ function detectarTipoVehiculo(placa: string): 'carro' | 'moto' | null {
   return coincidencia[1] === 'P' ? 'carro' : 'moto';
 }
 
+function lugarCompatibleConTipo(lugar: LugarGuardian, tipo: 'carro' | 'moto' | null): boolean {
+  if (!tipo || !lugar.tipo_permitido) return true;
+  const permitido = lugar.tipo_permitido.toLowerCase();
+  return tipo === 'moto' ? permitido.includes('moto') : !permitido.includes('moto');
+}
+
 function placeholderBusqueda(tipo: TipoBusqueda): string {
   if (tipo === 'placa') return 'P123ABC';
   if (tipo === 'ticket') return 'TK-...';
@@ -74,6 +80,8 @@ export function Guardian() {
   const [lugares, setLugares] = useState<LugarGuardian[]>([]);
   const [cargandoMapa, setCargandoMapa] = useState(true);
   const [placaEntrada, setPlacaEntrada] = useState('');
+  const [zonaEntrada, setZonaEntrada] = useState('');
+  const [lugarEntrada, setLugarEntrada] = useState('');
   const [registrandoEntrada, setRegistrandoEntrada] = useState(false);
   const [tipoBusqueda, setTipoBusqueda] = useState<TipoBusqueda>('placa');
   const [valorBusqueda, setValorBusqueda] = useState('');
@@ -85,6 +93,35 @@ export function Guardian() {
   const procesandoQr = useRef(false);
 
   const tipoDetectado = useMemo(() => detectarTipoVehiculo(placaEntrada), [placaEntrada]);
+  const ocupadosAnteriores = numero(resumen?.ocupados_anteriores);
+  const ocupadosAnterioresPorZona = useMemo(() => {
+    const agrupados = new Map<string, string[]>();
+    for (const ocupacion of resumen?.ocupados_anteriores_detalle ?? []) {
+      const lugaresZona = agrupados.get(ocupacion.zona) ?? [];
+      lugaresZona.push(ocupacion.lugar);
+      agrupados.set(ocupacion.zona, lugaresZona);
+    }
+    return [...agrupados.entries()];
+  }, [resumen]);
+  const zonasEntrada = useMemo(() => {
+    const zonas = new Map<number, string>();
+    for (const lugar of lugares) zonas.set(Number(lugar.zona_id), lugar.zona);
+    return [...zonas.entries()];
+  }, [lugares]);
+  const lugaresEntradaDisponibles = useMemo(() => {
+    if (!zonaEntrada) return [];
+    return lugares.filter((lugar) =>
+      String(lugar.zona_id) === zonaEntrada
+      && lugar.estado === 'disponible'
+      && lugarCompatibleConTipo(lugar, tipoDetectado),
+    );
+  }, [lugares, zonaEntrada, tipoDetectado]);
+
+  useEffect(() => {
+    if (lugarEntrada && !lugaresEntradaDisponibles.some((lugar) => String(lugar.id) === lugarEntrada)) {
+      setLugarEntrada('');
+    }
+  }, [lugarEntrada, lugaresEntradaDisponibles]);
 
   const cargarEstado = useCallback(async (silencioso = false) => {
     if (!silencioso) setCargandoMapa(true);
@@ -210,8 +247,14 @@ export function Guardian() {
     setRegistrandoEntrada(true);
     setMensaje(null);
     try {
-      const resultado = await guardianService.entrada(placa);
+      const resultado = await guardianService.entrada({
+        placa,
+        ...(zonaEntrada ? { zona_id: Number(zonaEntrada) } : {}),
+        ...(lugarEntrada ? { lugar_id: Number(lugarEntrada) } : {}),
+      });
       setPlacaEntrada('');
+      setZonaEntrada('');
+      setLugarEntrada('');
       setMensaje({
         tipo: 'exito',
         texto: `Entrada registrada: ${resultado.placa} asignado a ${resultado.lugar.numero} (${resultado.lugar.zona}). Ticket ${resultado.ticket}.${resultado.es_externo ? ' Vehículo registrado como visitante.' : ''}`,
@@ -270,6 +313,26 @@ export function Guardian() {
         </div>
       )}
 
+      {ocupadosAnteriores > 0 && (
+        <div className="guardian-carryover-alert" role="alert">
+          <div>
+            <strong>
+              {ocupadosAnteriores === 1
+                ? 'Hay 1 espacio que todavía no ha sido desocupado.'
+                : `Hay ${ocupadosAnteriores} espacios que todavía no han sido desocupados.`}
+            </strong>
+            <p>Corresponden a vehículos que ingresaron antes del día de hoy.</p>
+            <ul className="guardian-carryover-places">
+              {ocupadosAnterioresPorZona.map(([zona, lugaresZona]) => (
+                <li key={zona}>
+                  <span>{zona}:</span> <strong>{lugaresZona.join(', ')}</strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       <div className="guardian-summary" aria-live="polite">
         <article className="guardian-stat guardian-stat-total"><span>Total</span><strong>{numero(resumen?.total)}</strong></article>
         <article className="guardian-stat guardian-stat-free"><span>Disponibles</span><strong>{numero(resumen?.disponibles)}</strong></article>
@@ -278,7 +341,7 @@ export function Guardian() {
 
       <div className="guardian-workspace">
         <article className="guardian-card guardian-entry-card">
-          <div className="guardian-card-title"><span>🚗</span><div><h2>Registrar entrada</h2><p>La asignación es automática según el tipo del vehículo y la disponibilidad.</p></div></div>
+          <div className="guardian-card-title"><div><h2>Registrar entrada</h2><p>Selecciona un parqueo y espacio, o deja la ubicación automática.</p></div></div>
           <form onSubmit={registrarEntrada} className="guardian-form">
             <label htmlFor="placa-entrada">Placa del vehículo</label>
             <input
@@ -301,15 +364,48 @@ export function Guardian() {
                 </p>
               )
             )}
-            <button className="guardian-button guardian-button-primary" disabled={registrandoEntrada || !tipoDetectado}>
-              {registrandoEntrada ? 'Registrando...' : 'Registrar y asignar lugar'}
+            <label htmlFor="zona-entrada">Parqueo</label>
+            <select
+              id="zona-entrada"
+              value={zonaEntrada}
+              onChange={(event) => {
+                setZonaEntrada(event.target.value);
+                setLugarEntrada('');
+              }}
+              disabled={registrandoEntrada}
+            >
+              <option value="">Cualquier parqueo (aleatorio)</option>
+              {zonasEntrada.map(([id, zona]) => <option key={id} value={id}>{zona}</option>)}
+            </select>
+            <label htmlFor="lugar-entrada">Espacio</label>
+            <select
+              id="lugar-entrada"
+              value={lugarEntrada}
+              onChange={(event) => setLugarEntrada(event.target.value)}
+              disabled={registrandoEntrada || !zonaEntrada}
+            >
+              <option value="">
+                {zonaEntrada ? 'Cualquier espacio disponible (aleatorio)' : 'Selecciona primero un parqueo'}
+              </option>
+              {lugaresEntradaDisponibles.map((lugar) => (
+                <option key={lugar.id} value={lugar.id}>{lugar.lugar}</option>
+              ))}
+            </select>
+            {zonaEntrada && lugaresEntradaDisponibles.length === 0 && (
+              <p className="guardian-location-empty">No hay espacios disponibles compatibles en este parqueo.</p>
+            )}
+            <button
+              className="guardian-button guardian-button-primary"
+              disabled={registrandoEntrada || !tipoDetectado || (!!zonaEntrada && lugaresEntradaDisponibles.length === 0)}
+            >
+              {registrandoEntrada ? 'Registrando...' : lugarEntrada ? 'Registrar en el espacio seleccionado' : 'Registrar y asignar al azar'}
             </button>
           </form>
-          <p className="guardian-hint">Si no existe previamente, se registra como visitante para esta entrada. Una placa ya registrada conserva su tipo original.</p>
+          <p className="guardian-hint">Si no eliges ubicación, el sistema asignará un espacio compatible al azar. Si seleccionas solo el parqueo, buscará al azar dentro de ese parqueo.</p>
         </article>
 
         <article className="guardian-card guardian-exit-card">
-          <div className="guardian-card-title"><span>🛡️</span><div><h2>Validar salida</h2><p>Busca por placa, ticket, referencia o QR para confirmar la salida del vehículo.</p></div></div>
+          <div className="guardian-card-title"><div><h2>Validar salida</h2><p>Busca por placa, ticket, referencia o QR para confirmar la salida del vehículo.</p></div></div>
           <form onSubmit={buscarVehiculo} className="guardian-search-row">
             <select aria-label="Tipo de búsqueda" value={tipoBusqueda} onChange={(event) => setTipoBusqueda(event.target.value as TipoBusqueda)} disabled={buscando}>
               <option value="placa">Placa</option>
@@ -329,7 +425,7 @@ export function Guardian() {
           </form>
           <div className="guardian-qr-controls">
             <button type="button" className="guardian-button guardian-button-camera" onClick={() => setLectorActivo((activo) => !activo)} disabled={buscando}>
-              {lectorActivo ? 'Cerrar cámara' : '▣ Escanear QR con cámara'}
+              {lectorActivo ? 'Cerrar cámara' : 'Escanear QR con cámara'}
             </button>
             <span>
               Escanea el QR del vehículo del usuario para llenar la placa automáticamente, o usa la cámara/búsqueda para localizar una salida por referencia de pago.

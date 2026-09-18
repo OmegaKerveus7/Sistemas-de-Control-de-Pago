@@ -12,6 +12,12 @@ export interface ResumenGuardian {
   total: number | string;
   disponibles: number | string;
   ocupados: number | string;
+  ocupados_anteriores: number | string;
+  ocupados_anteriores_detalle: Array<{
+    id: number;
+    lugar: string;
+    zona: string;
+  }>;
   por_zona: ResumenZonaGuardian[];
 }
 
@@ -29,9 +35,16 @@ export interface LugarGuardian {
   zona_id: number;
   zona: string;
   estado: 'disponible' | 'ocupado' | 'extra' | string;
+  tipo_permitido?: string | null;
   color?: string | null;
   ticket?: string | null;
   placa?: string | null;
+}
+
+export interface RegistroEntradaGuardian {
+  placa: string;
+  zona_id?: number;
+  lugar_id?: number;
 }
 
 export interface CriterioGuardian {
@@ -77,7 +90,7 @@ export const guardianService = {
   resumen: () => api.get<ResumenGuardian>('/guardian/resumen'),
   estadisticas: () => api.get<EstadisticasGuardian>('/guardian/estadisticas'),
   lugares: () => api.get<LugarGuardian[]>('/guardian/lugares'),
-  entrada: (placa: string) => api.post<EntradaGuardian>('/guardian/entrada', { placa }),
+  entrada: (registro: RegistroEntradaGuardian) => api.post<EntradaGuardian>('/guardian/entrada', registro),
   buscar: (criterio: CriterioGuardian) => api.post<BusquedaGuardian>('/guardian/buscar', criterio),
   validarPago: (criterio: CriterioGuardian) => api.post<BusquedaGuardian>('/guardian/validar-pago', criterio),
   salida: (criterio: CriterioGuardian) => api.post<SalidaGuardian>('/guardian/salida', criterio),

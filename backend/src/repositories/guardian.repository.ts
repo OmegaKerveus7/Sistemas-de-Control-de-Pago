@@ -21,6 +21,18 @@ interface LugarDisponible extends RowDataPacket {
   zona_nombre: string;
 }
 
+interface ResumenGuardianTotal extends RowDataPacket {
+  total: number | string;
+  disponibles: number | string;
+  ocupados: number | string;
+}
+
+interface OcupacionAnteriorGuardian extends RowDataPacket {
+  id: number;
+  lugar: string;
+  zona: string;
+}
+
 interface TicketActivo extends RowDataPacket {
   id_ticket: number;
   id_lugar: number;
@@ -47,6 +59,17 @@ function validarPlaca(placa: string): { placaNormalizada: string; tipo: TipoVehi
   }
   const tipo: TipoVehiculoGuardian = coincidencia[1] === 'P' ? 'carro' : 'moto';
   return { placaNormalizada: normalizada, tipo };
+}
+
+function tipoCoincideConPlaca(nombreTipo: string, tipoDetectado: TipoVehiculoGuardian): boolean {
+  const normalizado = nombreTipo
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const alias = tipoDetectado === 'moto'
+    ? ['moto', 'motocicl']
+    : ['auto', 'carro', 'camioneta', 'camin', 'pickup', 'suv'];
+  return alias.some((valor) => normalizado.includes(valor));
 }
 
 function criterioConsulta(criterio: CriterioGuardian): { where: string; params: string[] } {
@@ -130,7 +153,7 @@ function nuevoNumeroTicket(): string {
 
 export async function resumen() {
   const pool = getPool();
-  const [totales] = await pool.query<RowDataPacket[]>(
+  const [totales] = await pool.query<ResumenGuardianTotal[]>(
     `SELECT
        COUNT(*) AS total,
        COALESCE(SUM(el.nombre = 'disponible'), 0) AS disponibles,
@@ -150,7 +173,27 @@ export async function resumen() {
      GROUP BY z.id_zona, z.nombre
      ORDER BY z.nombre`,
   );
-  return { ...(totales[0] ?? { total: 0, disponibles: 0, ocupados: 0 }), por_zona: porZona };
+  const [ocupacionesAnteriores] = await pool.query<OcupacionAnteriorGuardian[]>(
+    `SELECT l.id_lugar AS id, l.codigo AS lugar, z.nombre AS zona
+     FROM Tickets t
+     JOIN Lugares l ON l.id_lugar = t.id_lugar
+     JOIN Zonas z ON z.id_zona = l.id_zona
+     WHERE t.activo = 1
+       AND t.fecha_salida IS NULL
+       AND t.fecha_entrada < CURDATE()
+     GROUP BY l.id_lugar, l.codigo, z.nombre
+     ORDER BY z.nombre, l.codigo`,
+  );
+  const detalleOcupacionesAnteriores = ocupacionesAnteriores.map(({ id, lugar, zona }) => ({ id, lugar, zona }));
+  const total = totales[0] ?? { total: 0, disponibles: 0, ocupados: 0 };
+  return {
+    total: total.total,
+    disponibles: total.disponibles,
+    ocupados: total.ocupados,
+    ocupados_anteriores: detalleOcupacionesAnteriores.length,
+    ocupados_anteriores_detalle: detalleOcupacionesAnteriores,
+    por_zona: porZona,
+  };
 }
 
 export async function estadisticas() {
@@ -176,10 +219,12 @@ export async function lugares() {
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT l.id_lugar AS id, l.codigo, l.codigo AS lugar, z.id_zona AS zona_id, z.nombre AS zona,
             el.nombre AS estado, el.color,
+            permitido.nombre AS tipo_permitido,
             t.numero_ticket AS ticket, t.placa
      FROM Lugares l
      JOIN Zonas z ON z.id_zona = l.id_zona
      JOIN Estado_Lugar el ON el.id_estado = l.id_estado
+     LEFT JOIN Tipo_vehiculo permitido ON permitido.id_tipo = l.id_tipo_permitido
      LEFT JOIN Tickets t ON t.id_lugar = l.id_lugar AND t.activo = 1
      WHERE l.activo = 1
      ORDER BY z.nombre, l.codigo`,
@@ -225,8 +270,7 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
       }
       idTipo = vehiculo.id_tipo;
       tipoNombre = vehiculo.tipo_nombre;
-      const tipoEsperado = tipo === 'carro' ? 'carro' : 'moto';
-      if (tipoNombre.toLowerCase() !== tipoEsperado && tipoNombre.toLowerCase() !== 'moto' && tipoNombre.toLowerCase() !== 'carro') {
+      if (!tipoCoincideConPlaca(tipoNombre, tipo)) {
         throw new GuardianError(409, `Esta placa ya está registrada como ${tipoNombre}, no coincide con ${tipo}`, 'TIPO_VEHICULO_DISTINTO');
       }
     } else {
@@ -253,18 +297,39 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
     );
     if (duplicados.length > 0) throw new GuardianError(409, 'Ya existe una entrada activa para esta placa', 'PLACA_ACTIVA');
 
+    const filtrosLugar = [
+      'l.activo = 1',
+      "el.nombre = 'disponible'",
+      '(l.id_tipo_permitido IS NULL OR l.id_tipo_permitido = ?)',
+      'NOT EXISTS (SELECT 1 FROM Tickets activo WHERE activo.id_lugar = l.id_lugar AND activo.activo = 1)',
+    ];
+    const parametrosLugar: number[] = [idTipo];
+    if (registro.lugar_id !== undefined) {
+      filtrosLugar.push('l.id_lugar = ?');
+      parametrosLugar.push(registro.lugar_id);
+    }
+    if (registro.zona_id !== undefined) {
+      filtrosLugar.push('l.id_zona = ?');
+      parametrosLugar.push(registro.zona_id);
+    }
+
     const [lugares] = await conn.execute<LugarDisponible[]>(
       `SELECT l.id_lugar, l.codigo, l.id_zona, z.nombre AS zona_nombre
        FROM Lugares l
        JOIN Zonas z ON z.id_zona = l.id_zona
        JOIN Estado_Lugar el ON el.id_estado = l.id_estado
-       WHERE l.activo = 1 AND el.nombre = 'disponible'
-         AND (l.id_tipo_permitido IS NULL OR l.id_tipo_permitido = ?)
-       ORDER BY z.nombre, l.codigo
+       WHERE ${filtrosLugar.join('\n         AND ')}
+       ${registro.lugar_id === undefined ? 'ORDER BY RAND()' : ''}
        LIMIT 1 FOR UPDATE`,
-      [idTipo],
+      parametrosLugar,
     );
     const lugar = lugares[0];
+    if (!lugar && registro.lugar_id !== undefined) {
+      throw new GuardianError(409, 'El espacio seleccionado ya no está disponible o no es compatible con el vehículo', 'LUGAR_NO_DISPONIBLE');
+    }
+    if (!lugar && registro.zona_id !== undefined) {
+      throw new GuardianError(409, 'No hay espacios disponibles compatibles en el parqueo seleccionado', 'SIN_LUGAR_EN_ZONA');
+    }
     if (!lugar) throw new GuardianError(409, 'No hay lugares disponibles compatibles con el vehículo', 'SIN_LUGAR_DISPONIBLE');
 
     const [ocupacionActiva] = await conn.execute<RowDataPacket[]>(
@@ -303,7 +368,12 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
     await conn.execute(
       `INSERT INTO Tickets_Detalle (id_ticket, id_movimiento, id_usuario_accion, ip_dispositivo, datos_adicionales)
        VALUES (?, ?, ?, ?, ?)`,
-      [idTicket, movimientoEntrada, idGuardia, ip, datosAuditoria({ placa: placaNormalizada, lugar: lugar.codigo, zona: lugar.zona_nombre })],
+      [idTicket, movimientoEntrada, idGuardia, ip, datosAuditoria({
+        placa: placaNormalizada,
+        lugar: lugar.codigo,
+        zona: lugar.zona_nombre,
+        asignacion: registro.lugar_id === undefined ? 'automatica' : 'manual',
+      })],
     );
 
     await conn.commit();

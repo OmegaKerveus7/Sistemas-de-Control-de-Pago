@@ -3,6 +3,8 @@ import type { VehiculoConDueno } from '../../models';
 import { vehiculosService } from '../../services/vehiculos.service';
 import './BuscarVehiculo.css';
 
+const REGEX_PLACA = /^[PM]\d{3}[A-Z]{3}$/;
+
 export function BuscarVehiculo() {
   const [termino, setTermino] = useState('');
   const [resultados, setResultados] = useState<VehiculoConDueno[]>([]);
@@ -12,15 +14,24 @@ export function BuscarVehiculo() {
 
   async function buscar(evento: FormEvent) {
     evento.preventDefault();
-    const valor = termino.trim();
-    if (!valor) return;
+    const placa = termino.trim().toUpperCase();
+    setBuscoAlgunaVez(true);
+    if (!placa) {
+      setError('Ingresa la placa del vehículo.');
+      setResultados([]);
+      return;
+    }
+    if (!REGEX_PLACA.test(placa)) {
+      setError('La placa debe tener el formato P123ABC o M123ABC.');
+      setResultados([]);
+      return;
+    }
 
     setBuscando(true);
     setError(null);
     try {
-      const data = await vehiculosService.buscar(valor);
+      const data = await vehiculosService.buscar(placa);
       setResultados(data);
-      setBuscoAlgunaVez(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo realizar la búsqueda');
       setResultados([]);
@@ -34,16 +45,19 @@ export function BuscarVehiculo() {
       <div>
         <h1 className="buscar-vehiculo-title">Buscar vehículo</h1>
         <p className="buscar-vehiculo-subtitle">
-           Busca por placa, marca, nombre o DPI del dueño.
+          Busca un vehículo ingresando su placa completa.
         </p>
       </div>
 
       <form className="buscar-vehiculo-form" onSubmit={buscar}>
         <input
           className="form-input usuarios-input-plano"
-          placeholder="Ej. P111AAA, Toyota, Juan Pérez..."
+          placeholder="Ej. P123ABC"
           value={termino}
-          onChange={(e) => setTermino(e.target.value)}
+          onChange={(e) => setTermino(e.target.value.toUpperCase())}
+          maxLength={7}
+          autoComplete="off"
+          aria-label="Placa del vehículo"
         />
         <button type="submit" className="buscar-vehiculo-btn" disabled={buscando}>
           {buscando ? 'Buscando...' : 'Buscar'}
@@ -55,7 +69,7 @@ export function BuscarVehiculo() {
       {buscoAlgunaVez && !error && (
         <div className="card buscar-vehiculo-card">
           {resultados.length === 0 ? (
-            <div className="buscar-vehiculo-vacio">No se encontraron vehículos con ese criterio.</div>
+            <div className="buscar-vehiculo-vacio">No se encontró ningún vehículo con esa placa.</div>
           ) : (
             <div className="buscar-vehiculo-tabla-wrapper">
               <table className="buscar-vehiculo-tabla">

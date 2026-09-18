@@ -37,6 +37,15 @@ function guardiaAutenticado(req: Request): number {
   return id;
 }
 
+function idOpcional(valor: unknown, campo: string): number | undefined {
+  if (valor === undefined || valor === null || valor === '') return undefined;
+  const id = Number(valor);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new GuardianError(400, `${campo} debe ser un identificador válido`, 'UBICACION_INVALIDA');
+  }
+  return id;
+}
+
 export async function obtenerResumen(_req: Request, res: Response) {
   try { res.json(await guardianService.resumen()); } catch (error) { responderError(error, res); }
 }
@@ -53,7 +62,12 @@ export async function entrada(req: Request, res: Response) {
   try {
     const placa = typeof req.body?.placa === 'string' ? req.body.placa.trim() : '';
     if (!placa) throw new GuardianError(400, 'La placa es requerida', 'PLACA_REQUERIDA');
-    const resultado = await guardianService.registrarEntrada({ placa } satisfies RegistroEntradaGuardian, guardiaAutenticado(req), ipDe(req));
+    const registro: RegistroEntradaGuardian = {
+      placa,
+      zona_id: idOpcional(req.body?.zona_id, 'zona_id'),
+      lugar_id: idOpcional(req.body?.lugar_id, 'lugar_id'),
+    };
+    const resultado = await guardianService.registrarEntrada(registro, guardiaAutenticado(req), ipDe(req));
     res.status(201).json(resultado);
   } catch (error) { responderError(error, res); }
 }
