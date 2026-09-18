@@ -113,7 +113,6 @@ interface FormData {
 export default function Registro() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormData>({
     dpi: '',
     nombres: '',
@@ -405,14 +404,6 @@ export default function Registro() {
                     <button
                       type="button"
                       className="foto-btn"
-                      onClick={() => cameraInputRef.current?.click()}
-                    >
-                      <IconoCamara />
-                      <span>Cámara</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="foto-btn"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <IconoSubir />
@@ -421,14 +412,6 @@ export default function Registro() {
                   </div>
                 </div>
               )}
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="user"
-                onChange={manejarFoto}
-                hidden
-              />
               <input
                 ref={fileInputRef}
                 type="file"

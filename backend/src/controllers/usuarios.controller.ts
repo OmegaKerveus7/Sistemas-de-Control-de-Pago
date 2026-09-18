@@ -105,7 +105,7 @@ export async function registroPublico(req: Request, res: Response) {
 
   try {
     const id = await usuariosService.crear({
-      id_rol: 3,
+      id_rol: 4,
       email: data.email,
       pass: password,
       nombres: data.nombres,

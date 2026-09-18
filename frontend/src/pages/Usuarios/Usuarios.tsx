@@ -4,8 +4,9 @@ import './Usuarios.css';
 
 const ROLES = [
   { id_rol: 1, nombre: 'administrador' },
-  { id_rol: 2, nombre: 'guardia' },
-  { id_rol: 3, nombre: 'usuario' },
+  { id_rol: 2, nombre: 'cobrador' },
+  { id_rol: 3, nombre: 'guardia' },
+  { id_rol: 4, nombre: 'usuario' },
 ];
 
 interface FormularioUsuario {
@@ -23,7 +24,7 @@ const FORMULARIO_VACIO: FormularioUsuario = {
   apellidos: '',
   dpi: '',
   email: '',
-  id_rol: 3,
+  id_rol: 4,
   pass: '',
   activo: true,
 };
