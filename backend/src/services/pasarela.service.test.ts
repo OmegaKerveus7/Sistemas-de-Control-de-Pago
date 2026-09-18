@@ -6,6 +6,14 @@ const originalFetch = globalThis.fetch;
 afterEach(() => { process.env = { ...env }; globalThis.fetch = originalFetch; });
 function sandbox() { process.env.NODE_ENV = 'test'; process.env.PAYMENT_PROVIDER = 'recurrente'; process.env.PAYMENT_MODE = 'sandbox'; process.env.RECURRENTE_SECRET_KEY = 'sk_test_fixture'; }
 
+test('por defecto usa el formulario de Recurrente y exige la llave de prueba', () => {
+  sandbox();
+  delete process.env.PAYMENT_PROVIDER;
+  expect(validarConfiguracionPago()).toBe('sandbox');
+  delete process.env.RECURRENTE_SECRET_KEY;
+  expect(() => validarConfiguracionPago()).toThrow('sk_test_');
+});
+
 test('producción bloquea el simulador y llaves de prueba', () => {
   process.env.NODE_ENV = 'production'; process.env.PAYMENT_PROVIDER = 'mock';
   expect(() => modoPago()).toThrow('Producción requiere');

@@ -65,8 +65,8 @@ export function FormularioRecurrente({ url, referencia, sandbox }: {
 
   return <section className="pagar-formulario" aria-label="Formulario de tarjeta">
     <h2 className="pagar-resumen-titulo">{sandbox ? 'Prueba tu pago con tarjeta' : 'Datos de la tarjeta'}</h2>
-    {sandbox && <details className="pagar-aviso-prueba" open>
-      <summary>Sandbox · No se cobra dinero real</summary>
+    {sandbox && <details className="pagar-aviso-prueba pagar-ayuda-tarjeta">
+      <summary>Modo de prueba · Ver tarjetas y CVC</summary>
       <p>Aprobar: <code>4242 4242 4242 4242</code><br />Rechazar: <code>4000 0000 0000 0002</code></p>
       <p>Fecha futura y CVC de 3 dígitos. Completa los demás campos que solicite Recurrente.</p>
     </details>}
@@ -74,12 +74,14 @@ export function FormularioRecurrente({ url, referencia, sandbox }: {
     <iframe ref={iframe} src={checkout} title="Formulario seguro de pago con tarjeta de Recurrente"
       allow="payment" className="pagar-checkout-iframe" onLoad={() => setCargando(false)}
       onError={() => { setCargando(false); setError('No se pudo cargar el formulario. Abre el mismo pago con el enlace de abajo.'); }} />
-    <p role="status">{aviso}</p>
+    <p className="pagar-estado-tarjeta" role="status">{aviso}</p>
     {error && <p className="pagar-alerta pagar-alerta-error" role="alert">{error}</p>}
-    <Link to={resultado} className="pagar-button">Consultar resultado del pago</Link>
+    <div className="pagar-checkout-acciones">
+    <Link to={resultado} className="pagar-link">Consultar resultado</Link>
     <details><summary>¿No aparece el formulario?</summary>
       <p>Puedes abrir el mismo checkout en otra pestaña y volver aquí para verificarlo.</p>
       <a href={url} target="_blank" rel="noopener noreferrer">Abrir este pago en Recurrente</a>
     </details>
+    </div>
   </section>;
 }

@@ -89,7 +89,7 @@ export function PagarParqueo() {
   };
 
   return (
-    <div className="pagar-page">
+    <div className={`pagar-page${checkout ? ' pagar-page-checkout' : ''}`}>
       <header className="pagar-header">
         <Link to="/" className="pagar-logo">
           Sistema de Gestión de Parqueo
@@ -99,13 +99,13 @@ export function PagarParqueo() {
         </button>
       </header>
 
-      <main className="pagar-main">
+      <main className={`pagar-main${checkout ? ' pagar-main-checkout' : ''}`}>
         <h1 className="pagar-title">Pago de Parqueo</h1>
-        <p className="pagar-subtitle">
+        <p className="pagar-subtitle" hidden={!!checkout}>
           Bienvenido(a), {usuario.nombres} {usuario.apellidos}. Paga tu estancia de forma rápida y segura con tarjeta.
         </p>
 
-        {error && <div className="pagar-alerta pagar-alerta-error">{error}</div>}
+        {error && <div className="pagar-alerta pagar-alerta-error" role="alert">{error}</div>}
 
         {!parqueo || !precio ? (
           <form className="pagar-card" onSubmit={buscar}>
@@ -135,10 +135,11 @@ export function PagarParqueo() {
             </button>
           </form>
         ) : (
-          <div className="pagar-card">
+          <div className={checkout ? 'pagar-checkout-layout' : undefined}>
+          <div className="pagar-card pagar-resumen">
             <h2 className="pagar-resumen-titulo">Resumen de pago</h2>
-            {precio.modo !== 'live' && <p className="pagar-aviso-prueba" role="status">
-              {precio.modo === 'mock' ? 'Simulador local: no se hacen cobros ni se solicita tarjeta.' : 'Sandbox de Recurrente: utiliza únicamente tarjetas de prueba.'}
+            {!checkout && precio.modo !== 'live' && <p className="pagar-aviso-prueba" role="status">
+              {precio.modo === 'mock' ? 'Simulador local: no se hacen cobros ni se solicita tarjeta.' : 'Modo de prueba · Sin cobros reales.'}
             </p>}
             <p className="pagar-resumen-linea">
               <span>Vehículo</span>
@@ -161,7 +162,6 @@ export function PagarParqueo() {
             >
               {cargandoPago ? 'Preparando pago...' : precio.modo === 'mock' ? 'Probar pago' : 'Abrir formulario de tarjeta'}
             </button>}
-            {checkout && <FormularioRecurrente url={checkout.url_pago} referencia={checkout.referencia} sandbox={precio.modo === 'sandbox'} />}
             <button
               type="button"
               className="pagar-button pagar-button-secundario"
@@ -175,6 +175,8 @@ export function PagarParqueo() {
             >
               Cambiar vehículo
             </button>
+          </div>
+          {checkout && <div className="pagar-card pagar-tarjeta"><FormularioRecurrente url={checkout.url_pago} referencia={checkout.referencia} sandbox={precio.modo === 'sandbox'} /></div>}
           </div>
         )}
       </main>

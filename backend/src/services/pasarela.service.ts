@@ -6,7 +6,7 @@ export class PagoError extends Error {
 }
 
 export function modoPago(): ModoPago {
-  const provider = process.env.PAYMENT_PROVIDER || 'mock';
+  const provider = process.env.PAYMENT_PROVIDER || 'recurrente';
   const mode = process.env.PAYMENT_MODE || 'sandbox';
   if (provider !== 'mock' && provider !== 'recurrente') throw new PagoError(503, 'PAYMENT_PROVIDER debe ser mock o recurrente');
   const result = provider === 'mock' ? 'mock' : mode === 'test' ? 'sandbox' : mode;

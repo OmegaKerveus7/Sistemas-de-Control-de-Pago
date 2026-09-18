@@ -1,5 +1,17 @@
 # Pagos de parqueo con Recurrente
 
+## Al actualizar Rama/Combinada en otra computadora
+
+El diseño del formulario se comparte por Git; las credenciales no. Para abrir el formulario con número de tarjeta, vencimiento y CVC, configura en `backend/.env.local`:
+
+```dotenv
+PAYMENT_PROVIDER=recurrente
+PAYMENT_MODE=sandbox
+RECURRENTE_SECRET_KEY=sk_test_REEMPLAZAR
+```
+
+Obtén la llave TEST del sandbox del equipo por un canal privado. Reinicia el backend y comienza un pago nuevo desde la consulta de placa. Un enlace anterior `/simulador` sigue siendo una simulación local. Si tu `.env` anterior contiene `PAYMENT_PROVIDER=mock`, reemplázalo por `recurrente` también. No subas llaves al repositorio.
+
 Las credenciales de esta instalación se configuran en `backend/.env.local`, ignorado por Git. El backend carga ese archivo antes de `.env`; las variables definidas por el proceso conservan prioridad. Reinicia el backend al cambiar las llaves. No pongas secretos nuevos en el `.env` versionado del repositorio.
 
 El acceso **Pagos → Ir a pago con tarjeta** lleva a la consulta por placa. Después, **Abrir formulario de tarjeta** monta el checkout en un iframe dentro de la misma página, con `embed=true`, siguiendo el protocolo publicado en el repositorio oficial de Recurrente. El checkout usa `charge_type: one_time`, `payment_method_types: [card]` y ninguna opción de cuotas. Los datos de tarjeta se introducen en el formulario servido por Recurrente; este sistema no recibe número de tarjeta ni CVC.
