@@ -5,6 +5,11 @@
   background: #f4f6fa;
 }
 
+.pagar-page.pagar-integrado { min-height: 0; background: transparent; }
+.pagar-integrado .pagar-main { box-sizing: border-box; margin: 0 auto; }
+.pagar-integrado .pagar-title { color: #242582; }
+.pagar-integrado .pagar-button:not(.pagar-button-secundario) { background: #242582; }
+
 .pagar-header {
   display: flex;
   align-items: center;
@@ -219,7 +224,7 @@
 
 /* Checkout: resumen horizontal y una sola superficie para el formulario. */
 .pagar-main-checkout {
-  max-width: 1440px;
+  max-width: 720px;
   box-sizing: border-box;
   margin: 12px auto;
   padding: 0 24px;
@@ -229,9 +234,9 @@
 .pagar-checkout-layout { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .pagar-checkout-layout .pagar-resumen {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  gap: 20px;
+  gap: 14px 24px;
   padding: 14px 20px;
   border: 1px solid #e1e7ee;
   box-shadow: none;
@@ -241,10 +246,10 @@
 .pagar-checkout-layout .pagar-resumen-linea strong { font-size: .95rem; }
 .pagar-checkout-layout .pagar-resumen-linea:last-of-type strong { font-size: 1.35rem; color: #25583f; }
 .pagar-checkout-layout .pagar-resumen > .pagar-button { width: auto; padding: 9px 14px; font-size: .85rem; }
-.pagar-tarjeta { width: 100%; max-width: 480px; box-sizing: border-box; align-self: center; min-width: 0; padding: 16px; border: 1px solid #e1e7ee; box-shadow: none; }
+.pagar-tarjeta { width: 100%; box-sizing: border-box; align-self: center; min-width: 0; padding: 20px; border: 1px solid #e1e7ee; box-shadow: none; }
 .pagar-tarjeta .pagar-formulario { display: flex; flex-direction: column; gap: 10px; }
-.pagar-tarjeta .pagar-resumen-titulo { font-size: 1rem; align-self: center; }
-.pagar-ayuda-tarjeta { padding: 6px 10px; font-size: .8rem; max-width: 380px; }
+.pagar-tarjeta .pagar-resumen-titulo { font-size: 1rem; align-self: flex-start; }
+.pagar-ayuda-tarjeta { padding: 6px 10px; font-size: .8rem; }
 .pagar-ayuda-tarjeta code { white-space: nowrap; }
 .pagar-tarjeta .pagar-checkout-iframe { height: 1000px; border-radius: 8px; }
 .pagar-formulario .pagar-estado-tarjeta { margin: 0; color: #526070; font-size: .8rem; }

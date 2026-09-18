@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { pagosService } from '../../services/pagos.service';
 
 const ORIGEN = 'https://app.recurrente.com';
@@ -21,7 +21,9 @@ export function FormularioRecurrente({ url, referencia, sandbox }: {
   const [cargando, setCargando] = useState(true);
   const [aviso, setAviso] = useState(sandbox ? 'Completa el formulario para probar el pago.' : 'Completa el formulario para realizar el pago.');
   const [error, setError] = useState('');
-  const resultado = `/pagar-parqueo/resultado?referencia=${encodeURIComponent(referencia)}`;
+  const ruta = useLocation().pathname;
+  const base = ruta.startsWith('/app/') ? ruta : '/pagar-parqueo';
+  const resultado = `${base}/resultado?referencia=${encodeURIComponent(referencia)}`;
   const checkout = urlEmbebida(url);
   const urlValida = checkout !== null;
 

@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams, useLocation } from 'react-router-dom';
 import { pagosService, type ResultadoConfirmar } from '../../services/pagos.service';
 import { useAuth } from '../../hooks/useAuth';
 import './PagarParqueo.css';
 
 export function ResultadoPago() {
   const [params] = useSearchParams();
+  const ruta = useLocation().pathname;
+  const integrado = ruta.startsWith('/app/');
+  const volver = integrado ? ruta.replace(/\/resultado$/, '') : '/pagar-parqueo';
   const referencia = params.get('referencia') || '';
   const cancelado = params.get('estado') === 'cancelado';
   const { usuario } = useAuth();
@@ -51,8 +54,8 @@ export function ResultadoPago() {
     pendiente: cancelado ? 'Saliste del checkout. Todavía no hay un pago confirmado; puedes consultar de nuevo o continuar con el mismo enlace.' : 'Aún no se ha confirmado el cobro. Consulta de nuevo antes de intentar otro pago.',
     rechazado: 'Puedes volver al mismo enlace para reintentar el pago.', reembolsado: 'Consulta con la administración del parqueo.', error,
   };
-  return <div className="pagar-page">
-    <header className="pagar-header"><Link to="/" className="pagar-logo">Sistema de Gestión de Parqueo</Link></header>
+  return <div className={`pagar-page${integrado ? ' pagar-integrado' : ''}`}>
+    {!integrado && <header className="pagar-header"><Link to="/" className="pagar-logo">Sistema de Gestión de Parqueo</Link></header>}
     <main className="pagar-main">
       <div className={`pagar-card pagar-resultado pagar-resultado-${estado}`} aria-live="polite" aria-busy={cargando}>
         {resultado && resultado.modo !== 'live' && <p className="pagar-aviso-prueba">{resultado.modo === 'mock' ? 'Simulador local' : 'Sandbox Recurrente'} · Sin dinero real</p>}
@@ -67,7 +70,7 @@ export function ResultadoPago() {
         </>}
         <Link to="/app/historial" className="pagar-link">Ver mi historial de pagos</Link>
         <Link to="/app/dashboard" className="pagar-button pagar-button-enlace">Volver al panel</Link>
-        <Link to="/pagar-parqueo" className="pagar-link">Consultar otro parqueo</Link>
+        <Link to={volver} className="pagar-link">Consultar otro parqueo</Link>
       </div>
     </main>
   </div>;

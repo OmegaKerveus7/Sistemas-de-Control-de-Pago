@@ -160,7 +160,7 @@ export function Pagos() {
         <div className="card pagos-form-card">
           <h2 className="pagos-form-title">Pago con tarjeta</h2>
           <p>Consulta la placa y revisa el monto antes de abrir el pago seguro de Recurrente.</p>
-          <Link className="pagos-btn-link" to={`/pagar-parqueo${placa.trim() ? `?placa=${encodeURIComponent(placa.trim().toUpperCase())}` : ''}`}>
+          <Link className="pagos-btn-link" to={`/app/pagos/tarjeta${placa.trim() ? `?placa=${encodeURIComponent(placa.trim().toUpperCase())}` : ''}`}>
             Ir a pago con tarjeta
           </Link>
         </div>

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { parqueoService, type Parqueo } from '../../services/parqueo.service';
 import { pagosService, type PrecioInfo } from '../../services/pagos.service';
@@ -24,6 +24,7 @@ function detectarTipoVehiculo(placa: string): TipoVehiculo | null {
 export function PagarParqueo() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
+  const integrado = useLocation().pathname.startsWith('/app/');
   const [params] = useSearchParams();
 
   const [placa, setPlaca] = useState(() => (params.get('placa') || '').toUpperCase());
@@ -89,15 +90,15 @@ export function PagarParqueo() {
   };
 
   return (
-    <div className={`pagar-page${checkout ? ' pagar-page-checkout' : ''}`}>
-      <header className="pagar-header">
+    <div className={`pagar-page${checkout ? ' pagar-page-checkout' : ''}${integrado ? ' pagar-integrado' : ''}`}>
+      {!integrado && <header className="pagar-header">
         <Link to="/" className="pagar-logo">
           Sistema de Gestión de Parqueo
         </Link>
         <button className="pagar-volver" onClick={() => navigate('/app/dashboard')}>
           Volver
         </button>
-      </header>
+      </header>}
 
       <main className={`pagar-main${checkout ? ' pagar-main-checkout' : ''}`}>
         <h1 className="pagar-title">Pago de Parqueo</h1>
