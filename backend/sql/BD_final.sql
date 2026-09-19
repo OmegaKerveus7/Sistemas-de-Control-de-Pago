@@ -1207,6 +1207,7 @@ CREATE PROCEDURE `usuariosM`(
     IN p_nombres VARCHAR(120),
     IN p_apellidos VARCHAR(120),
     IN p_dpi CHAR(13),
+    IN p_telefono VARCHAR(15),
     IN p_rol INT,
     IN p_foto_perfil LONGTEXT,
     IN p_id_usuario INT,
@@ -1244,19 +1245,20 @@ BEGIN
                     SET pmensaje = 'Ya existe un usuario con ese correo o DPI';
                     SET pdata = NULL;
                 ELSE
-                    INSERT INTO Usuarios (id_rol, email, pass, nombres, apellidos, DPI, activo)
-                    VALUES (p_rol, p_correo, p_contraseña, p_nombres, p_apellidos, p_dpi, 1);
+                    INSERT INTO Usuarios (id_rol, email, pass, nombres, apellidos, DPI, telefono, activo)
+                    VALUES (p_rol, p_correo, p_contraseña, p_nombres, p_apellidos, p_dpi, p_telefono, 1);
 
                     SET v_id_usuario = LAST_INSERT_ID();
                     SELECT id_proceso INTO v_id_proceso FROM Procesos WHERE nom_proceso = 'creacion_usuario' LIMIT 1;
 
                     INSERT INTO Usuarios_Detalle (id_usuario, id_proceso, ip_dispositivo, procedimiento, operacion, descripcion)
                     VALUES (v_id_usuario, v_id_proceso, p_ip_dispositivo, NOW(),
-                            JSON_OBJECT('accion', 'crear', 'email', p_correo), CONCAT('Usuario creado: ', p_nombres));
+                            JSON_OBJECT('accion', 'crear', 'email', p_correo, 'telefono', p_telefono),
+                            CONCAT('Usuario creado: ', p_nombres));
 
                     SET pcodigo_s = 201;
                     SET pmensaje = 'Usuario creado exitosamente';
-                    SET pdata = JSON_OBJECT('id_usuario', v_id_usuario, 'email', p_correo);
+                    SET pdata = JSON_OBJECT('id_usuario', v_id_usuario, 'email', p_correo, 'telefono', p_telefono);
                 END IF;
             END IF;
 
@@ -1264,7 +1266,8 @@ BEGIN
             IF p_id_usuario IS NOT NULL THEN
                 SELECT JSON_OBJECT(
                     'id_usuario', u.id_usuario, 'email', u.email, 'nombres', u.nombres,
-                    'apellidos', u.apellidos, 'dpi', u.DPI, 'rol', r.nom_rol, 'activo', u.activo
+                    'apellidos', u.apellidos, 'dpi', u.DPI, 'telefono', u.telefono,
+                    'rol', r.nom_rol, 'activo', u.activo
                 ) INTO pdata
                 FROM Usuarios u JOIN Roles r ON r.id_rol = u.id_rol
                 WHERE u.id_usuario = p_id_usuario;
@@ -1288,6 +1291,7 @@ BEGIN
                     nombres = IFNULL(p_nombres, nombres),
                     apellidos = IFNULL(p_apellidos, apellidos),
                     DPI = IFNULL(p_dpi, DPI),
+                    telefono = IFNULL(p_telefono, telefono),
                     id_rol = IFNULL(p_rol, id_rol)
                 WHERE id_usuario = p_id_usuario;
 
@@ -1327,7 +1331,8 @@ BEGIN
             SELECT JSON_ARRAYAGG(
                 JSON_OBJECT(
                     'id_usuario', u.id_usuario, 'email', u.email, 'nombres', u.nombres,
-                    'apellidos', u.apellidos, 'dpi', u.DPI, 'rol', r.nom_rol, 'activo', u.activo
+                    'apellidos', u.apellidos, 'dpi', u.DPI, 'telefono', u.telefono,
+                    'rol', r.nom_rol, 'activo', u.activo
                 )
             ) INTO pdata
             FROM Usuarios u JOIN Roles r ON r.id_rol = u.id_rol

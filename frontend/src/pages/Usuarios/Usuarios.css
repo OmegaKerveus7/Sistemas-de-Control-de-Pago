@@ -334,6 +334,11 @@
     word-break: break-all;
   }
 
+  .usuarios-card-telefono {
+    color: var(--color-texto-terciario);
+    font-size: 0.78rem;
+  }
+
   .usuarios-card-meta {
     display: flex;
     align-items: center;

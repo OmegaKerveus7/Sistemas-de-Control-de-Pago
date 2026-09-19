@@ -14,6 +14,7 @@ interface FormularioUsuario {
   apellidos: string;
   dpi: string;
   email: string;
+  telefono: string;
   id_rol: number;
   pass: string;
   activo: boolean;
@@ -24,6 +25,7 @@ const FORMULARIO_VACIO: FormularioUsuario = {
   apellidos: '',
   dpi: '',
   email: '',
+  telefono: '',
   id_rol: 4,
   pass: '',
   activo: true,
@@ -80,6 +82,7 @@ export function Usuarios() {
       apellidos: usuario.apellidos,
       dpi: usuario.dpi,
       email: usuario.email,
+      telefono: usuario.telefono ?? '',
       id_rol: usuario.id_rol,
       pass: '',
       activo: usuario.activo,
@@ -119,12 +122,14 @@ export function Usuarios() {
     setGuardando(true);
     setErrorForm(null);
     try {
+      const telefonoLimpio = formulario.telefono.trim();
       if (usuarioEditando) {
         const cambios: Partial<Usuario> & { pass?: string } = {
           nombres: formulario.nombres.trim(),
           apellidos: formulario.apellidos.trim(),
           dpi: formulario.dpi.trim(),
           email: formulario.email.trim(),
+          telefono: telefonoLimpio || null,
           id_rol: formulario.id_rol,
           activo: formulario.activo,
         };
@@ -136,6 +141,7 @@ export function Usuarios() {
           apellidos: formulario.apellidos.trim(),
           dpi: formulario.dpi.trim(),
           email: formulario.email.trim(),
+          telefono: telefonoLimpio || null,
           id_rol: formulario.id_rol,
           pass: formulario.pass.trim(),
           activo: true,
@@ -200,6 +206,7 @@ export function Usuarios() {
                     <th>Nombre</th>
                     <th>DPI</th>
                     <th>Correo</th>
+                    <th>Teléfono</th>
                     <th>Rol</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -211,6 +218,7 @@ export function Usuarios() {
                       <td>{usuario.nombres} {usuario.apellidos}</td>
                       <td>{usuario.dpi}</td>
                       <td>{usuario.email}</td>
+                      <td>{usuario.telefono || '—'}</td>
                       <td className="usuarios-rol">{usuario.nom_rol ?? '—'}</td>
                       <td>
                         <span className={`usuarios-estado-texto ${usuario.activo ? 'activo' : 'inactivo'}`}>
@@ -238,6 +246,9 @@ export function Usuarios() {
                   <div className="usuarios-card-info">
                     <strong className="usuarios-card-nombre">{usuario.nombres} {usuario.apellidos}</strong>
                     <span className="usuarios-card-email">{usuario.email}</span>
+                    {usuario.telefono && (
+                      <span className="usuarios-card-telefono">{usuario.telefono}</span>
+                    )}
                     <div className="usuarios-card-meta">
                       <span className={`usuarios-estado-texto ${usuario.activo ? 'activo' : 'inactivo'}`}>
                         {usuario.activo ? 'Activo' : 'Inactivo'}
@@ -307,6 +318,21 @@ export function Usuarios() {
                     type="email"
                     value={formulario.email}
                     onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="usuarios-form-row">
+                <div className="form-group">
+                  <label className="form-label">Teléfono</label>
+                  <input
+                    className="form-input usuarios-input-plano"
+                    type="tel"
+                    inputMode="tel"
+                    maxLength={15}
+                    value={formulario.telefono}
+                    onChange={(e) => setFormulario({ ...formulario, telefono: e.target.value.replace(/[^\d+\s-]/g, '') })}
+                    placeholder="Opcional"
                   />
                 </div>
               </div>

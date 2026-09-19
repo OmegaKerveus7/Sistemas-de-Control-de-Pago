@@ -6,6 +6,7 @@ export interface Usuario {
   nombres: string;
   apellidos: string;
   email: string;
+  telefono?: string | null;
   id_rol: number;
   nom_rol?: string;
   activo: boolean;
@@ -17,6 +18,6 @@ export const usuariosService = {
   crear: (data: Partial<Usuario> & { pass: string }) => api.post<{ id: number }>('/usuarios', data),
   actualizar: (id: number, data: Partial<Usuario>) => api.put<void>(`/usuarios/${id}`, data),
   eliminar: (id: number) => api.delete<void>(`/usuarios/${id}`),
-  registroPublico: (data: { dpi: string; nombres: string; apellidos: string; email: string; password: string }) =>
+  registroPublico: (data: { dpi: string; nombres: string; apellidos: string; email: string; telefono?: string; password: string }) =>
     api.post<{ id: number; mensaje: string }>('/usuarios/registro', data),
 };

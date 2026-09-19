@@ -105,6 +105,7 @@ interface FormData {
   nombres: string;
   apellidos: string;
   email: string;
+  telefono: string;
   password: string;
   confirmPassword: string;
   foto_perfil?: string | null;
@@ -118,6 +119,7 @@ export default function Registro() {
     nombres: '',
     apellidos: '',
     email: '',
+    telefono: '',
     password: '',
     confirmPassword: '',
   });
@@ -151,6 +153,8 @@ export default function Registro() {
         valor = valor.slice(0, 100);
       } else if (campo === 'email') {
         valor = valor.slice(0, 100);
+      } else if (campo === 'telefono') {
+        valor = valor.replace(/[^\d+\s-]/g, '').slice(0, 15);
       } else if (campo === 'password' || campo === 'confirmPassword') {
         valor = valor.slice(0, 200);
       }
@@ -195,8 +199,8 @@ export default function Registro() {
 
   const validarFormulario = (): boolean => {
     if (!form.dpi.trim() || !form.nombres.trim() || !form.apellidos.trim() ||
-        !form.email.trim() || !form.password || !form.confirmPassword) {
-      setError('Por favor complete todos los campos');
+        !form.email.trim() || !form.telefono.trim() || !form.password || !form.confirmPassword) {
+      setError('Por favor complete todos los campos obligatorios: nombre, DPI, teléfono, correo y contraseña');
       triggerShake();
       return false;
     }
@@ -210,6 +214,13 @@ export default function Registro() {
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       setError('Ingrese un correo electrónico válido');
+      triggerShake();
+      return false;
+    }
+
+    const telefonoDigitos = form.telefono.replace(/\D/g, '');
+    if (telefonoDigitos.length < 8) {
+      setError('El teléfono debe tener al menos 8 dígitos');
       triggerShake();
       return false;
     }
@@ -243,6 +254,7 @@ export default function Registro() {
         nombres: form.nombres.trim(),
         apellidos: form.apellidos.trim(),
         email: form.email.trim().toLowerCase(),
+        telefono: form.telefono.trim() || undefined,
         password: form.password,
       });
 
@@ -502,6 +514,32 @@ export default function Registro() {
                   disabled={loading}
                   autoComplete="off"
                   maxLength={100}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="telefono">
+                Teléfono <span className="requerido">*</span>
+              </label>
+              <div className="form-input-wrapper">
+                <span className="form-input-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                </span>
+                <input
+                  id="telefono"
+                  type="tel"
+                  inputMode="tel"
+                  className="form-input"
+                  placeholder="0000 0000"
+                  value={form.telefono}
+                  onChange={manejarInput('telefono')}
+                  disabled={loading}
+                  autoComplete="off"
+                  maxLength={15}
+                  required
                 />
               </div>
             </div>
