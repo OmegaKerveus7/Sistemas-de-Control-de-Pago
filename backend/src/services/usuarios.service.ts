@@ -16,7 +16,7 @@ export async function existeCorreoODpi(email: string, dpi: string): Promise<bool
   return usuariosRepo.existeCorreoODpi(email, dpi);
 }
 
-export async function crear(data: Omit<UsuarioMySQL, 'id_usuarios' | 'nom_rol' | 'fecha_creacion'>): Promise<number> {
+export async function crear(data: Omit<UsuarioMySQL, 'id_usuario' | 'nom_rol' | 'fecha_creacion'>): Promise<number> {
   const hash = await bcrypt.hash(data.pass ?? '', 10);
   return usuariosRepo.crear({ ...data, pass: hash });
 }

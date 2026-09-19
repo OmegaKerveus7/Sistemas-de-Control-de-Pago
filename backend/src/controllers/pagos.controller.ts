@@ -1,16 +1,8 @@
 import type { Request, Response } from 'express';
 import * as pagosService from '../services/pagos.service';
-import * as parqueoService from '../services/parqueo.service';
-import * as pasarelaService from '../services/pasarela.service';
-import { precioPorTipo } from '../config/precios';
+import * as correoService from '../services/correo.service';
 import type { AuthRequest } from '../types';
-import type { MetodoPago } from '../models';
-
-function obtenerIp(req: Request): string {
-  const forward = req.headers['x-forwarded-for'];
-  if (forward) return String(forward).split(',')[0]?.trim() ?? 'desconocida';
-  return req.socket?.remoteAddress?.replace('::ffff:', '') || 'desconocida';
-}
+import { PagoError } from '../services/pasarela.service';
 
 export async function listar(_req: Request, res: Response) {
   res.json(await pagosService.listar());
@@ -23,121 +15,90 @@ export async function obtenerPorId(req: Request, res: Response) {
   res.json(pago);
 }
 
-export async function obtenerPorParqueo(req: Request, res: Response) {
-  const parqueoId = Number(req.params.parqueoId);
-  const pago = await pagosService.obtenerPorParqueo(parqueoId);
-  if (!pago) { res.status(404).json({ error: 'Pago no encontrado para este parqueo' }); return; }
+export async function obtenerPorTicket(req: Request, res: Response) {
+  const idTicket = Number(req.params.idTicket);
+  const pago = await pagosService.obtenerPorTicket(idTicket);
+  if (!pago) { res.status(404).json({ error: 'Pago no encontrado para este ticket' }); return; }
   res.json(pago);
 }
 
-export async function precio(req: Request, res: Response) {
-  const tipo = String(req.query.tipo ?? '').toLowerCase();
-  const metodo = (req.query.metodo as 'efectivo' | 'online') ?? 'efectivo';
-  const monto = precioPorTipo(tipo, metodo);
-  res.json({ tipo, metodo, monto });
-}
-
-export async function crear(req: Request, res: Response) {
+export async function registrarEfectivo(req: Request, res: Response) {
   const usuario = (req as AuthRequest).usuario;
-  const { parqueo_id, tipo_vehiculo, metodo = 'tarjeta' } = req.body;
+  const { placa, id_tipo_vehiculo } = req.body;
 
-  if (!parqueo_id || !tipo_vehiculo) {
-    res.status(400).json({ error: 'parqueo_id y tipo_vehiculo son requeridos' });
+  if (!placa || !id_tipo_vehiculo) {
+    res.status(400).json({ error: 'placa e id_tipo_vehiculo son requeridos' });
+    return;
+  }
+  if (!usuario?.id) {
+    res.status(401).json({ error: 'No autenticado' });
     return;
   }
 
-  const parqueo = await parqueoService.obtenerPorId(Number(parqueo_id));
-  if (!parqueo || parqueo.estado !== 'activo') {
-    res.status(400).json({ error: 'No hay un parqueo activo para este registro' });
-    return;
+  try {
+    const resultado = await pagosService.crearEfectivo({
+      placa: String(placa),
+      id_tipo_vehiculo: Number(id_tipo_vehiculo),
+      id_guardia: usuario.id,
+    });
+    res.status(201).json({ id: resultado.id, monto: resultado.monto });
+
+    if (resultado.dueno_email && resultado.dueno_nombre) {
+      correoService.enviarComprobantePago({
+        correoDestino: resultado.dueno_email,
+        nombreUsuario: resultado.dueno_nombre,
+        placa: resultado.placa,
+        ticket: resultado.ticket,
+        monto: resultado.monto,
+        fechaPago: new Date().toLocaleString('es-GT'),
+        lugar: resultado.lugar,
+        zona: resultado.zona,
+        codigoValidacion: resultado.codigo_validacion,
+      }).catch((err) => console.error('[Correo comprobante]', err));
+    }
+  } catch (err) {
+    if (err instanceof PagoError) {
+      res.status(err.status).json({ error: err.message });
+    } else {
+      console.error('[Pagos efectivo]', err);
+      res.status(500).json({ error: 'No se pudo registrar el pago en efectivo. Consulta con administración.' });
+    }
   }
-
-  const monto = precioPorTipo(String(tipo_vehiculo).toLowerCase(), metodo === 'tarjeta' ? 'online' : 'efectivo');
-  if (monto === undefined) {
-    res.status(404).json({ error: 'Precio no definido para este tipo de vehículo' });
-    return;
-  }
-
-  const referencia = pasarelaService.generarReferencia();
-  const ip = obtenerIp(req);
-
-  const id = await pagosService.crear({
-    parqueo_id: Number(parqueo_id),
-    monto,
-    metodo: metodo as MetodoPago,
-    estado: 'pendiente',
-    referencia,
-    ip_inicio: ip,
-    procesado_por: usuario?.id,
-  });
-
-  const checkout = await pasarelaService.crearCheckout({
-    id,
-    parqueo_id: Number(parqueo_id),
-    monto,
-    metodo: metodo as MetodoPago,
-    estado: 'pendiente',
-    referencia,
-  });
-
-  res.status(201).json({ id, monto, referencia, url_pago: checkout.url_pago });
-}
-
-export async function confirmar(req: Request, res: Response) {
-  const referencia = String(req.query.referencia ?? '').trim();
-  if (!referencia) { res.status(400).json({ error: 'referencia es requerida' }); return; }
-
-  const pago = await pagosService.obtenerPorReferencia(referencia);
-  if (!pago || !pago.id) { res.status(404).json({ error: 'Pago no encontrado' }); return; }
-
-  if (pago.estado === 'completado') {
-    res.json({ aprobado: true, id: pago.id, monto: pago.monto, referencia, ya_confirmado: true });
-    return;
-  }
-
-  const verificacion = await pasarelaService.verificarPago(referencia);
-  if (!verificacion.aprobado) {
-    res.json({ aprobado: false, referencia, mensaje: verificacion.mensaje ?? 'Pago rechazado' });
-    return;
-  }
-
-  const ok = await pagosService.confirmar(pago.id, referencia, obtenerIp(req));
-  if (ok && pago.parqueo_id) {
-    await parqueoService.registrarSalida(pago.parqueo_id, pago.monto);
-  }
-
-  res.json({ aprobado: true, id: pago.id, monto: pago.monto, referencia });
 }
 
 export async function reporteMensual(_req: Request, res: Response) {
   res.json(await pagosService.reporteMensual());
 }
 
-export async function mockCheckout(req: Request, res: Response) {
-  if (!pasarelaService.esModoPrueba()) {
-    res.status(404).send('No disponible');
+export async function reporteDetallado(req: Request, res: Response) {
+  const anio = Number(req.query.anio);
+  const mes = Number(req.query.mes);
+  if (!anio || !mes || mes < 1 || mes > 12) {
+    res.status(400).json({ error: 'Se requieren parámetros anio y mes (1-12)' });
     return;
   }
+  res.json(await pagosService.reporteDetallado(anio, mes));
+}
 
-  const referencia = String(req.query.referencia ?? '').trim();
-  if (!referencia) { res.status(400).send('referencia requerida'); return; }
+export async function misPagos(req: Request, res: Response) {
+  const usuario = (req as AuthRequest).usuario;
+  if (!usuario) { res.status(401).json({ error: 'No autenticado' }); return; }
 
-  const pago = await pagosService.obtenerPorReferencia(referencia);
-  if (!pago) { res.status(404).send('Pago no encontrado'); return; }
+  const fechaInicio = typeof req.query.fecha_inicio === 'string' && req.query.fecha_inicio.trim()
+    ? req.query.fecha_inicio.trim()
+    : null;
+  const fechaFin = typeof req.query.fecha_fin === 'string' && req.query.fecha_fin.trim()
+    ? req.query.fecha_fin.trim()
+    : null;
 
-  const retorno = pasarelaService.urlRetorno(referencia);
-  res.type('html').send(`<!doctype html>
-<html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulación de pago</title></head>
-<body style="font-family:system-ui,sans-serif;max-width:420px;margin:40px auto;text-align:center">
-<h2>Pasarela de prueba (sandbox)</h2>
-<p>No se realizará ningún cargo real.</p>
-<p><strong>Pago:</strong> ${pago.id}</p>
-<p><strong>Monto:</strong> Q${Number(pago.monto).toFixed(2)}</p>
-<p><strong>Referencia:</strong> ${referencia}</p>
-<a href="${retorno}" style="display:inline-block;margin:8px;padding:12px 24px;background:#2e7d32;color:#fff;text-decoration:none;border-radius:6px">Pagar (aprobado)</a>
-<a href="${retorno}&estado=cancelado" style="display:inline-block;margin:8px;padding:12px 24px;background:#b71c1c;color:#fff;text-decoration:none;border-radius:6px">Cancelar</a>
-</body>
-</html>`);
+  const resultado = await pagosService.historialUsuario(usuario.id, fechaInicio, fechaFin);
+  if (resultado.codigo === 404) {
+    res.status(200).json([]);
+    return;
+  }
+  if (resultado.codigo >= 400) {
+    res.status(resultado.codigo).json({ error: resultado.mensaje });
+    return;
+  }
+  res.json(resultado.data);
 }

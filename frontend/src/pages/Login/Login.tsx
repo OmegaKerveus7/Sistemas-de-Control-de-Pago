@@ -88,8 +88,8 @@ type TipoIdentificador = 'vacio' | 'dpi' | 'correo';
 
 const detectarTipo = (valor: string): TipoIdentificador => {
   if (!valor) return 'vacio';
-  if (valor.includes('@')) return 'correo';
-  return 'dpi';
+  if (/^\d[\d\s]*$/.test(valor)) return 'dpi';
+  return 'correo';
 };
 
 const validarCorreo = (correo: string): boolean => {

@@ -1,118 +1,177 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
-import type { Vehiculo } from '../models';
+import type { Vehiculo, VehiculoConDueno } from '../models';
 
-const SELECT_BASE = `
-  SELECT id_vehiculo AS id, placa, marca, modelo, color, tipo, foto, creado_en
-  FROM vehiculos
-`;
-
-export async function listar(): Promise<Vehiculo[]> {
-  const pool = getPool();
-  const [rows] = await pool.query(`${SELECT_BASE} ORDER BY id_vehiculo`);
-  return rows as unknown as Vehiculo[];
+export interface ResultadoSP {
+  codigo: number;
+  mensaje: string;
+  data: unknown;
 }
 
-export async function obtenerPorId(id: number): Promise<Vehiculo | null> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(`${SELECT_BASE} WHERE id_vehiculo = ?`, [id]);
-  return (rows as unknown as Vehiculo[])[0] ?? null;
+export interface Marca {
+  id_marca: number;
+  nombre: string;
 }
 
-export async function obtenerPorPlaca(placa: string): Promise<Vehiculo | null> {
+export interface TipoVehiculoCatalogo {
+  id_tipo: number;
+  nombre: string;
+  precio_efectivo: number;
+  precio_linea: number;
+}
+
+export async function listar(): Promise<VehiculoConDueno[]> {
+  const pool = getPool();
+  const [results] = await pool.query('CALL sp_vehiculos_listar()');
+  return (results as unknown as [VehiculoConDueno[]])[0];
+}
+
+export async function obtenerPorPlaca(placa: string): Promise<VehiculoConDueno | null> {
+  const pool = getPool();
+  const [results] = await pool.query('CALL sp_vehiculos_obtener_por_placa(?)', [placa.toUpperCase()]);
+  return (results as unknown as [VehiculoConDueno[]])[0][0] ?? null;
+}
+
+export async function buscar(filtro: string): Promise<VehiculoConDueno[]> {
+  const pool = getPool();
+  const placa = filtro.trim().toUpperCase();
+  if (!placa) return [];
+  const [rows] = await pool.query<(VehiculoConDueno & RowDataPacket)[]>(
+    `SELECT v.placa, v.id_tipo, tv.nombre AS tipo, m.nombre AS marca, v.color, v.activo,
+            v.id_usuario AS id_dueno, u.nombres AS dueno_nombres, u.apellidos AS dueno_apellidos,
+            u.DPI AS dueno_dpi, u.email AS dueno_email
+     FROM Vehiculos v
+     LEFT JOIN Marcas m ON m.id_marca = v.id_marca
+     LEFT JOIN Tipo_vehiculo tv ON tv.id_tipo = v.id_tipo
+     LEFT JOIN Usuarios u ON u.id_usuario = v.id_usuario
+     WHERE v.placa = ?
+     ORDER BY v.placa`, [placa]);
+  return rows;
+}
+
+export async function crear(
+  data: Vehiculo,
+  idUsuarioAccion: number,
+  ip: string,
+): Promise<ResultadoSP> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.query(
+      'CALL sp_vehiculos_crear(?, ?, ?, ?, ?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      [
+        data.placa.toUpperCase(),
+        data.id_usuario,
+        data.id_tipo,
+        data.id_marca ?? null,
+        data.color ?? null,
+        idUsuarioAccion,
+        ip,
+      ],
+    );
+    const [rows] = await conn.query(
+      'SELECT @pcodigo_s AS pcodigo_s, @pmensaje AS pmensaje, @pdata AS pdata',
+    );
+    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    return {
+      codigo: fila?.pcodigo_s ?? 500,
+      mensaje: fila?.pmensaje ?? 'Error interno',
+      data: fila?.pdata ? JSON.parse(fila.pdata) : null,
+    };
+  } finally {
+    conn.release();
+  }
+}
+
+export async function actualizar(
+  placa: string,
+  data: Partial<Vehiculo>,
+  idUsuarioAccion: number,
+  ip: string,
+): Promise<ResultadoSP> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.query(
+      'CALL sp_vehiculos_actualizar(?, ?, ?, ?, ?, ?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      [
+        placa.toUpperCase(),
+        data.id_usuario ?? null,
+        data.id_tipo ?? null,
+        data.id_marca ?? null,
+        data.color ?? null,
+        data.activo === undefined ? null : data.activo ? 1 : 0,
+        idUsuarioAccion,
+        ip,
+      ],
+    );
+    const [rows] = await conn.query(
+      'SELECT @pcodigo_s AS pcodigo_s, @pmensaje AS pmensaje, @pdata AS pdata',
+    );
+    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    return {
+      codigo: fila?.pcodigo_s ?? 500,
+      mensaje: fila?.pmensaje ?? 'Error interno',
+      data: fila?.pdata ? JSON.parse(fila.pdata) : null,
+    };
+  } finally {
+    conn.release();
+  }
+}
+
+export async function eliminar(
+  placa: string,
+  idUsuarioAccion: number,
+  ip: string,
+): Promise<ResultadoSP> {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.query(
+      'CALL sp_vehiculos_desactivar(?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      [placa.toUpperCase(), idUsuarioAccion, ip],
+    );
+    const [rows] = await conn.query(
+      'SELECT @pcodigo_s AS pcodigo_s, @pmensaje AS pmensaje, @pdata AS pdata',
+    );
+    const fila = (rows as Array<{ pcodigo_s: number; pmensaje: string; pdata: string | null }>)[0];
+    return {
+      codigo: fila?.pcodigo_s ?? 500,
+      mensaje: fila?.pmensaje ?? 'Error interno',
+      data: fila?.pdata ? JSON.parse(fila.pdata) : null,
+    };
+  } finally {
+    conn.release();
+  }
+}
+
+/** Catálogo de tipos de vehículo desde la tabla Tipo_vehiculo. */
+export async function listarTiposVehiculo(): Promise<TipoVehiculoCatalogo[]> {
   const pool = getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    `${SELECT_BASE} WHERE placa = ? LIMIT 1`,
-    [placa.toUpperCase()],
+    'SELECT id_tipo, nombre, precio_efectivo, precio_linea FROM Tipo_vehiculo ORDER BY id_tipo',
   );
-  return (rows as unknown as Vehiculo[])[0] ?? null;
+  return rows as unknown as TipoVehiculoCatalogo[];
 }
 
-export async function buscar(filtro: string): Promise<Vehiculo[]> {
+/** Marcas agrupadas por tipo de vehículo usando la vista v_marcas_por_tipo. */
+export async function marcasPorTipo(): Promise<Array<{ tipo_vehiculo: string; marcas: Marca[] }>> {
   const pool = getPool();
-  const termino = `%${filtro}%`;
   const [rows] = await pool.query<RowDataPacket[]>(
-    `${SELECT_BASE} WHERE placa LIKE ? OR marca LIKE ? OR modelo LIKE ? OR color LIKE ? ORDER BY id_vehiculo`,
-    [termino, termino, termino, termino],
+    'SELECT tipo_vehiculo, marcas FROM v_marcas_por_tipo',
   );
-  return rows as unknown as Vehiculo[];
+  return rows.map((r) => ({
+    tipo_vehiculo: String(r.tipo_vehiculo),
+    marcas: typeof r.marcas === 'string' ? JSON.parse(r.marcas) : (r.marcas as Marca[]),
+  }));
 }
 
-export async function crear(data: Vehiculo): Promise<number> {
-  const pool = getPool();
-  const [result] = await pool.execute<ResultSetHeader>(
-    'INSERT INTO vehiculos (placa, marca, modelo, color, tipo, foto) VALUES (?, ?, ?, ?, ?, ?)',
-    [data.placa.toUpperCase(), data.marca, data.modelo, data.color, data.tipo, data.foto ?? null],
-  );
-  return result.insertId;
-}
-
-export async function actualizar(id: number, data: Partial<Vehiculo>): Promise<boolean> {
-  const pool = getPool();
-  const sets: string[] = [];
-  const values: Array<string | number | null> = [];
-
-  if (data.placa !== undefined) { sets.push('placa = ?'); values.push(data.placa.toUpperCase()); }
-  if (data.marca !== undefined) { sets.push('marca = ?'); values.push(data.marca); }
-  if (data.modelo !== undefined) { sets.push('modelo = ?'); values.push(data.modelo); }
-  if (data.color !== undefined) { sets.push('color = ?'); values.push(data.color); }
-  if (data.tipo !== undefined) { sets.push('tipo = ?'); values.push(data.tipo); }
-  if (data.foto !== undefined) { sets.push('foto = ?'); values.push(data.foto); }
-
-  if (sets.length === 0) return false;
-  values.push(id);
-
-  const [result] = await pool.execute<ResultSetHeader>(
-    `UPDATE vehiculos SET ${sets.join(', ')} WHERE id_vehiculo = ?`,
-    values,
-  );
-  return result.affectedRows > 0;
-}
-
-export async function eliminar(id: number): Promise<boolean> {
-  const pool = getPool();
-  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM vehiculos WHERE id_vehiculo = ?', [id]);
-  return result.affectedRows > 0;
-}
-
-// ==================== USUARIO_VEHICULOS ====================
-
+/** Obtener vehículos de un usuario (por id_usuario en la tabla Vehiculos). */
 export async function vehiculosPorUsuario(idUsuario: number): Promise<Vehiculo[]> {
   const pool = getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT v.id_vehiculo AS id, v.placa, v.marca, v.modelo, v.color, v.tipo, v.foto, v.creado_en
-     FROM vehiculos v
-     JOIN usuario_vehiculos uv ON uv.id_vehiculo = v.id_vehiculo
-     WHERE uv.id_usuario = ?
-     ORDER BY v.id_vehiculo`,
+    `SELECT v.placa, v.id_usuario, v.id_tipo, v.id_marca, v.color, v.activo, v.fecha_registro
+     FROM Vehiculos v
+     WHERE v.id_usuario = ?
+     ORDER BY v.placa`,
     [idUsuario],
   );
   return rows as unknown as Vehiculo[];
-}
-
-export async function asignarVehiculoAUsuario(idUsuario: number, idVehiculo: number): Promise<number> {
-  const pool = getPool();
-  const [result] = await pool.execute<ResultSetHeader>(
-    'INSERT INTO usuario_vehiculos (id_usuario, id_vehiculo) VALUES (?, ?)',
-    [idUsuario, idVehiculo],
-  );
-  return (result as ResultSetHeader).insertId;
-}
-
-export async function removerVehiculoDeUsuario(idUsuario: number, idVehiculo: number): Promise<boolean> {
-  const pool = getPool();
-  const [result] = await pool.execute<ResultSetHeader>(
-    'DELETE FROM usuario_vehiculos WHERE id_usuario = ? AND id_vehiculo = ?',
-    [idUsuario, idVehiculo],
-  );
-  return (result as ResultSetHeader).affectedRows > 0;
-}
-
-export async function usuarioTieneVehiculo(idUsuario: number, idVehiculo: number): Promise<boolean> {
-  const pool = getPool();
-  const [rows] = await pool.query<RowDataPacket[]>(
-    'SELECT id_usuario_vehiculo FROM usuario_vehiculos WHERE id_usuario = ? AND id_vehiculo = ? LIMIT 1',
-    [idUsuario, idVehiculo],
-  );
-  return (rows as unknown[]).length > 0;
 }

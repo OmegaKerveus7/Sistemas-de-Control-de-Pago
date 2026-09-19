@@ -1,14 +1,19 @@
 import { Router } from 'express';
 import * as pagosController from '../controllers/pagos.controller';
-import { verificarToken } from '../middleware/auth.middleware';
+import * as online from '../controllers/pagos-online.controller';
+import { verificarToken, verificarRol } from '../middleware/auth.middleware';
 
 export const pagosRouter = Router();
 
-pagosRouter.get('/reporte-mensual', verificarToken, pagosController.reporteMensual);
-pagosRouter.get('/precio', verificarToken, pagosController.precio);
-pagosRouter.get('/confirmar', pagosController.confirmar);
-pagosRouter.get('/mock-checkout', pagosController.mockCheckout);
-pagosRouter.get('/parqueo/:parqueoId', verificarToken, pagosController.obtenerPorParqueo);
-pagosRouter.get('/:id', verificarToken, pagosController.obtenerPorId);
-pagosRouter.get('/', verificarToken, pagosController.listar);
-pagosRouter.post('/', verificarToken, pagosController.crear);
+pagosRouter.get('/precio', verificarToken, online.precio);
+pagosRouter.post('/', verificarToken, online.crear);
+pagosRouter.get('/confirmar/:referencia', verificarToken, online.confirmar);
+pagosRouter.post('/simular/:referencia', verificarToken, online.simular);
+
+pagosRouter.get('/mis-pagos', verificarToken, pagosController.misPagos);
+pagosRouter.post('/efectivo', verificarToken, verificarRol('administrador', 'cobrador', 'guardia'), pagosController.registrarEfectivo);
+pagosRouter.get('/reporte-mensual', verificarToken, verificarRol('administrador'), pagosController.reporteMensual);
+pagosRouter.get('/reporte-detallado', verificarToken, verificarRol('administrador'), pagosController.reporteDetallado);
+pagosRouter.get('/ticket/:idTicket', verificarToken, verificarRol('administrador', 'cobrador', 'guardia'), pagosController.obtenerPorTicket);
+pagosRouter.get('/:id', verificarToken, verificarRol('administrador'), pagosController.obtenerPorId);
+pagosRouter.get('/', verificarToken, verificarRol('administrador'), pagosController.listar);

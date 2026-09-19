@@ -1,28 +1,16 @@
 import { api } from './api';
-
-export type TipoVehiculo = 'automovil' | 'motocicleta' | 'camioneta' | 'otro';
-
-export interface Vehiculo {
-  id: number;
-  placa: string;
-  marca: string;
-  modelo: string;
-  color: string;
-  tipo: TipoVehiculo;
-  foto?: string;
-}
+import type { Marca, TipoVehiculoCatalogo, VehiculoConDueno } from '../models';
 
 export const vehiculosService = {
-  listar: () => api.get<Vehiculo[]>('/vehiculos'),
-  obtenerPorId: (id: number) => api.get<Vehiculo>(`/vehiculos/${id}`),
-  obtenerPorPlaca: (placa: string) => api.get<Vehiculo>(`/vehiculos/placa/${placa}`),
-  buscar: (filtro: string) => api.get<Vehiculo[]>('/vehiculos/buscar', { params: { q: filtro } }),
-  crear: (data: Vehiculo) => api.post<{ id: number }>('/vehiculos', data),
-  actualizar: (id: number, data: Partial<Vehiculo>) => api.put<void>(`/vehiculos/${id}`, data),
-  eliminar: (id: number) => api.delete<void>(`/vehiculos/${id}`),
-  vehiculosPorUsuario: (idUsuario: number) => api.get<Vehiculo[]>(`/vehiculos/usuario/${idUsuario}`),
-  asignarAUsuario: (idUsuario: number, idVehiculo: number) =>
-    api.post<void>('/vehiculos/asignar', { id_usuario: idUsuario, id_vehiculo: idVehiculo }),
-  removerDeUsuario: (idUsuario: number, idVehiculo: number) =>
-    api.delete<void>(`/vehiculos/usuario/${idUsuario}/${idVehiculo}`),
+  listar: () => api.get<VehiculoConDueno[]>('/vehiculos'),
+  obtenerPorPlaca: (placa: string) => api.get<VehiculoConDueno>(`/vehiculos/placa/${placa}`),
+  buscar: (filtro: string) => api.get<VehiculoConDueno[]>('/vehiculos/buscar', { params: { q: filtro } }),
+  tiposVehiculo: () => api.get<TipoVehiculoCatalogo[]>('/vehiculos/tipos'),
+  marcasPorTipo: () => api.get<Array<{ tipo_vehiculo: string; marcas: Marca[] }>>('/vehiculos/marcas'),
+  crear: (data: { placa: string; id_usuario: number; id_tipo: number; id_marca?: number; color?: string }) =>
+    api.post<{ mensaje?: string; data?: unknown }>('/vehiculos', data),
+  actualizar: (placa: string, data: Partial<{ id_usuario: number; id_tipo: number; id_marca: number; color: string; activo: boolean }>) =>
+    api.put<{ mensaje?: string; data?: unknown }>(`/vehiculos/${placa}`, data),
+  eliminar: (placa: string) => api.delete<{ mensaje?: string; data?: unknown }>(`/vehiculos/${placa}`),
+  vehiculosPorUsuario: (idUsuario: number) => api.get<import('../models').Vehiculo[]>(`/vehiculos/usuario/${idUsuario}`),
 };

@@ -13,26 +13,22 @@ export async function obtenerActivoPorPlaca(placa: string): Promise<Parqueo | nu
   return parqueoRepo.obtenerActivoPorPlaca(placa);
 }
 
-export async function numParqueoOcupado(numParqueo: string): Promise<boolean> {
-  return parqueoRepo.numParqueoOcupado(numParqueo);
-}
-
-export async function registrarEntrada(placa: string, numParqueo: string): Promise<number> {
-  return parqueoRepo.registrarEntrada(placa, numParqueo);
-}
-
-export async function registrarSalida(id: number, costo: number): Promise<boolean> {
-  return parqueoRepo.registrarSalida(id, costo);
-}
-
-export async function cancelar(id: number): Promise<boolean> {
-  return parqueoRepo.cancelar(id);
-}
-
-export async function historialPorPlaca(
-  placa: string,
-  fechaInicio: string,
-  fechaFin: string,
-): Promise<unknown[]> {
+export async function historialPorPlaca(placa: string, fechaInicio: string, fechaFin: string): Promise<Parqueo[]> {
   return parqueoRepo.historialPorPlaca(placa, fechaInicio, fechaFin);
+}
+
+export async function validarParqueoPorPlaca(placa: string) {
+  const resultado = await parqueoRepo.validarParqueoPorPlaca(placa);
+  const data = (resultado.data ?? {}) as { estado?: string; placa?: string };
+  if (data.estado === 'sin_parqueo') {
+    const existe = await parqueoRepo.placaExiste(placa);
+    if (!existe) {
+      return {
+        ...resultado,
+        mensaje: `La placa ${placa.trim().toUpperCase()} no está registrada en el sistema`,
+        data: { ...data, estado: 'no_registrada' },
+      };
+    }
+  }
+  return resultado;
 }

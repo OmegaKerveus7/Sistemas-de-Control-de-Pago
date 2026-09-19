@@ -1,15 +1,23 @@
 import type { Request, Response } from 'express';
 import * as vehiculosService from '../services/vehiculos.service';
+import type { AuthRequest } from '../types';
+
+function getClientIp(req: Request): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded) {
+    const primero = forwarded.split(',')[0];
+    return (primero ?? '').trim() || req.ip || 'desconocida';
+  }
+  return req.ip ?? 'desconocida';
+}
+
+function idUsuarioAccion(req: Request): number {
+  const usuario = (req as AuthRequest).usuario;
+  return usuario?.id ?? 0;
+}
 
 export async function listar(_req: Request, res: Response) {
   res.json(await vehiculosService.listar());
-}
-
-export async function obtenerPorId(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  const vehiculo = await vehiculosService.obtenerPorId(id);
-  if (!vehiculo) { res.status(404).json({ error: 'Vehículo no encontrado' }); return; }
-  res.json(vehiculo);
 }
 
 export async function obtenerPorPlaca(req: Request, res: Response) {
@@ -20,61 +28,75 @@ export async function obtenerPorPlaca(req: Request, res: Response) {
 }
 
 export async function buscar(req: Request, res: Response) {
-  const q = req.query.q as string;
-  if (!q) { res.status(400).json({ error: 'Parámetro de búsqueda requerido' }); return; }
-  res.json(await vehiculosService.buscar(q));
+  const placa = typeof req.query.q === 'string' ? req.query.q.trim().toUpperCase() : '';
+  if (!placa) { res.status(400).json({ error: 'La placa es requerida' }); return; }
+  if (!/^[PM]\d{3}[A-Z]{3}$/.test(placa)) {
+    res.status(400).json({ error: 'La placa debe tener el formato P123ABC o M123ABC' });
+    return;
+  }
+  res.json(await vehiculosService.buscar(placa));
 }
 
 export async function crear(req: Request, res: Response) {
-  const { placa, marca, modelo, color, tipo } = req.body;
-  if (!placa || !marca || !modelo || !color || !tipo) {
-    res.status(400).json({ error: 'Faltan campos: placa, marca, modelo, color, tipo' });
+  const { placa, id_usuario, id_tipo, id_marca, color } = req.body ?? {};
+  if (!placa || !id_usuario || !id_tipo) {
+    res.status(400).json({ error: 'Faltan campos: placa, id_usuario, id_tipo' });
     return;
   }
-  const id = await vehiculosService.crear(req.body);
-  res.status(201).json({ id });
+  const resultado = await vehiculosService.crear(
+    { placa, id_usuario, id_tipo, id_marca, color },
+    idUsuarioAccion(req),
+    getClientIp(req),
+  );
+  if (resultado.codigo >= 400) {
+    res.status(resultado.codigo).json({ error: resultado.mensaje });
+    return;
+  }
+  res.status(resultado.codigo).json({ mensaje: resultado.mensaje, data: resultado.data });
 }
 
 export async function actualizar(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  const ok = await vehiculosService.actualizar(id, req.body);
-  if (!ok) { res.status(404).json({ error: 'Vehículo no encontrado' }); return; }
-  res.json({ mensaje: 'Vehículo actualizado' });
+  const placa = req.params.id as string;
+  if (!req.body?.id_usuario && !req.body?.id_tipo && !req.body?.id_marca && !req.body?.color && req.body?.activo === undefined) {
+    res.status(400).json({ error: 'Debes enviar al menos un campo para actualizar' });
+    return;
+  }
+  const resultado = await vehiculosService.actualizar(
+    placa,
+    req.body,
+    idUsuarioAccion(req),
+    getClientIp(req),
+  );
+  if (resultado.codigo >= 400) {
+    res.status(resultado.codigo).json({ error: resultado.mensaje });
+    return;
+  }
+  res.json({ mensaje: resultado.mensaje, data: resultado.data });
 }
 
 export async function eliminar(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  const ok = await vehiculosService.eliminar(id);
-  if (!ok) { res.status(404).json({ error: 'Vehículo no encontrado' }); return; }
-  res.json({ mensaje: 'Vehículo eliminado' });
+  const placa = req.params.id as string;
+  const resultado = await vehiculosService.eliminar(
+    placa,
+    idUsuarioAccion(req),
+    getClientIp(req),
+  );
+  if (resultado.codigo >= 400) {
+    res.status(resultado.codigo).json({ error: resultado.mensaje });
+    return;
+  }
+  res.json({ mensaje: resultado.mensaje, data: resultado.data });
 }
-
-// ==================== USUARIO_VEHICULOS ====================
 
 export async function vehiculosPorUsuario(req: Request, res: Response) {
   const idUsuario = Number(req.params.idUsuario);
   res.json(await vehiculosService.vehiculosPorUsuario(idUsuario));
 }
 
-export async function asignarAUsuario(req: Request, res: Response) {
-  const { id_usuario, id_vehiculo } = req.body;
-  if (!id_usuario || !id_vehiculo) {
-    res.status(400).json({ error: 'Se requieren id_usuario e id_vehiculo' });
-    return;
-  }
-  const existe = await vehiculosService.usuarioTieneVehiculo(id_usuario, id_vehiculo);
-  if (existe) {
-    res.status(409).json({ error: 'El vehículo ya está asignado a este usuario' });
-    return;
-  }
-  await vehiculosService.asignarVehiculoAUsuario(id_usuario, id_vehiculo);
-  res.status(201).json({ mensaje: 'Vehículo asignado al usuario' });
+export async function listarTiposVehiculo(_req: Request, res: Response) {
+  res.json(await vehiculosService.listarTiposVehiculo());
 }
 
-export async function removerDeUsuario(req: Request, res: Response) {
-  const idUsuario = Number(req.params.idUsuario);
-  const idVehiculo = Number(req.params.idVehiculo);
-  const ok = await vehiculosService.removerVehiculoDeUsuario(idUsuario, idVehiculo);
-  if (!ok) { res.status(404).json({ error: 'Relación no encontrada' }); return; }
-  res.json({ mensaje: 'Vehículo removido del usuario' });
+export async function marcasPorTipo(_req: Request, res: Response) {
+  res.json(await vehiculosService.marcasPorTipo());
 }

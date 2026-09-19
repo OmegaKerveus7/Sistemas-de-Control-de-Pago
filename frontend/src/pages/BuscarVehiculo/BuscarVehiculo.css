@@ -1,0 +1,112 @@
+.buscar-vehiculo-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.buscar-vehiculo-title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--belen-azul);
+  margin-bottom: 6px;
+}
+
+.buscar-vehiculo-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-texto-secundario);
+}
+
+.buscar-vehiculo-form {
+  display: flex;
+  gap: 10px;
+  max-width: 520px;
+}
+
+.buscar-vehiculo-form .form-input {
+  flex: 1;
+}
+
+.buscar-vehiculo-btn {
+  height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--belen-azul);
+  border-radius: var(--radio-sm);
+  background: var(--belen-azul);
+  color: var(--color-blanco);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transicion);
+}
+
+.buscar-vehiculo-btn:hover:not(:disabled) {
+  background: var(--belen-azul-medio);
+}
+
+.buscar-vehiculo-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.buscar-vehiculo-card {
+  overflow: hidden;
+}
+
+.buscar-vehiculo-vacio {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-texto-secundario);
+  font-size: 0.9rem;
+}
+
+.buscar-vehiculo-tabla-wrapper {
+  overflow-x: auto;
+}
+
+.buscar-vehiculo-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.buscar-vehiculo-tabla th {
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--color-fondo-input);
+  color: var(--belen-azul);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-borde);
+  white-space: nowrap;
+}
+
+.buscar-vehiculo-tabla td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-borde-suave);
+  color: var(--color-texto);
+  white-space: nowrap;
+}
+
+.buscar-vehiculo-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.buscar-vehiculo-tabla tbody tr:hover {
+  background: var(--color-fondo-input);
+}
+
+.buscar-vehiculo-placa {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.buscar-vehiculo-tipo {
+  color: var(--color-texto-secundario);
+  font-size: 0.82rem;
+}
