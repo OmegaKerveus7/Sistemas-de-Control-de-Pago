@@ -37,7 +37,7 @@ export async function buscar(filtro: string): Promise<VehiculoConDueno[]> {
   const placa = filtro.trim().toUpperCase();
   if (!placa) return [];
   const [rows] = await pool.query<(VehiculoConDueno & RowDataPacket)[]>(
-    `SELECT v.placa, v.id_tipo, tv.nombre AS tipo, m.nombre AS marca, v.color, v.activo,
+    `SELECT v.placa, v.id_tipo, tv.nombre AS tipo, m.nombre AS marca, v.color, v.modelo, v.activo,
             v.id_usuario AS id_dueno, u.nombres AS dueno_nombres, u.apellidos AS dueno_apellidos,
             u.DPI AS dueno_dpi, u.email AS dueno_email
      FROM Vehiculos v
@@ -57,13 +57,14 @@ export async function crear(
   const conn = await getPool().getConnection();
   try {
     await conn.query(
-      'CALL sp_vehiculos_crear(?, ?, ?, ?, ?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      'CALL sp_vehiculos_crear(?, ?, ?, ?, ?, ?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
       [
         data.placa.toUpperCase(),
         data.id_usuario,
         data.id_tipo,
         data.id_marca ?? null,
         data.color ?? null,
+        data.modelo ?? null,
         idUsuarioAccion,
         ip,
       ],
@@ -91,13 +92,14 @@ export async function actualizar(
   const conn = await getPool().getConnection();
   try {
     await conn.query(
-      'CALL sp_vehiculos_actualizar(?, ?, ?, ?, ?, ?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
+      'CALL sp_vehiculos_actualizar(?, ?, ?, ?, ?, ?, ?, ?, ?, @pcodigo_s, @pmensaje, @pdata)',
       [
         placa.toUpperCase(),
         data.id_usuario ?? null,
         data.id_tipo ?? null,
         data.id_marca ?? null,
         data.color ?? null,
+        data.modelo ?? null,
         data.activo === undefined ? null : data.activo ? 1 : 0,
         idUsuarioAccion,
         ip,
@@ -167,11 +169,31 @@ export async function marcasPorTipo(): Promise<Array<{ tipo_vehiculo: string; ma
 export async function vehiculosPorUsuario(idUsuario: number): Promise<Vehiculo[]> {
   const pool = getPool();
   const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT v.placa, v.id_usuario, v.id_tipo, v.id_marca, v.color, v.activo, v.fecha_registro
+    `SELECT v.placa, v.id_usuario, v.id_tipo, v.id_marca, v.color, v.modelo, v.activo, v.fecha_registro
      FROM Vehiculos v
      WHERE v.id_usuario = ?
      ORDER BY v.placa`,
     [idUsuario],
   );
   return rows as unknown as Vehiculo[];
+}
+
+/**
+ * Busca una marca por nombre dentro de un tipo de vehículo; si no existe la crea.
+ * Usado cuando el usuario elige "Otros" y escribe una marca manualmente.
+ */
+export async function obtenerOCrearMarca(idTipo: number, nombre: string): Promise<number> {
+  const pool = getPool();
+  const nombreLimpio = nombre.trim();
+  const [existentes] = await pool.query<RowDataPacket[]>(
+    'SELECT id_marca FROM Marcas WHERE id_tipo = ? AND LOWER(nombre) = LOWER(?) LIMIT 1',
+    [idTipo, nombreLimpio],
+  );
+  if (existentes[0]) return existentes[0].id_marca as number;
+
+  const [resultado] = await pool.query<ResultSetHeader>(
+    'INSERT INTO Marcas (nombre, id_tipo, activo) VALUES (?, ?, 1)',
+    [nombreLimpio, idTipo],
+  );
+  return resultado.insertId;
 }

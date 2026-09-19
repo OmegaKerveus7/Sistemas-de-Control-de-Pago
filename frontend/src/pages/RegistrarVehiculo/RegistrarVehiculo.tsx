@@ -1,46 +1,46 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../hooks/useAuth';
 import { vehiculosService } from '../../services/vehiculos.service';
 import type { Marca, TipoVehiculoCatalogo, Vehiculo } from '../../models';
 import './RegistrarVehiculo.css';
 
 const REGEX_PLACA = /^([PM])\d{3}[A-Z]{3}$/;
+const OTROS_MARCA = '__otros__';
 
-const ALIAS_P = ['auto', 'carro', 'camioneta', 'camin', 'pickup', 'suv'];
-const ALIAS_M = ['moto', 'motocicl'];
+/** P = autom\u00f3vil (carro), M = motocicleta. No se ofrece "camioneta": la placa solo distingue estos dos tipos. */
+const NOMBRE_TIPO_POR_PREFIJO: Record<'P' | 'M', string> = { P: 'carro', M: 'moto' };
 
-function tipoCoincideConPrefijo(nombreTipo: string, prefijo: 'P' | 'M'): boolean {
-  const normalizado = nombreTipo
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-  const alias = prefijo === 'P' ? ALIAS_P : ALIAS_M;
-  return alias.some((a) => normalizado.includes(a));
-}
-
-function construirQrVehiculo(placa: string): string {
-  return `BELEN-VEH|v1|${placa.toUpperCase()}`;
+function etiquetaTipo(tipo?: { nombre: string } | null): string {
+  if (!tipo) return '\u2014';
+  const nombre = tipo.nombre.toLowerCase();
+  if (nombre === 'carro') return 'Carro';
+  if (nombre === 'moto') return 'Motocicleta';
+  return tipo.nombre.charAt(0).toUpperCase() + tipo.nombre.slice(1);
 }
 
 interface FormularioVehiculo {
   placa: string;
   id_tipo: string;
   id_marca: string;
+  marcaManual: string;
   color: string;
+  modelo: string;
 }
 
 const FORMULARIO_VACIO: FormularioVehiculo = {
   placa: '',
   id_tipo: '',
   id_marca: '',
+  marcaManual: '',
   color: '',
+  modelo: '',
 };
 
 interface FormularioEdicion {
   placa: string;
   color: string;
+  modelo: string;
 }
 
 export function RegistrarVehiculo() {
@@ -58,30 +58,28 @@ export function RegistrarVehiculo() {
   const [errorLista, setErrorLista] = useState('');
 
   const [vehiculoEditando, setVehiculoEditando] = useState<Vehiculo | null>(null);
-  const [formularioEdicion, setFormularioEdicion] = useState<FormularioEdicion>({ placa: '', color: '' });
+  const [formularioEdicion, setFormularioEdicion] = useState<FormularioEdicion>({ placa: '', color: '', modelo: '' });
   const [errorEdicion, setErrorEdicion] = useState('');
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
-  const [qrExpandido, setQrExpandido] = useState<string | null>(null);
+
+  const cargarCatalogos = async () => {
+    setCargandoCatalogos(true);
+    try {
+      const [tiposData, marcasData] = await Promise.all([
+        vehiculosService.tiposVehiculo(),
+        vehiculosService.marcasPorTipo(),
+      ]);
+      setTipos(tiposData);
+      setMarcasAgrupadas(marcasData);
+    } catch (err) {
+      setErrorForm(err instanceof Error ? err.message : 'No se pudieron cargar los catálogos');
+    } finally {
+      setCargandoCatalogos(false);
+    }
+  };
 
   useEffect(() => {
-    let activo = true;
-    (async () => {
-      setCargandoCatalogos(true);
-      try {
-        const [tiposData, marcasData] = await Promise.all([
-          vehiculosService.tiposVehiculo(),
-          vehiculosService.marcasPorTipo(),
-        ]);
-        if (!activo) return;
-        setTipos(tiposData);
-        setMarcasAgrupadas(marcasData);
-      } catch (err) {
-        if (activo) setErrorForm(err instanceof Error ? err.message : 'No se pudieron cargar los catálogos');
-      } finally {
-        if (activo) setCargandoCatalogos(false);
-      }
-    })();
-    return () => { activo = false; };
+    void cargarCatalogos();
   }, []);
 
   const recargarVehiculos = async () => {
@@ -132,8 +130,17 @@ export function RegistrarVehiculo() {
 
   const tipoCompatibleConPlaca = useMemo(() => {
     if (!tipoDetectadoPorPlaca) return null;
-    return tipos.find((t) => tipoCoincideConPrefijo(t.nombre, tipoDetectadoPorPlaca)) ?? null;
+    const nombreEsperado = NOMBRE_TIPO_POR_PREFIJO[tipoDetectadoPorPlaca];
+    return tipos.find((t) => t.nombre.toLowerCase() === nombreEsperado) ?? null;
   }, [tipos, tipoDetectadoPorPlaca]);
+
+  useEffect(() => {
+    setFormulario((prev) => {
+      const nuevoIdTipo = tipoCompatibleConPlaca ? String(tipoCompatibleConPlaca.id_tipo) : '';
+      if (prev.id_tipo === nuevoIdTipo) return prev;
+      return { ...prev, id_tipo: nuevoIdTipo, id_marca: '', marcaManual: '' };
+    });
+  }, [tipoCompatibleConPlaca]);
 
   if (!usuario) {
     return <Navigate to="/login?redirect=/app/mis-vehiculos" replace />;
@@ -143,16 +150,10 @@ export function RegistrarVehiculo() {
     const placaLimpia = formulario.placa.trim().toUpperCase();
     if (!placaLimpia) return 'Ingresa la placa del vehículo';
     if (!REGEX_PLACA.test(placaLimpia)) return 'La placa debe iniciar con P (automóvil) o M (motocicleta), seguido de 3 números y 3 letras. Ej: P123ABC o M123ABC';
-    if (!tipoCompatibleConPlaca) return 'La placa no coincide con ningún tipo de vehículo disponible';
-
-    const tipoSeleccionado = tipos.find((t) => String(t.id_tipo) === formulario.id_tipo);
-    if (formulario.id_tipo && (!tipoSeleccionado || !tipoCoincideConPrefijo(tipoSeleccionado.nombre, tipoDetectadoPorPlaca as 'P' | 'M'))) {
-      const sugerencia = tipoCompatibleConPlaca?.nombre ?? '—';
-      return `La placa inicia con "${tipoDetectadoPorPlaca}", debe ser un vehículo tipo "${sugerencia}"`;
-    }
-
-    if (!formulario.id_tipo) return 'Selecciona el tipo de vehículo';
-    if (marcasDisponibles.length > 0 && !formulario.id_marca) return 'Selecciona la marca del vehículo';
+    if (!tipoCompatibleConPlaca || !formulario.id_tipo) return 'No se pudo determinar el tipo de vehículo a partir de la placa';
+    if (!formulario.id_marca) return 'Selecciona la marca del vehículo';
+    if (formulario.id_marca === OTROS_MARCA && !formulario.marcaManual.trim()) return 'Escribe la marca del vehículo';
+    if (!formulario.modelo.trim()) return 'Ingresa el modelo del vehículo';
     return null;
   };
 
@@ -168,8 +169,11 @@ export function RegistrarVehiculo() {
 
     const placaLimpia = formulario.placa.trim().toUpperCase();
     const idTipoNum = Number(formulario.id_tipo);
-    const idMarcaNum = formulario.id_marca ? Number(formulario.id_marca) : undefined;
+    const esOtrosMarca = formulario.id_marca === OTROS_MARCA;
+    const idMarcaNum = formulario.id_marca && !esOtrosMarca ? Number(formulario.id_marca) : undefined;
+    const marcaPersonalizada = esOtrosMarca ? formulario.marcaManual.trim() : undefined;
     const colorLimpio = formulario.color.trim() || undefined;
+    const modeloLimpio = formulario.modelo.trim();
 
     if (vehiculos.some((v) => v.placa.toUpperCase() === placaLimpia && v.activo !== false)) {
       setErrorForm('Ya tienes un vehículo registrado con esa placa');
@@ -183,11 +187,13 @@ export function RegistrarVehiculo() {
         id_usuario: usuario.id,
         id_tipo: idTipoNum,
         id_marca: idMarcaNum,
+        marca_personalizada: marcaPersonalizada,
         color: colorLimpio,
+        modelo: modeloLimpio,
       });
-      setMensajeExito(`Vehículo ${placaLimpia} registrado correctamente. Comparte el QR con el guardia para registrar tu entrada.`);
+      setMensajeExito(`Vehículo ${placaLimpia} registrado correctamente.`);
       setFormulario(FORMULARIO_VACIO);
-      await recargarVehiculos();
+      await Promise.all([recargarVehiculos(), esOtrosMarca ? cargarCatalogos() : Promise.resolve()]);
     } catch (err) {
       setErrorForm(err instanceof Error ? err.message : 'No se pudo registrar el vehículo');
     } finally {
@@ -211,13 +217,13 @@ export function RegistrarVehiculo() {
 
   const abrirEdicion = (vehiculo: Vehiculo) => {
     setVehiculoEditando(vehiculo);
-    setFormularioEdicion({ placa: vehiculo.placa, color: vehiculo.color ?? '' });
+    setFormularioEdicion({ placa: vehiculo.placa, color: vehiculo.color ?? '', modelo: vehiculo.modelo ?? '' });
     setErrorEdicion('');
   };
 
   const cerrarEdicion = () => {
     setVehiculoEditando(null);
-    setFormularioEdicion({ placa: '', color: '' });
+    setFormularioEdicion({ placa: '', color: '', modelo: '' });
     setErrorEdicion('');
   };
 
@@ -228,6 +234,7 @@ export function RegistrarVehiculo() {
 
     const nuevaPlaca = formularioEdicion.placa.trim().toUpperCase();
     const nuevoColor = formularioEdicion.color.trim();
+    const nuevoModelo = formularioEdicion.modelo.trim();
 
     if (!nuevaPlaca) {
       setErrorEdicion('Ingresa la placa');
@@ -239,15 +246,16 @@ export function RegistrarVehiculo() {
     }
     const prefijo = nuevaPlaca.charAt(0) as 'P' | 'M';
     const tipo = tipos.find((t) => t.id_tipo === vehiculoEditando.id_tipo);
-    if (!tipo || !tipoCoincideConPrefijo(tipo.nombre, prefijo)) {
-      setErrorEdicion(`La placa (${prefijo}) no coincide con el tipo de vehículo registrado (${tipo?.nombre ?? 'desconocido'})`);
+    if (!tipo || tipo.nombre.toLowerCase() !== NOMBRE_TIPO_POR_PREFIJO[prefijo]) {
+      setErrorEdicion(`La placa (${prefijo}) no coincide con el tipo de vehículo registrado (${etiquetaTipo(tipo)})`);
       return;
     }
 
     const placaCambio = nuevaPlaca !== vehiculoEditando.placa;
     const colorCambio = (nuevoColor || null) !== (vehiculoEditando.color ?? null);
+    const modeloCambio = (nuevoModelo || null) !== (vehiculoEditando.modelo ?? null);
 
-    if (!placaCambio && !colorCambio) {
+    if (!placaCambio && !colorCambio && !modeloCambio) {
       cerrarEdicion();
       return;
     }
@@ -266,11 +274,13 @@ export function RegistrarVehiculo() {
           id_tipo: vehiculoEditando.id_tipo,
           id_marca: vehiculoEditando.id_marca,
           color: nuevoColor || undefined,
+          modelo: nuevoModelo || undefined,
         });
         await vehiculosService.eliminar(vehiculoEditando.placa);
       } else {
         await vehiculosService.actualizar(vehiculoEditando.placa, {
           color: nuevoColor || undefined,
+          modelo: nuevoModelo || undefined,
         });
       }
       cerrarEdicion();
@@ -292,28 +302,12 @@ export function RegistrarVehiculo() {
     return grupo?.marcas.find((m) => m.id_marca === vehiculo.id_marca);
   };
 
-  const descargarQr = (vehiculo: Vehiculo) => {
-    const svg = document.getElementById(`qr-${vehiculo.placa}`);
-    if (!svg) return;
-    const serializer = new XMLSerializer();
-    const source = serializer.serializeToString(svg);
-    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `vehiculo-${vehiculo.placa}.svg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <section className="mis-vehiculos-page">
       <div className="mis-vehiculos-header">
         <h1 className="mis-vehiculos-title">Mis Vehículos</h1>
         <p className="mis-vehiculos-subtitle">
-          Registra tus vehículos para identificarlos cuando entren al parqueo. Comparte el QR de cada vehículo con el guardia para que pueda llenar la placa automáticamente al registrar tu entrada.
+          Registra tus vehículos para identificarlos cuando entren al parqueo.
         </p>
       </div>
 
@@ -338,32 +332,11 @@ export function RegistrarVehiculo() {
                 disabled={cargandoCatalogos || guardando}
               />
               <p className="mis-vehiculos-ayuda">
-                Formato: 1 letra (P/M) + 3 números + 3 letras.
+                Formato: 1 letra (P = Carro, M = Motocicleta) + 3 números + 3 letras.
                 {tipoCompatibleConPlaca && (
-                  <>
-                    {' '}Detectado: <strong>{tipoCompatibleConPlaca.nombre}</strong>
-                    {formulario.id_tipo && tipoCompatibleConPlaca.id_tipo !== Number(formulario.id_tipo) && (
-                      <> · cambia el tipo si no coincide</>
-                    )}
-                  </>
+                  <> Tipo detectado: <strong>{etiquetaTipo(tipoCompatibleConPlaca)}</strong></>
                 )}
               </p>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="id_tipo">Tipo de vehículo</label>
-              <select
-                id="id_tipo"
-                className="form-input"
-                value={formulario.id_tipo}
-                onChange={(e) => setFormulario({ ...formulario, id_tipo: e.target.value, id_marca: '' })}
-                disabled={cargandoCatalogos || guardando}
-              >
-                <option value="">Selecciona…</option>
-                {tipos.map((t) => (
-                  <option key={t.id_tipo} value={t.id_tipo}>{t.nombre}</option>
-                ))}
-              </select>
             </div>
 
             <div className="form-group">
@@ -372,14 +345,45 @@ export function RegistrarVehiculo() {
                 id="id_marca"
                 className="form-input"
                 value={formulario.id_marca}
-                onChange={(e) => setFormulario({ ...formulario, id_marca: e.target.value })}
-                disabled={cargandoCatalogos || guardando || !formulario.id_tipo || marcasDisponibles.length === 0}
+                onChange={(e) => setFormulario({ ...formulario, id_marca: e.target.value, marcaManual: '' })}
+                disabled={cargandoCatalogos || guardando || !formulario.id_tipo}
               >
-                <option value="">{formulario.id_tipo ? (marcasDisponibles.length ? 'Selecciona…' : 'Sin marcas disponibles') : 'Selecciona primero el tipo'}</option>
+                <option value="">{formulario.id_tipo ? 'Selecciona…' : 'Ingresa una placa válida primero'}</option>
                 {marcasDisponibles.map((m) => (
                   <option key={m.id_marca} value={m.id_marca}>{m.nombre}</option>
                 ))}
+                {formulario.id_tipo && <option value={OTROS_MARCA}>Otros</option>}
               </select>
+            </div>
+
+            {formulario.id_marca === OTROS_MARCA && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="marcaManual">Especifica la marca</label>
+                <input
+                  id="marcaManual"
+                  className="form-input"
+                  type="text"
+                  value={formulario.marcaManual}
+                  onChange={(e) => setFormulario({ ...formulario, marcaManual: e.target.value })}
+                  placeholder="Ej. Zongshen"
+                  maxLength={60}
+                  disabled={guardando}
+                />
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="modelo">Modelo</label>
+              <input
+                id="modelo"
+                className="form-input"
+                type="text"
+                value={formulario.modelo}
+                onChange={(e) => setFormulario({ ...formulario, modelo: e.target.value })}
+                placeholder="Ej. Corolla 2020"
+                maxLength={60}
+                disabled={guardando}
+              />
             </div>
 
             <div className="form-group">
@@ -426,49 +430,16 @@ export function RegistrarVehiculo() {
             {vehiculos.map((v) => {
               const tipo = tipoDeVehiculo(v);
               const marca = marcaDeVehiculo(v);
-              const qrContenido = construirQrVehiculo(v.placa);
-              const qrExpandidoEsta = qrExpandido === v.placa;
               return (
                 <li key={v.placa} className="mis-vehiculos-item">
                   <div className="mis-vehiculos-item-info">
                     <span className="mis-vehiculos-item-placa">{v.placa}</span>
                     <span className="mis-vehiculos-item-detalle">
-                      {tipo?.nombre ?? '—'}{marca ? ` · ${marca.nombre}` : ''}{v.color ? ` · ${v.color}` : ''}
+                      {etiquetaTipo(tipo)}{marca ? ` · ${marca.nombre}` : ''}{v.modelo ? ` · ${v.modelo}` : ''}{v.color ? ` · ${v.color}` : ''}
                     </span>
                     <span className={`mis-vehiculos-estado ${v.activo === false ? 'inactivo' : ''}`}>
                       {v.activo === false ? 'Inactivo' : 'Activo'}
                     </span>
-                  </div>
-
-                  <div className="mis-vehiculos-qr-block">
-                    <div className="mis-vehiculos-qr-svg" aria-hidden={!qrExpandidoEsta}>
-                      <QRCodeSVG
-                        id={`qr-${v.placa}`}
-                        value={qrContenido}
-                        size={qrExpandidoEsta ? 220 : 90}
-                        level="M"
-                        includeMargin={qrExpandidoEsta}
-                      />
-                    </div>
-                    <div className="mis-vehiculos-qr-acciones">
-                      <button
-                        type="button"
-                        className="mis-vehiculos-btn-secondary"
-                        onClick={() => setQrExpandido(qrExpandidoEsta ? null : v.placa)}
-                      >
-                        {qrExpandidoEsta ? 'Ocultar QR' : 'Ver QR'}
-                      </button>
-                      <button
-                        type="button"
-                        className="mis-vehiculos-btn-secondary"
-                        onClick={() => descargarQr(v)}
-                      >
-                        Descargar
-                      </button>
-                    </div>
-                    <p className="mis-vehiculos-ayuda">
-                      El guardia escanea este QR para llenar la placa automáticamente al registrar la entrada.
-                    </p>
                   </div>
 
                   <div className="mis-vehiculos-item-acciones">
@@ -514,7 +485,6 @@ export function RegistrarVehiculo() {
                   maxLength={7}
                   disabled={guardandoEdicion}
                 />
-                <p className="mis-vehiculos-ayuda">Cambiar la placa regenera el QR de este vehículo.</p>
               </div>
 
               <div className="form-group">
@@ -531,9 +501,22 @@ export function RegistrarVehiculo() {
               </div>
 
               <div className="form-group">
+                <label className="form-label">Modelo</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  value={formularioEdicion.modelo}
+                  onChange={(e) => setFormularioEdicion({ ...formularioEdicion, modelo: e.target.value })}
+                  placeholder="Ej. Corolla 2020"
+                  maxLength={60}
+                  disabled={guardandoEdicion}
+                />
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">Tipo y marca</label>
                 <div className="mis-vehiculos-bloque-info">
-                  <span><strong>Tipo:</strong> {tipoDeVehiculo(vehiculoEditando)?.nombre ?? '—'}</span>
+                  <span><strong>Tipo:</strong> {etiquetaTipo(tipoDeVehiculo(vehiculoEditando))}</span>
                   <span><strong>Marca:</strong> {marcaDeVehiculo(vehiculoEditando)?.nombre ?? '—'}</span>
                   <p className="mis-vehiculos-ayuda">El tipo y la marca no se pueden modificar. Si necesitas cambiarlos, desactiva este vehículo y registra uno nuevo.</p>
                 </div>

@@ -41,6 +41,9 @@
 }
 
 .guardian-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid var(--color-borde);
   background: var(--color-blanco);
   color: var(--belen-azul);
@@ -51,6 +54,12 @@
   white-space: nowrap;
   transition: all var(--transicion);
   min-height: 44px;
+}
+
+.guardian-refresh svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .guardian-refresh:hover:not(:disabled) {

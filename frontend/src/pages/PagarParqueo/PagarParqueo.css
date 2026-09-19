@@ -206,10 +206,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 4px;
+}
+
+.pagar-resultado-icono svg {
+  width: 30px;
+  height: 30px;
 }
 
 .pagar-resultado-aprobado .pagar-resultado-icono {

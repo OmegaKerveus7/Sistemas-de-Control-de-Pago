@@ -38,13 +38,13 @@ export async function buscar(req: Request, res: Response) {
 }
 
 export async function crear(req: Request, res: Response) {
-  const { placa, id_usuario, id_tipo, id_marca, color } = req.body ?? {};
+  const { placa, id_usuario, id_tipo, id_marca, marca_personalizada, color, modelo } = req.body ?? {};
   if (!placa || !id_usuario || !id_tipo) {
     res.status(400).json({ error: 'Faltan campos: placa, id_usuario, id_tipo' });
     return;
   }
   const resultado = await vehiculosService.crear(
-    { placa, id_usuario, id_tipo, id_marca, color },
+    { placa, id_usuario, id_tipo, id_marca, marca_personalizada, color, modelo },
     idUsuarioAccion(req),
     getClientIp(req),
   );
@@ -57,7 +57,8 @@ export async function crear(req: Request, res: Response) {
 
 export async function actualizar(req: Request, res: Response) {
   const placa = req.params.id as string;
-  if (!req.body?.id_usuario && !req.body?.id_tipo && !req.body?.id_marca && !req.body?.color && req.body?.activo === undefined) {
+  const body = req.body ?? {};
+  if (!body.id_usuario && !body.id_tipo && !body.id_marca && !body.marca_personalizada && !body.color && !body.modelo && body.activo === undefined) {
     res.status(400).json({ error: 'Debes enviar al menos un campo para actualizar' });
     return;
   }
