@@ -4,6 +4,27 @@ import { pagosService, type ResultadoConfirmar } from '../../services/pagos.serv
 import { useAuth } from '../../hooks/useAuth';
 import './PagarParqueo.css';
 
+const IconoAprobado = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const IconoVerificando = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <polyline points="12 7 12 12 15.5 14" />
+  </svg>
+);
+
+const IconoAlerta = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="8" x2="12" y2="13" />
+    <line x1="12" y1="16.5" x2="12" y2="16.51" />
+    <circle cx="12" cy="12" r="9" />
+  </svg>
+);
+
 export function ResultadoPago() {
   const [params] = useSearchParams();
   const location = useLocation();
@@ -63,7 +84,9 @@ export function ResultadoPago() {
     <main className="pagar-main">
       <div className={`pagar-card pagar-resultado pagar-resultado-${estado}`} aria-live="polite" aria-busy={cargando}>
         {resultado && resultado.modo !== 'live' && <p className="pagar-aviso-prueba">{resultado.modo === 'mock' ? 'Simulador local' : 'Sandbox Recurrente'} · Sin dinero real</p>}
-        <div className="pagar-resultado-icono" aria-hidden="true">{estado === 'aprobado' ? '✓' : estado === 'verificando' || estado === 'pendiente' ? '…' : '!'}</div>
+        <div className="pagar-resultado-icono" aria-hidden="true">
+          {estado === 'aprobado' ? <IconoAprobado /> : estado === 'verificando' || estado === 'pendiente' ? <IconoVerificando /> : <IconoAlerta />}
+        </div>
         <h1 className="pagar-title">{titulos[estado]}</h1>
         <p className="pagar-subtitle">{descripciones[estado]}</p>
         {resultado && <p className="pagar-resumen-linea"><span>{resultado.placa}</span><strong>Q{Number(resultado.monto).toFixed(2)}</strong></p>}

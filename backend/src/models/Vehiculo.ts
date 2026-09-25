@@ -6,6 +6,7 @@ export interface Vehiculo {
   id_tipo: number;
   id_marca?: number | null;
   color?: string | null;
+  modelo?: string | null;
   activo?: boolean;
   fecha_registro?: Date;
 }
@@ -16,6 +17,7 @@ export interface VehiculoConDueno {
   tipo: string | null;
   marca: string | null;
   color: string | null;
+  modelo: string | null;
   activo: boolean;
   id_dueno: number | null;
   dueno_nombres: string | null;

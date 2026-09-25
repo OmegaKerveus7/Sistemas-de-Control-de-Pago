@@ -6,6 +6,13 @@ import './ValidarParqueoPublico.css';
 
 const REGEX_PLACA = /^([PM])\d{3}[A-Z]{3}$/;
 
+const IconoVolver = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+);
+
 function construirQrVehiculo(placa: string): string {
   return `BELEN-VEH|v1|${placa.toUpperCase()}`;
 }
@@ -75,7 +82,7 @@ export function ValidarParqueoPublico() {
     <div className="vp-page">
       <header className="vp-header">
         <button type="button" className="vp-volver" onClick={() => navigate('/')}>
-          ← Volver al inicio
+          <IconoVolver /> Volver al inicio
         </button>
         <h1 className="vp-title">Validar Parqueo</h1>
         <p className="vp-subtitle">
