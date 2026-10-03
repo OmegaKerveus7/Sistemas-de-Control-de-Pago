@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import ExcelJS from 'exceljs';
 import { reportesService, type ReporteDetallado, type ReporteMensual } from '../../services/reportes.service';
+import { crearLibroPagos } from './libroPagos';
 import './Reportes.css';
 
 const MESES = [
@@ -40,64 +40,21 @@ export function Reportes() {
   const totalMonto = useMemo(() => detalle.reduce((s, d) => s + Number(d.monto), 0), [detalle]);
   const totalPagos = detalle.length;
 
+  const pagosCompletados = useMemo(() => detalle.filter((d) => d.estado === 'completado').length, [detalle]);
+
   async function descargarExcel() {
-    if (detalle.length === 0) return;
+    if (pagosCompletados === 0) return;
     setDescargando(true);
     try {
-      const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'Sistema de Parqueo Zona 19';
-      workbook.created = new Date();
-
-      const sheet = workbook.addWorksheet(`Reporte ${MESES[mesSeleccionada - 1]} ${anioSeleccionado}`);
-
-      sheet.columns = [
-        { header: '#', key: 'num', width: 6 },
-        { header: 'Ticket', key: 'ticket', width: 16 },
-        { header: 'Placa', key: 'placa', width: 10 },
-        { header: 'Tipo', key: 'tipo_vehiculo', width: 14 },
-        { header: 'Pagador', key: 'pagador', width: 24 },
-        { header: 'Método', key: 'metodo', width: 12 },
-        { header: 'Monto', key: 'monto', width: 10 },
-        { header: 'Estado', key: 'estado', width: 12 },
-        { header: 'Fecha', key: 'fecha_pago', width: 20 },
-        { header: 'Lugar', key: 'lugar', width: 10 },
-        { header: 'Zona', key: 'zona', width: 14 },
-      ];
-
-      const headerRow = sheet.getRow(1);
-      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A237E' } };
-      headerRow.alignment = { horizontal: 'center' };
-
-      detalle.forEach((d, i) => {
-        sheet.addRow({
-          num: i + 1,
-          ticket: d.ticket,
-          placa: d.placa,
-          tipo_vehiculo: d.tipo_vehiculo,
-          pagador: d.pagador?.trim() || 'Visitante',
-          metodo: d.metodo,
-          monto: Number(d.monto),
-          estado: d.estado,
-          fecha_pago: new Date(d.fecha_pago).toLocaleString('es-GT'),
-          lugar: d.lugar,
-          zona: d.zona,
-        });
-      });
-
-      sheet.addRow({});
-      sheet.addRow({});
-      const summaryRow = sheet.addRow({ pagador: 'TOTAL', monto: totalMonto });
-      summaryRow.font = { bold: true, size: 12 };
-      const countRow = sheet.addRow({ pagador: 'Total pagos', monto: totalPagos });
-      countRow.font = { bold: true };
+      const nombreMes = MESES[mesSeleccionada - 1];
+      const workbook = crearLibroPagos(detalle, `Pagos ${nombreMes} ${anioSeleccionado}`);
 
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `reporte-parqueo-${MESES[mesSeleccionada - 1]}-${anioSeleccionado}.xlsx`;
+      a.download = `registro-pagos-parqueo-${nombreMes}-${anioSeleccionado}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -147,7 +104,7 @@ export function Reportes() {
           <button
             className="reportes-btn-descargar"
             onClick={() => void descargarExcel()}
-            disabled={descargando || detalle.length === 0}
+            disabled={descargando || pagosCompletados === 0}
           >
             {descargando ? 'Generando...' : 'Descargar Excel'}
           </button>

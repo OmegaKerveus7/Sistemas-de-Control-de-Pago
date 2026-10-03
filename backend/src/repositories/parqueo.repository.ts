@@ -102,6 +102,15 @@ export interface ResultadoValidarParqueoSP {
 }
 
 /** Verifica si una placa tiene cualquier registro en el sistema (Vehiculos o Tickets históricos). */
+/** Número (TK-…) del ticket activo de una placa; sirve para armar el QR del ticket. */
+export async function numeroTicketActivoPorPlaca(placa: string): Promise<string | null> {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    'SELECT numero_ticket FROM Tickets WHERE UPPER(placa) = ? AND activo = 1 ORDER BY id_ticket DESC LIMIT 1',
+    [placa.trim().toUpperCase()],
+  );
+  return (rows[0]?.numero_ticket as string | undefined) ?? null;
+}
+
 export async function placaExiste(placa: string): Promise<boolean> {
   const limpia = placa.trim().toUpperCase();
   if (!/^[PM][0-9]{3}[A-Z]{3}$/.test(limpia)) return false;

@@ -8,10 +8,13 @@ export interface ReporteMensual {
 
 export interface ReporteDetallado {
   id: number;
+  id_ticket: number;
   ticket: string;
   placa: string;
   tipo_vehiculo: string;
   pagador: string;
+  nombre_completo: string;
+  dpi: string;
   metodo: string;
   monto: number;
   estado: string;

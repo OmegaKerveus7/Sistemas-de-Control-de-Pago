@@ -3,6 +3,7 @@ import { getPool } from '../config/database';
 import type { CriterioGuardian, RegistroEntradaGuardian, TipoVehiculoGuardian } from '../models';
 import { GuardianError } from '../models';
 import { parsearQrGuardian } from '../utils/guardian-qr';
+import { esQrTicket, parsearQrTicket } from '../utils/qr-ticket';
 
 type Movimiento = 'entrada' | 'salida' | 'autorizacion_salida';
 
@@ -80,6 +81,11 @@ function criterioConsulta(criterio: CriterioGuardian): { where: string; params: 
       where: 'EXISTS (SELECT 1 FROM Pagos pr WHERE pr.id_ticket = t.id_ticket AND pr.codigo_validacion = ?)',
       params: [criterio.referencia.trim()],
     };
+  }
+  if (criterio.qr && esQrTicket(criterio.qr)) {
+    // QR del ticket: identifica el ticket aunque todavía no tenga pago; el estado de pago se resuelve en la consulta.
+    const qr = parsearQrTicket(criterio.qr);
+    return { where: 't.numero_ticket = ? AND UPPER(t.placa) = ?', params: [qr.ticket, qr.placa] };
   }
   if (criterio.qr) {
     const qr = parsearQrGuardian(criterio.qr);

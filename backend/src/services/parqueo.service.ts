@@ -30,5 +30,10 @@ export async function validarParqueoPorPlaca(placa: string) {
       };
     }
   }
+  if (data.estado === 'con_parqueo' || data.estado === 'sin_pago') {
+    // El usuario necesita el número del ticket para mostrar su QR al guardia (pagado o no).
+    const numeroTicket = await parqueoRepo.numeroTicketActivoPorPlaca(placa);
+    if (numeroTicket) return { ...resultado, data: { ...data, numero_ticket: numeroTicket } };
+  }
   return resultado;
 }

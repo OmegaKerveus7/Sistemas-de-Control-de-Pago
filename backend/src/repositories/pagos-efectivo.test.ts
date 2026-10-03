@@ -5,6 +5,7 @@ let insertArgs: unknown[] | undefined;
 let committed = false;
 let rolledBack = false;
 let failInsert = false;
+let dueno: Record<string, unknown> | null = null;
 const conn = {
   beginTransaction: async () => {}, commit: async () => { committed = true; },
   rollback: async () => { rolledBack = true; }, release: () => {},
@@ -12,7 +13,12 @@ const conn = {
     if (sql.includes('FROM Tickets')) { expect(sql).toContain('FOR UPDATE'); return [ticket ? [ticket] : []]; }
     if (sql.includes('FROM Pagos')) { expect(sql).toContain('FOR UPDATE'); return [pagos]; }
     if (sql.includes('INSERT INTO Pagos')) { if (failInsert) throw new Error('fallo de escritura'); insertArgs = args; return [{ insertId: 3 }]; }
-    if (sql.includes('FROM Usuarios')) { return [[]]; }
+    if (sql.includes('FROM Usuarios')) {
+      // La columna real se llama "email"; consultar "correo" rompe el cobro en la BD.
+      expect(sql).toContain('email');
+      expect(sql).not.toContain('correo');
+      return [dueno ? [dueno] : []];
+    }
     throw new Error('Consulta inesperada');
   },
 };
@@ -21,7 +27,13 @@ const { crearEfectivo } = await import('./pagos.repository');
 const datos = { placa: 'p123abc', id_tipo_vehiculo: 2, id_guardia: 7 };
 afterEach(() => {
   ticket = { id_ticket: 1, id_usuario: null, id_tipo: 2, precio_efectivo: '20.00', numero_ticket: 'TK-001', lugar: 'A1', zona: 'Zona A' };
-  pagos = []; insertArgs = undefined; committed = rolledBack = failInsert = false;
+  pagos = []; insertArgs = undefined; committed = rolledBack = failInsert = false; dueno = null;
+});
+test('devuelve el correo y nombre del dueño del ticket para enviar el comprobante', async () => {
+  ticket = { ...ticket!, id_usuario: 5 };
+  dueno = { email: 'ana@correo.test', nombres: 'Ana', apellidos: 'Pérez' };
+  expect(await crearEfectivo(datos)).toMatchObject({ dueno_email: 'ana@correo.test', dueno_nombre: 'Ana Pérez' });
+  expect(committed).toBe(true);
 });
 test('cobra la tarifa del ticket y admite visitantes', async () => {
   expect(await crearEfectivo(datos)).toEqual({ id: 3, monto: 20, dueno_email: null, dueno_nombre: null, placa: 'P123ABC', ticket: 'TK-001', lugar: 'A1', zona: 'Zona A', codigo_validacion: expect.stringMatching(/^E-/) });

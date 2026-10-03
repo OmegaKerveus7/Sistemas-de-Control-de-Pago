@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import * as pagosService from '../services/pagos.service';
 import * as correoService from '../services/correo.service';
+import * as recordatoriosService from '../services/recordatorios.service';
 import type { AuthRequest } from '../types';
 import { PagoError } from '../services/pasarela.service';
 
@@ -64,6 +65,27 @@ export async function registrarEfectivo(req: Request, res: Response) {
       res.status(500).json({ error: 'No se pudo registrar el pago en efectivo. Consulta con administración.' });
     }
   }
+}
+
+/** Envía recordatorios de pago a usuarios con un ticket activo sin pagar. Body opcional: { id_ticket }. */
+export async function enviarRecordatorios(req: Request, res: Response) {
+  const crudo = req.body?.id_ticket;
+  const idTicket = crudo === undefined || crudo === null || crudo === '' ? undefined : Number(crudo);
+  if (idTicket !== undefined && (!Number.isInteger(idTicket) || idTicket <= 0)) {
+    res.status(400).json({ error: 'id_ticket debe ser un entero positivo' });
+    return;
+  }
+  if (!correoService.correoRecordatoriosConfigurado()) {
+    res.status(503).json({ error: 'El correo de recordatorios no está configurado en el servidor' });
+    return;
+  }
+
+  const resumen = await recordatoriosService.enviarRecordatorios(idTicket);
+  if (idTicket !== undefined && resumen.total === 0) {
+    res.status(404).json({ error: 'El ticket no existe, ya está pagado, ya salió o no pertenece a un usuario registrado' });
+    return;
+  }
+  res.json(resumen);
 }
 
 export async function reporteMensual(_req: Request, res: Response) {

@@ -67,10 +67,14 @@ export async function reporteMensual(): Promise<FilaReporteMensual[]> {
 
 export interface FilaReporteDetallado {
   id: number;
+  id_ticket: number;
   ticket: string;
   placa: string;
   tipo_vehiculo: string;
   pagador: string;
+  /** Dueño del vehículo del ticket (o el visitante); "pagador" puede ser el guardia que cobró. */
+  nombre_completo: string;
+  dpi: string;
   metodo: string;
   monto: number;
   estado: string;
@@ -82,9 +86,12 @@ export interface FilaReporteDetallado {
 export async function reporteDetallado(anio: number, mes: number): Promise<FilaReporteDetallado[]> {
   const pool = getPool();
   const [rows] = await pool.query(
-    `SELECT pg.id_pago AS id, t.numero_ticket AS ticket, pg.placa,
+    `SELECT pg.id_pago AS id, t.id_ticket, t.numero_ticket AS ticket, pg.placa,
             tv.nombre AS tipo_vehiculo,
             CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) AS pagador,
+            COALESCE(NULLIF(TRIM(CONCAT(COALESCE(d.nombres, ''), ' ', COALESCE(d.apellidos, ''))), ''),
+                     t.nombre_externo, '') AS nombre_completo,
+            COALESCE(d.DPI, '') AS dpi,
             pg.metodo_pago AS metodo, pg.monto, pg.estado_pago AS estado,
             pg.fecha_pago,
             COALESCE(l.codigo, 'N/A') AS lugar,
@@ -93,6 +100,7 @@ export async function reporteDetallado(anio: number, mes: number): Promise<FilaR
      JOIN Tickets t ON t.id_ticket = pg.id_ticket
      JOIN Tipo_vehiculo tv ON tv.id_tipo = pg.id_tipo
      LEFT JOIN Usuarios u ON u.id_usuario = pg.id_usuario
+     LEFT JOIN Usuarios d ON d.id_usuario = t.id_usuario
      LEFT JOIN Parqueos p ON p.id_ticket = t.id_ticket
      LEFT JOIN Lugares l ON l.id_lugar = p.id_lugar
      LEFT JOIN Zonas z ON z.id_zona = l.id_zona
@@ -212,9 +220,9 @@ export async function crearEfectivo(datos: DatosPagoEfectivo): Promise<Resultado
     let dueno_nombre: string | null = null;
     if (ticket.id_usuario) {
       const [usuarios] = await conn.query<RowDataPacket[]>(
-        'SELECT correo, nombres, apellidos FROM Usuarios WHERE id_usuario = ?', [ticket.id_usuario]);
-      if (usuarios[0]?.correo) {
-        dueno_email = usuarios[0].correo;
+        'SELECT email, nombres, apellidos FROM Usuarios WHERE id_usuario = ?', [ticket.id_usuario]);
+      if (usuarios[0]?.email) {
+        dueno_email = usuarios[0].email;
         dueno_nombre = `${usuarios[0].nombres} ${usuarios[0].apellidos}`;
       }
     }

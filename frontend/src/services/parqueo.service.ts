@@ -26,6 +26,8 @@ export interface ValidarParqueoRespuesta {
   tiene_pago: boolean;
   puede_salir: boolean;
   id_ticket?: number;
+  /** Número del ticket (TK-…); con él se arma el QR que lee el guardia. */
+  numero_ticket?: string;
   id_lugar?: number;
   codigo_validacion?: string | null;
   es_externo?: number;

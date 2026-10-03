@@ -11,6 +11,8 @@ let queryResponses: Array<Record<string, unknown>[]> = [];
 let committed = false;
 let rolledBack = false;
 let released = false;
+let ticketBusqueda: Record<string, unknown> | undefined;
+let consultaBusqueda: { sql: string; params: unknown[] } | undefined;
 const connection = {
   beginTransaction: async () => {},
   commit: async () => { committed = true; },
@@ -18,6 +20,7 @@ const connection = {
   release: () => { released = true; },
   execute: async (sql: string, params: unknown[] = []) => {
     statements.push(sql);
+    if (sql.includes('AS pago_completado')) { consultaBusqueda = { sql, params }; return [ticketBusqueda ? [ticketBusqueda] : []]; }
     if (sql.includes('FROM Vehiculos')) return [vehicle ? [vehicle] : []];
     if (sql.includes('FROM Tipo_vehiculo')) return [[{ id_tipo: 2, nombre: 'carro' }]];
     if (sql.includes('SELECT id_ticket FROM Tickets')) return [entradaDuplicada ? [{ id_ticket: 1 }] : []];
@@ -41,7 +44,7 @@ const pool = {
 };
 
 mock.module('../config/database', () => ({ getPool: () => pool }));
-const { registrarEntrada, resumen } = await import('./guardian.repository');
+const { registrarEntrada, resumen, buscar } = await import('./guardian.repository');
 
 afterEach(() => {
   vehicle = undefined;
@@ -53,6 +56,8 @@ afterEach(() => {
   statements = [];
   queryResponses = [];
   committed = rolledBack = released = false;
+  ticketBusqueda = undefined;
+  consultaBusqueda = undefined;
 });
 
 test('incluye en el resumen los espacios ocupados desde días anteriores', async () => {
@@ -178,4 +183,40 @@ test('rechaza una entrada duplicada sin crear otro ticket', async () => {
   await expect(registrarEntrada({ placa: 'P123ABC' }, 1, '127.0.0.1')).rejects.toMatchObject({ codigo: 'PLACA_ACTIVA' });
   expect(statements.some(sql => sql.includes('INSERT INTO Tickets ('))).toBe(false);
   expect(rolledBack).toBe(true);
+});
+
+const ticketSinPagar = { id_ticket: 7, numero_ticket: 'TK-ABC-1', placa: 'P123ABC', codigo_lugar: 'A1', zona_nombre: 'Zona A', tipo_nombre: 'carro', pago_id: null, pago_estado: null, pago_completado: 0 };
+
+test('el QR del ticket encuentra un ticket SIN pago y lo reporta como no pagado', async () => {
+  ticketBusqueda = ticketSinPagar;
+  const r = await buscar({ qr: 'BELEN-TKT|v1|tk-abc-1|p123abc' });
+  expect(consultaBusqueda?.sql).toContain('t.numero_ticket = ? AND UPPER(t.placa) = ?');
+  expect(consultaBusqueda?.sql).not.toContain('codigo_validacion');
+  expect(consultaBusqueda?.params).toEqual(['TK-ABC-1', 'P123ABC']);
+  expect(r).toMatchObject({ numero_ticket: 'TK-ABC-1', pago_completado: 0, pago_estado: null, lugar: 'A1', zona: 'Zona A' });
+});
+
+test('el QR del ticket refleja el pago cuando ya está completado', async () => {
+  ticketBusqueda = { ...ticketSinPagar, pago_id: 3, pago_estado: 'completado', pago_completado: 1 };
+  expect(await buscar({ qr: 'BELEN-TKT|v1|TK-ABC-1|P123ABC' })).toMatchObject({ pago_completado: 1, pago_estado: 'completado' });
+});
+
+test('un QR de ticket que no existe o ya salió responde 404', async () => {
+  await expect(buscar({ qr: 'BELEN-TKT|v1|TK-NOEXISTE|P123ABC' })).rejects.toMatchObject({ status: 404 });
+});
+
+test('un QR de ticket mal formado se rechaza antes de consultar la BD', async () => {
+  await expect(buscar({ qr: 'BELEN-TKT|v1|TK-ABC-1|XYZ' })).rejects.toMatchObject({ status: 400 });
+  expect(consultaBusqueda).toBeUndefined();
+});
+
+test('el QR de pago BELEN-PAGO sigue funcionando por referencia', async () => {
+  ticketBusqueda = { ...ticketSinPagar, pago_id: 3, pago_estado: 'completado', pago_completado: 1 };
+  await buscar({ qr: 'BELEN-PAGO|v1|E-abc123|p123abc' });
+  expect(consultaBusqueda?.sql).toContain('pr.codigo_validacion = ?');
+  expect(consultaBusqueda?.params).toEqual(['P123ABC', 'E-abc123']);
+});
+
+test('un QR desconocido indica los formatos aceptados', async () => {
+  await expect(buscar({ qr: 'hola' })).rejects.toThrow('BELEN-TKT|v1|ticket|placa');
 });

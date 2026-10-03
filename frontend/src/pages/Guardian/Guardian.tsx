@@ -80,7 +80,7 @@ function placeholderBusqueda(tipo: TipoBusqueda): string {
   if (tipo === 'placa') return 'P123ABC';
   if (tipo === 'ticket') return 'TK-...';
   if (tipo === 'referencia') return 'REF-...';
-  return 'BELEN-PAGO|v1|REF-...|P123ABC';
+  return 'BELEN-TKT|v1|TK-...|P123ABC';
 }
 
 export function Guardian() {
