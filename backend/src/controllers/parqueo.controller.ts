@@ -19,37 +19,6 @@ export async function obtenerActivoPorPlaca(req: Request, res: Response) {
   res.json(parqueo);
 }
 
-export async function registrarEntrada(req: Request, res: Response) {
-  const { placa, num_parqueo } = req.body;
-  if (!placa) { res.status(400).json({ error: 'La placa es requerida' }); return; }
-  if (!num_parqueo) { res.status(400).json({ error: 'El número de parqueo es requerido' }); return; }
-
-  const activo = await parqueoService.obtenerActivoPorPlaca(placa);
-  if (activo) { res.status(400).json({ error: 'Ya hay un parqueo activo para esta placa' }); return; }
-
-  const ocupado = await parqueoService.numParqueoOcupado(num_parqueo);
-  if (ocupado) { res.status(400).json({ error: 'El número de parqueo ya está ocupado' }); return; }
-
-  const id = await parqueoService.registrarEntrada(placa, num_parqueo);
-  res.status(201).json({ id });
-}
-
-export async function registrarSalida(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  const { costo } = req.body;
-  if (costo === undefined) { res.status(400).json({ error: 'El costo es requerido' }); return; }
-  const ok = await parqueoService.registrarSalida(id, costo);
-  if (!ok) { res.status(404).json({ error: 'Parqueo no encontrado o ya completado' }); return; }
-  res.json({ mensaje: 'Salida registrada' });
-}
-
-export async function cancelar(req: Request, res: Response) {
-  const id = Number(req.params.id);
-  const ok = await parqueoService.cancelar(id);
-  if (!ok) { res.status(404).json({ error: 'Parqueo no encontrado' }); return; }
-  res.json({ mensaje: 'Parqueo cancelado' });
-}
-
 export async function historialPorPlaca(req: Request, res: Response) {
   const placa = req.params.placa as string;
   const { fecha_inicio, fecha_fin } = req.query;
@@ -65,4 +34,30 @@ export async function historialPorPlaca(req: Request, res: Response) {
     fecha_fin as string,
   );
   res.json(historial);
+}
+
+export async function validarPorPlaca(req: Request, res: Response) {
+  const placa = (req.params.placa as string) ?? '';
+  try {
+    const resultado = await parqueoService.validarParqueoPorPlaca(placa);
+    const data = (resultado.data ?? {}) as { estado?: string };
+    const estadosNegocio = new Set(['con_parqueo', 'sin_pago', 'sin_parqueo', 'no_registrada']);
+    const esErrorValidacion = resultado.codigo === 400 && placa.trim() === '';
+    if (esErrorValidacion) {
+      res.status(400).json({ error: resultado.mensaje });
+      return;
+    }
+    if (data.estado && estadosNegocio.has(data.estado)) {
+      res.status(200).json({ mensaje: resultado.mensaje, data: resultado.data });
+      return;
+    }
+    if (resultado.codigo === 200 || resultado.codigo === 402) {
+      res.status(200).json({ mensaje: resultado.mensaje, data: resultado.data });
+      return;
+    }
+    res.status(resultado.codigo).json({ error: resultado.mensaje });
+  } catch (error) {
+    console.error('[Parqueo validar]', error);
+    res.status(500).json({ error: 'No se pudo validar el parqueo. Inténtalo nuevamente.' });
+  }
 }

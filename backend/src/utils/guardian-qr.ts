@@ -10,7 +10,7 @@ export function parsearQrGuardian(valor: string): DatosQrGuardian {
   const partes = valor.trim().split('|');
   const [sistema, version, referencia, placa] = partes;
   if (partes.length !== 4 || sistema !== 'BELEN-PAGO' || version !== 'v1') {
-    throw new GuardianError(400, 'QR inválido. Se espera el formato BELEN-PAGO|v1|referencia_pago|placa', 'QR_INVALIDO');
+    throw new GuardianError(400, 'QR inválido. Se espera BELEN-TKT|v1|ticket|placa o BELEN-PAGO|v1|referencia_pago|placa', 'QR_INVALIDO');
   }
 
   const referenciaLimpia = referencia?.trim();

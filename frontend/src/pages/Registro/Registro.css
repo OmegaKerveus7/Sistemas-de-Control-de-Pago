@@ -2,6 +2,12 @@
    REGISTRO — Foto y layout adicional
    ============================================ */
 
+.requerido {
+  color: var(--belen-rojo);
+  margin-left: 2px;
+  font-weight: 700;
+}
+
 .registro-foto-section {
   display: flex;
   justify-content: center;

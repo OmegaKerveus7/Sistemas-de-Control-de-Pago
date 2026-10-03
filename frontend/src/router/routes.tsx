@@ -6,9 +6,19 @@ import { Login } from '../pages/Login';
 import { Registro } from '../pages/Registro';
 import { ForgotPassword } from '../pages/ForgotPassword';
 import { Dashboard } from '../pages/Dashboard';
-import { Placeholder } from '../pages/Placeholder';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
+import { SimuladorPago } from '../pages/PagarParqueo/Simulador';
 import { Guardian } from '../pages/Guardian';
+import { HistorialPagos } from '../pages/HistorialPagos';
+import { RegistrarVehiculo } from '../pages/RegistrarVehiculo';
+import { ValidarParqueo } from '../pages/ValidarParqueo';
+import { ValidarParqueoPublico } from '../pages/ValidarParqueoPublico';
+import { Usuarios } from '../pages/Usuarios';
+import { BuscarVehiculo } from '../pages/BuscarVehiculo';
+import { Parqueo } from '../pages/Parqueo';
+import { Pagos } from '../pages/Pagos';
+import { Reportes } from '../pages/Reportes';
+import { Tarifas } from '../pages/Tarifas';
 
 export const router = createHashRouter([
   {
@@ -32,6 +42,14 @@ export const router = createHashRouter([
     element: <PagarParqueo />,
   },
   {
+    path: '/validar-parqueo',
+    element: <ValidarParqueoPublico />,
+  },
+  {
+    path: '/pagar-parqueo/simulador',
+    element: <SimuladorPago />,
+  },
+  {
     path: '/pagar-parqueo/resultado',
     element: <ResultadoPago />,
   },
@@ -40,14 +58,19 @@ export const router = createHashRouter([
     element: <Menu />,
     children: [
       { path: 'dashboard', element: <Dashboard /> },
-      { path: 'usuarios', element: <Placeholder titulo="Usuarios" /> },
-      { path: 'parqueo', element: <Placeholder titulo="Parqueo" /> },
-      { path: 'pagos', element: <Placeholder titulo="Pagos" /> },
-      { path: 'tarifas', element: <Placeholder titulo="Tarifas" /> },
-      { path: 'auditoria', element: <Placeholder titulo="Auditoría" /> },
-      { path: 'validar', element: <Placeholder titulo="Validar Parqueo" /> },
+      { path: 'usuarios', element: <Usuarios /> },
+      { path: 'parqueo', element: <Parqueo /> },
+      { path: 'pagos', element: <Pagos /> },
+      { path: 'pagos/tarjeta', element: <PagarParqueo /> },
+      { path: 'pagos/tarjeta/resultado', element: <ResultadoPago /> },
+      { path: 'pagar/resultado', element: <ResultadoPago /> },
+      { path: 'tarifas', element: <Tarifas /> },
+      { path: 'reportes', element: <Reportes /> },
+      { path: 'validar', element: <ValidarParqueo /> },
+      { path: 'historial', element: <HistorialPagos /> },
+      { path: 'mis-vehiculos', element: <RegistrarVehiculo /> },
       { path: 'guardian', element: <Guardian /> },
-      { path: 'reportes', element: <Placeholder titulo="Reportes" /> },
+      { path: 'buscar-vehiculo', element: <BuscarVehiculo /> },
       { path: 'pagar', element: <PagarParqueo /> },
     ],
   },

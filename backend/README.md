@@ -1,5 +1,7 @@
 # api
 
+Para configurar y probar pagos (simulador local, sandbox y producción), consulta [PAGOS-RECURRENTE.md](./PAGOS-RECURRENTE.md).
+
 To install dependencies:
 
 ```bash

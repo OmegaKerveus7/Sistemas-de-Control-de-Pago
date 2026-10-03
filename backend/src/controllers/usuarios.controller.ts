@@ -86,14 +86,20 @@ export async function registroPublico(req: Request, res: Response) {
   const data = req.body;
 
   const password = data.password || data.pass;
+  const telefono = typeof data.telefono === 'string' ? data.telefono.trim() : '';
 
-  if (!data.email || !password || !data.nombres || !data.apellidos || !data.dpi) {
-    res.status(400).json({ error: 'Faltan campos requeridos: email, contraseña, nombres, apellidos, dpi' });
+  if (!data.email || !password || !data.nombres || !data.apellidos || !data.dpi || !telefono) {
+    res.status(400).json({ error: 'Faltan campos requeridos: nombres, apellidos, DPI, correo, teléfono y contraseña' });
     return;
   }
 
   if (password.length < 6) {
     res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    return;
+  }
+
+  if (telefono.replace(/\D/g, '').length < 8) {
+    res.status(400).json({ error: 'El teléfono debe tener al menos 8 dígitos' });
     return;
   }
 
@@ -105,13 +111,13 @@ export async function registroPublico(req: Request, res: Response) {
 
   try {
     const id = await usuariosService.crear({
-      id_rol: 3,
+      id_rol: 4,
       email: data.email,
       pass: password,
       nombres: data.nombres,
       apellidos: data.apellidos,
       dpi: data.dpi,
-      foto_perfil: data.foto_perfil ?? null,
+      telefono,
       activo: true,
     });
 
