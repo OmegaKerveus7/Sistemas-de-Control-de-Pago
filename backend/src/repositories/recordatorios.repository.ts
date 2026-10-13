@@ -1,5 +1,6 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
+import { hoyGuatemala } from '../utils/fecha';
 
 export interface PagoPendiente {
   id_ticket: number;
@@ -21,7 +22,8 @@ export interface PagoPendiente {
  * Los visitantes no aparecen: no tienen cuenta ni correo.
  */
 export async function listarPendientesDePago(idTicket?: number): Promise<PagoPendiente[]> {
-  const params: number[] = [];
+  // El pago del día de la placa también evita el recordatorio (ticket de un reingreso del mismo día).
+  const params: (number | string)[] = [hoyGuatemala()];
   if (idTicket !== undefined) params.push(idTicket);
   const [rows] = await getPool().query<RowDataPacket[]>(
     `SELECT t.id_ticket, t.numero_ticket AS ticket, t.placa, tv.nombre AS tipo_vehiculo,
@@ -38,7 +40,8 @@ export async function listarPendientesDePago(idTicket?: number): Promise<PagoPen
      WHERE t.activo = 1 AND t.fecha_salida IS NULL
        AND NOT EXISTS (
          SELECT 1 FROM Pagos pg
-         WHERE pg.id_ticket = t.id_ticket AND pg.estado_pago IN ('completado', 'pendiente')
+         WHERE pg.estado_pago IN ('completado', 'pendiente')
+           AND (pg.id_ticket = t.id_ticket OR (pg.placa = t.placa AND pg.fecha_vigencia = ?))
        )
        ${idTicket !== undefined ? 'AND t.id_ticket = ?' : ''}
      ORDER BY t.fecha_entrada`,

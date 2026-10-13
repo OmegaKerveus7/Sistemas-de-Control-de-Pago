@@ -85,6 +85,15 @@ const IconoHistorial: Icono = () => (
   </svg>
 );
 
+const IconoQr: Icono = () => (
+  <svg viewBox="0 0 24 24" {...trazo}>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3" />
+  </svg>
+);
+
 export interface OpcionMenu {
   path: string;
   etiqueta: string;
@@ -93,17 +102,20 @@ export interface OpcionMenu {
 
 const OPCIONES_POR_ROL: Record<NombreRol, OpcionMenu[]> = {
   administrador: [
-    { path: '/app/dashboard', etiqueta: 'Dashboard', Icono: IconoDashboard },
+    { path: '/app/dashboard', etiqueta: 'Panel de control', Icono: IconoDashboard },
     { path: '/app/usuarios', etiqueta: 'Usuarios', Icono: IconoUsuarios },
     { path: '/app/parqueo', etiqueta: 'Parqueo', Icono: IconoParqueo },
     { path: '/app/pagos', etiqueta: 'Pagos', Icono: IconoPagos },
     { path: '/app/reportes', etiqueta: 'Reportes', Icono: IconoReportes },
     { path: '/app/guardian', etiqueta: 'Control de acceso', Icono: IconoGuardian },
+    { path: '/app/qr-pago', etiqueta: 'QR de pago', Icono: IconoQr },
     { path: '/app/buscar-vehiculo', etiqueta: 'Buscar vehículo', Icono: IconoBuscar },
   ],
   guardia: [
-    { path: '/app/dashboard', etiqueta: 'Dashboard', Icono: IconoDashboard },
+    { path: '/app/dashboard', etiqueta: 'Panel de control', Icono: IconoDashboard },
     { path: '/app/guardian', etiqueta: 'Control de acceso', Icono: IconoGuardian },
+    { path: '/app/pagos', etiqueta: 'Cobro en efectivo', Icono: IconoPagos },
+    { path: '/app/qr-pago', etiqueta: 'QR de pago', Icono: IconoQr },
     { path: '/app/buscar-vehiculo', etiqueta: 'Buscar vehículo', Icono: IconoBuscar },
   ],
   cobrador: [

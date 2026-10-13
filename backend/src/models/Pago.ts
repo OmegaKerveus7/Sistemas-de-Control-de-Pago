@@ -3,12 +3,15 @@ export type EstadoPago = 'pendiente' | 'completado' | 'fallido' | 'reembolsado';
 
 export interface Pago {
   id: number;
-  id_ticket: number;
-  ticket: string;
+  /** Null mientras el vehículo no ha entrado (pago del día hecho por adelantado). */
+  id_ticket: number | null;
+  ticket: string | null;
   placa: string;
-  id_usuario: number;
-  pagador_nombres: string;
-  pagador_apellidos: string;
+  id_usuario: number | null;
+  pagador_nombres: string | null;
+  pagador_apellidos: string | null;
+  nit: string | null;
+  nombre_facturacion: string | null;
   metodo: string;
   monto: number;
   estado: EstadoPago;

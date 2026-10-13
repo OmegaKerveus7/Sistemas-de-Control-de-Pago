@@ -1,4 +1,5 @@
 import { afterEach, expect, mock, test } from 'bun:test';
+import { hoyGuatemala } from '../utils/fecha';
 
 let vehicle: Record<string, unknown> | undefined;
 let failTicket = false;
@@ -13,6 +14,12 @@ let rolledBack = false;
 let released = false;
 let ticketBusqueda: Record<string, unknown> | undefined;
 let consultaBusqueda: { sql: string; params: unknown[] } | undefined;
+const permisoPagado = { id_pago: 40, id_ticket: null, metodo_pago: 'linea', codigo_validacion: 'P-abc' };
+let permisoDia: Record<string, unknown> | undefined = permisoPagado;
+let consultaPermiso: { sql: string; params: unknown[] } | undefined;
+let enlacePago: unknown[] | undefined;
+let pagoSalida: Record<string, unknown> | undefined;
+let consultaSalida: { sql: string; params: unknown[] } | undefined;
 const connection = {
   beginTransaction: async () => {},
   commit: async () => { committed = true; },
@@ -21,6 +28,9 @@ const connection = {
   execute: async (sql: string, params: unknown[] = []) => {
     statements.push(sql);
     if (sql.includes('AS pago_completado')) { consultaBusqueda = { sql, params }; return [ticketBusqueda ? [ticketBusqueda] : []]; }
+    if (sql.includes('FROM Pagos') && sql.includes('fecha_vigencia = ?') && sql.includes('metodo_pago')) { consultaPermiso = { sql, params }; return [permisoDia ? [permisoDia] : []]; }
+    if (sql.includes('FROM Pagos') && sql.includes('LIMIT 1 FOR UPDATE')) { consultaSalida = { sql, params }; return [pagoSalida ? [pagoSalida] : []]; }
+    if (sql.includes('UPDATE Pagos SET id_ticket')) { enlacePago = params; return [{ affectedRows: 1 }]; }
     if (sql.includes('FROM Vehiculos')) return [vehicle ? [vehicle] : []];
     if (sql.includes('FROM Tipo_vehiculo')) return [[{ id_tipo: 2, nombre: 'carro' }]];
     if (sql.includes('SELECT id_ticket FROM Tickets')) return [entradaDuplicada ? [{ id_ticket: 1 }] : []];
@@ -44,7 +54,8 @@ const pool = {
 };
 
 mock.module('../config/database', () => ({ getPool: () => pool }));
-const { registrarEntrada, resumen, buscar } = await import('./guardian.repository');
+const { registrarEntrada, registrarSalida, resumen, buscar, detalleIndicador } = await import('./guardian.repository');
+const hoy = hoyGuatemala();
 
 afterEach(() => {
   vehicle = undefined;
@@ -58,6 +69,8 @@ afterEach(() => {
   committed = rolledBack = released = false;
   ticketBusqueda = undefined;
   consultaBusqueda = undefined;
+  permisoDia = permisoPagado; consultaPermiso = enlacePago = pagoSalida = consultaSalida = undefined;
+  delete process.env.EXIGIR_PAGO_EN_ENTRADA;
 });
 
 test('incluye en el resumen los espacios ocupados desde días anteriores', async () => {
@@ -192,7 +205,7 @@ test('el QR del ticket encuentra un ticket SIN pago y lo reporta como no pagado'
   const r = await buscar({ qr: 'BELEN-TKT|v1|tk-abc-1|p123abc' });
   expect(consultaBusqueda?.sql).toContain('t.numero_ticket = ? AND UPPER(t.placa) = ?');
   expect(consultaBusqueda?.sql).not.toContain('codigo_validacion');
-  expect(consultaBusqueda?.params).toEqual(['TK-ABC-1', 'P123ABC']);
+  expect(consultaBusqueda?.params).toEqual([hoy, hoy, 'TK-ABC-1', 'P123ABC']);
   expect(r).toMatchObject({ numero_ticket: 'TK-ABC-1', pago_completado: 0, pago_estado: null, lugar: 'A1', zona: 'Zona A' });
 });
 
@@ -214,9 +227,90 @@ test('el QR de pago BELEN-PAGO sigue funcionando por referencia', async () => {
   ticketBusqueda = { ...ticketSinPagar, pago_id: 3, pago_estado: 'completado', pago_completado: 1 };
   await buscar({ qr: 'BELEN-PAGO|v1|E-abc123|p123abc' });
   expect(consultaBusqueda?.sql).toContain('pr.codigo_validacion = ?');
-  expect(consultaBusqueda?.params).toEqual(['P123ABC', 'E-abc123']);
+  expect(consultaBusqueda?.params).toEqual([hoy, hoy, 'P123ABC', 'E-abc123']);
 });
 
 test('un QR desconocido indica los formatos aceptados', async () => {
   await expect(buscar({ qr: 'hola' })).rejects.toThrow('BELEN-TKT|v1|ticket|placa');
+});
+
+test('la búsqueda considera pagado al ticket cubierto por el pago del día de su placa', async () => {
+  ticketBusqueda = ticketSinPagar;
+  await buscar({ placa: 'P123ABC' });
+  expect(consultaBusqueda?.sql).toContain('pago_completo.placa = t.placa AND pago_completo.fecha_vigencia = ?');
+  expect(consultaBusqueda?.sql).toContain('p.placa = t.placa AND p.fecha_vigencia = ?');
+});
+
+test('la entrada exige el pago del día y no crea ticket sin él', async () => {
+  permisoDia = undefined;
+  await expect(registrarEntrada({ placa: 'P123ABC' }, 1, '127.0.0.1')).rejects.toMatchObject({ status: 409, codigo: 'PAGO_PENDIENTE' });
+  expect(consultaPermiso?.params).toEqual(['P123ABC', hoy]);
+  expect(statements.some(sql => sql.includes('INSERT INTO Tickets ('))).toBe(false);
+  expect(rolledBack).toBe(true);
+});
+
+test('con EXIGIR_PAGO_EN_ENTRADA=false permite entrar sin pago y reporta que no hay pago vigente', async () => {
+  process.env.EXIGIR_PAGO_EN_ENTRADA = 'false';
+  permisoDia = undefined;
+  const result = await registrarEntrada({ placa: 'P123ABC' }, 1, '127.0.0.1');
+  expect(result).toMatchObject({ pago_vigente: false, pago: null });
+  expect(enlacePago).toBeUndefined();
+});
+
+test('la entrada con pago del día enlaza ese pago al nuevo ticket', async () => {
+  const result = await registrarEntrada({ placa: 'P123ABC' }, 1, '127.0.0.1');
+  expect(result).toMatchObject({ pago_vigente: true, pago: { metodo: 'linea', referencia: 'P-abc' } });
+  expect(enlacePago).toEqual([10, 40]);
+  expect(committed).toBe(true);
+});
+
+test('un reingreso el mismo día reutiliza el pago ya enlazado sin volver a enlazarlo', async () => {
+  permisoDia = { ...permisoPagado, id_ticket: 7 };
+  const result = await registrarEntrada({ placa: 'P123ABC' }, 1, '127.0.0.1');
+  expect(result.pago_vigente).toBe(true);
+  expect(enlacePago).toBeUndefined();
+});
+
+test('la salida acepta el pago del día de la placa y sigue bloqueada sin pago', async () => {
+  ticketBusqueda = ticketSinPagar;
+  pagoSalida = { id_pago: 40, estado_pago: 'completado', monto: '20.00' };
+  const salida = await registrarSalida({ placa: 'P123ABC' }, 1, '127.0.0.1');
+  expect(salida.monto_pagado).toBe('20.00');
+  expect(consultaSalida?.sql).toContain('placa = ? AND fecha_vigencia = ?');
+  expect(consultaSalida?.params).toEqual([7, 'P123ABC', hoy]);
+
+  pagoSalida = undefined;
+  await expect(registrarSalida({ placa: 'P123ABC' }, 1, '127.0.0.1')).rejects.toMatchObject({ codigo: 'PAGO_NO_COMPLETADO' });
+});
+
+test('rechaza indicadores inválidos antes de consultar la BD', async () => {
+  for (const tipo of ['otro', '__proto__', 'entradas OR 1=1']) await expect(detalleIndicador(tipo)).rejects.toMatchObject({ status: 400 });
+  expect(statements).toEqual([]);
+});
+
+test('detalle de espacios filtra habilitados y disponibles y devuelve el total del listado', async () => {
+  queryResponses = [[{ id: 1, lugar: 'A01', zona: 'A' }]];
+  const detalle = await detalleIndicador('espacios');
+  expect(detalle.total).toBe(detalle.filas.length);
+  expect(detalle.total).toBe(1);
+  expect(statements[0]).toContain("l.activo = 1 AND el.nombre = 'disponible'");
+});
+
+test('detalle de pagos pendientes elige el pago pendiente de cada ticket activo', async () => {
+  await detalleIndicador('pendientes');
+  expect(statements[0]).toContain("t.activo = 1 AND EXISTS (SELECT 1 FROM Pagos pendiente");
+  expect(statements[0]).toContain("AND ultimo.estado_pago = 'pendiente'");
+  expect(statements[0]).toContain('pg.id_pago = (');
+});
+
+test('sin pago excluye cualquier pago, entradas y salidas usan la fecha de la BD', async () => {
+  await detalleIndicador('sin_pago');
+  expect(statements[0]).toContain('t.activo = 1 AND NOT EXISTS (SELECT 1 FROM Pagos ninguno WHERE ninguno.id_ticket = t.id_ticket)');
+  await detalleIndicador('entradas');
+  expect(statements[1]).toContain('WHERE DATE(t.fecha_entrada) = CURDATE()');
+  await detalleIndicador('salidas');
+  expect(statements[2]).toContain('WHERE DATE(t.fecha_salida) = CURDATE()');
+  await detalleIndicador('vehiculos');
+  expect(statements[3]).toContain('WHERE t.activo = 1');
+  expect(statements[3]).not.toContain('CURDATE()');
 });

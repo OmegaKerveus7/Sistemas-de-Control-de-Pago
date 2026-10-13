@@ -7,6 +7,8 @@ import { Registro } from '../pages/Registro';
 import { ForgotPassword } from '../pages/ForgotPassword';
 import { Dashboard } from '../pages/Dashboard';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
+import { PagoPublico, ResultadoPagoPublico } from '../pages/PagoPublico';
+import { FormularioTarjeta } from '../pages/PagarParqueo/FormularioTarjeta';
 import { SimuladorPago } from '../pages/PagarParqueo/Simulador';
 import { Guardian } from '../pages/Guardian';
 import { HistorialPagos } from '../pages/HistorialPagos';
@@ -19,8 +21,10 @@ import { Parqueo } from '../pages/Parqueo';
 import { Pagos } from '../pages/Pagos';
 import { Reportes } from '../pages/Reportes';
 import { Tarifas } from '../pages/Tarifas';
+import { QrPago } from '../pages/QrPago';
 
 export const router = createHashRouter([
+  { path: '/pago-tarjeta/formulario', element: <FormularioTarjeta /> },
   {
     path: '/',
     element: <Main />,
@@ -39,7 +43,7 @@ export const router = createHashRouter([
   },
   {
     path: '/pagar-parqueo',
-    element: <PagarParqueo />,
+    element: <PagoPublico />,
   },
   {
     path: '/validar-parqueo',
@@ -51,7 +55,7 @@ export const router = createHashRouter([
   },
   {
     path: '/pagar-parqueo/resultado',
-    element: <ResultadoPago />,
+    element: <ResultadoPagoPublico />,
   },
   {
     path: '/app',
@@ -70,6 +74,7 @@ export const router = createHashRouter([
       { path: 'historial', element: <HistorialPagos /> },
       { path: 'mis-vehiculos', element: <RegistrarVehiculo /> },
       { path: 'guardian', element: <Guardian /> },
+      { path: 'qr-pago', element: <QrPago /> },
       { path: 'buscar-vehiculo', element: <BuscarVehiculo /> },
       { path: 'pagar', element: <PagarParqueo /> },
     ],

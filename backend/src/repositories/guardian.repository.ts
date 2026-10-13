@@ -4,6 +4,8 @@ import type { CriterioGuardian, RegistroEntradaGuardian, TipoVehiculoGuardian } 
 import { GuardianError } from '../models';
 import { parsearQrGuardian } from '../utils/guardian-qr';
 import { esQrTicket, parsearQrTicket } from '../utils/qr-ticket';
+import { hoyGuatemala } from '../utils/fecha';
+import { tipoCoincideConPlaca } from '../utils/placa';
 
 type Movimiento = 'entrada' | 'salida' | 'autorizacion_salida';
 
@@ -48,6 +50,18 @@ interface TicketActivo extends RowDataPacket {
   pago_completado: number;
 }
 
+interface PermisoDia extends RowDataPacket {
+  id_pago: number;
+  id_ticket: number | null;
+  metodo_pago: string;
+  codigo_validacion: string;
+}
+
+/** Con EXIGIR_PAGO_EN_ENTRADA=false la entrada vuelve a permitirse sin pago y solo se bloquea la salida. */
+function exigirPagoEnEntrada(): boolean {
+  return process.env.EXIGIR_PAGO_EN_ENTRADA !== 'false';
+}
+
 function normalizarPlaca(placa: string): string {
   return placa.trim().toUpperCase();
 }
@@ -60,17 +74,6 @@ function validarPlaca(placa: string): { placaNormalizada: string; tipo: TipoVehi
   }
   const tipo: TipoVehiculoGuardian = coincidencia[1] === 'P' ? 'carro' : 'moto';
   return { placaNormalizada: normalizada, tipo };
-}
-
-function tipoCoincideConPlaca(nombreTipo: string, tipoDetectado: TipoVehiculoGuardian): boolean {
-  const normalizado = nombreTipo
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-  const alias = tipoDetectado === 'moto'
-    ? ['moto', 'motocicl']
-    : ['auto', 'carro', 'camioneta', 'camin', 'pickup', 'suv'];
-  return alias.some((valor) => normalizado.includes(valor));
 }
 
 function criterioConsulta(criterio: CriterioGuardian): { where: string; params: string[] } {
@@ -115,6 +118,7 @@ async function ticketActivo(
   bloquear = false,
 ): Promise<TicketActivo | null> {
   const { where, params } = criterioConsulta(criterio);
+  const hoy = hoyGuatemala();
   const [rows] = await conn.execute<RowDataPacket[]>(
     `SELECT
        t.id_ticket,
@@ -129,7 +133,9 @@ async function ticketActivo(
        pago_reciente.estado_pago AS pago_estado,
        EXISTS(
          SELECT 1 FROM Pagos pago_completo
-         WHERE pago_completo.id_ticket = t.id_ticket AND pago_completo.estado_pago = 'completado'
+         WHERE pago_completo.estado_pago = 'completado'
+           AND (pago_completo.id_ticket = t.id_ticket
+                OR (pago_completo.placa = t.placa AND pago_completo.fecha_vigencia = ?))
        ) AS pago_completado
      FROM Tickets t
      JOIN Lugares l ON l.id_lugar = t.id_lugar
@@ -137,14 +143,15 @@ async function ticketActivo(
      LEFT JOIN Tipo_vehiculo tv ON tv.id_tipo = t.id_tipo
      LEFT JOIN Pagos pago_reciente ON pago_reciente.id_pago = (
        SELECT p.id_pago FROM Pagos p
-       WHERE p.id_ticket = t.id_ticket
+       WHERE p.id_ticket = t.id_ticket OR (p.placa = t.placa AND p.fecha_vigencia = ?)
        ORDER BY COALESCE(p.fecha_confirmacion, p.fecha_pago) DESC, p.id_pago DESC
        LIMIT 1
      )
      WHERE t.activo = 1 AND ${where}
      ORDER BY t.id_ticket DESC
      LIMIT 1${bloquear ? ' FOR UPDATE' : ''}`,
-    params,
+    // Un pago del día cubre a la placa aunque se haya enlazado a otro ticket (reingreso el mismo día).
+    [hoy, hoy, ...params],
   );
   return (rows[0] as TicketActivo | undefined) ?? null;
 }
@@ -215,7 +222,9 @@ export async function estadisticas() {
         WHERE t.activo = 1 AND p.estado_pago = 'pendiente') AS pagos_pendientes,
        (SELECT COUNT(*) FROM Tickets t
         WHERE t.activo = 1
-          AND NOT EXISTS (SELECT 1 FROM Pagos p WHERE p.id_ticket = t.id_ticket)) AS sin_pago`,
+          AND NOT EXISTS (SELECT 1 FROM Pagos p
+                          WHERE p.id_ticket = t.id_ticket OR (p.placa = t.placa AND p.fecha_vigencia = ?))) AS sin_pago`,
+    [hoyGuatemala()],
   );
   return rows[0] ?? { vehiculos_activos: 0, entradas_hoy: 0, salidas_hoy: 0, pagos_pendientes: 0, sin_pago: 0 };
 }
@@ -303,6 +312,18 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
     );
     if (duplicados.length > 0) throw new GuardianError(409, 'Ya existe una entrada activa para esta placa', 'PLACA_ACTIVA');
 
+    // Flujo "pagar primero": el pago del día (en línea por QR o en efectivo con el guardia) autoriza la entrada.
+    const [permisos] = await conn.execute<PermisoDia[]>(
+      `SELECT id_pago, id_ticket, metodo_pago, codigo_validacion FROM Pagos
+       WHERE placa = ? AND fecha_vigencia = ? AND estado_pago = 'completado'
+       ORDER BY id_pago DESC LIMIT 1 FOR UPDATE`,
+      [placaNormalizada, hoyGuatemala()],
+    );
+    const permiso = permisos[0];
+    if (!permiso && exigirPagoEnEntrada()) {
+      throw new GuardianError(409, 'Pago pendiente: esta placa aún no ha pagado hoy. Cóbralo en efectivo o indícale que pague con el QR de la entrada', 'PAGO_PENDIENTE');
+    }
+
     const filtrosLugar = [
       'l.activo = 1',
       "el.nombre = 'disponible'",
@@ -379,8 +400,13 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
         lugar: lugar.codigo,
         zona: lugar.zona_nombre,
         asignacion: registro.lugar_id === undefined ? 'automatica' : 'manual',
+        pago_id: permiso?.id_pago ?? null,
       })],
     );
+    // El pago previo queda ligado al primer ticket del día; los reingresos lo reutilizan por placa y fecha.
+    if (permiso && permiso.id_ticket === null) {
+      await conn.execute('UPDATE Pagos SET id_ticket = ? WHERE id_pago = ? AND id_ticket IS NULL', [idTicket, permiso.id_pago]);
+    }
 
     await conn.commit();
     return {
@@ -390,6 +416,8 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
       tipo_vehiculo: tipoNombre,
       es_externo: esExterno === 1,
       lugar: { id: lugar.id_lugar, numero: lugar.codigo, zona: lugar.zona_nombre },
+      pago_vigente: Boolean(permiso),
+      pago: permiso ? { metodo: permiso.metodo_pago, referencia: permiso.codigo_validacion } : null,
     };
   } catch (error) {
     await conn.rollback();
@@ -440,10 +468,10 @@ export async function registrarSalida(criterio: CriterioGuardian, idGuardia: num
     const [pagosCompletados] = await conn.execute<RowDataPacket[]>(
       `SELECT id_pago, estado_pago, monto
        FROM Pagos
-       WHERE id_ticket = ? AND estado_pago = 'completado'
+       WHERE estado_pago = 'completado' AND (id_ticket = ? OR (placa = ? AND fecha_vigencia = ?))
        ORDER BY COALESCE(fecha_confirmacion, fecha_pago) DESC, id_pago DESC
        LIMIT 1 FOR UPDATE`,
-      [ticket.id_ticket],
+      [ticket.id_ticket, ticket.placa, hoyGuatemala()],
     );
     const pago = pagosCompletados[0];
     if (!pago) throw new GuardianError(409, 'La salida está bloqueada: no existe un pago completado para este ticket', 'PAGO_NO_COMPLETADO');
@@ -469,4 +497,45 @@ export async function registrarSalida(criterio: CriterioGuardian, idGuardia: num
   } finally {
     conn.release();
   }
+}
+
+
+/** Mismos criterios que resumen() y estadisticas(), una fila por espacio o ticket. */
+export async function detalleIndicador(tipo: string) {
+  const filtros: Record<string, string> = {
+    vehiculos: 't.activo = 1',
+    entradas: 'DATE(t.fecha_entrada) = CURDATE()',
+    salidas: 'DATE(t.fecha_salida) = CURDATE()',
+    pendientes: "t.activo = 1 AND EXISTS (SELECT 1 FROM Pagos pendiente WHERE pendiente.id_ticket = t.id_ticket AND pendiente.estado_pago = 'pendiente')",
+    sin_pago: 't.activo = 1 AND NOT EXISTS (SELECT 1 FROM Pagos ninguno WHERE ninguno.id_ticket = t.id_ticket)',
+  };
+  if (tipo === 'espacios') {
+    const [filas] = await getPool().query<RowDataPacket[]>(
+      `SELECT l.id_lugar AS id, l.codigo AS lugar, z.nombre AS zona,
+              COALESCE(tv.nombre, 'Cualquier tipo') AS tipo_vehiculo
+       FROM Lugares l JOIN Estado_Lugar el ON el.id_estado = l.id_estado
+       LEFT JOIN Zonas z ON z.id_zona = l.id_zona
+       LEFT JOIN Tipo_vehiculo tv ON tv.id_tipo = l.id_tipo_permitido
+       WHERE l.activo = 1 AND el.nombre = 'disponible'
+       ORDER BY z.nombre, l.codigo`);
+    return { tipo, total: filas.length, filas };
+  }
+  if (!Object.hasOwn(filtros, tipo)) throw new GuardianError(400, 'Indicador de parqueo inválido', 'INDICADOR_INVALIDO');
+  const [filas] = await getPool().query<RowDataPacket[]>(
+    `SELECT t.id_ticket AS id, t.numero_ticket AS ticket, t.placa,
+            l.codigo AS lugar, z.nombre AS zona, tv.nombre AS tipo_vehiculo,
+            t.fecha_entrada, t.fecha_salida, pg.monto,
+            COALESCE(pg.estado_pago, 'sin_pago') AS estado_pago
+     FROM Tickets t
+     LEFT JOIN Lugares l ON l.id_lugar = t.id_lugar
+     LEFT JOIN Zonas z ON z.id_zona = l.id_zona
+     LEFT JOIN Tipo_vehiculo tv ON tv.id_tipo = t.id_tipo
+     LEFT JOIN Pagos pg ON pg.id_pago = (
+       SELECT ultimo.id_pago FROM Pagos ultimo WHERE ultimo.id_ticket = t.id_ticket
+       ${tipo === 'pendientes' ? "AND ultimo.estado_pago = 'pendiente'" : ''}
+       ORDER BY (ultimo.estado_pago = 'completado') DESC, ultimo.id_pago DESC LIMIT 1
+     )
+     WHERE ${filtros[tipo]}
+     ORDER BY ${tipo === 'salidas' ? 't.fecha_salida' : 't.fecha_entrada'} DESC, t.id_ticket DESC`);
+  return { tipo, total: filas.length, filas };
 }

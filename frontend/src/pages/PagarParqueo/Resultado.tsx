@@ -32,6 +32,7 @@ export function ResultadoPago() {
   const integrado = ruta.startsWith('/app/');
   const volver = integrado ? ruta.replace(/\/resultado$/, '') : '/pagar-parqueo';
   const referencia = params.get('referencia') || '';
+  const acceso = params.get('acceso') || '';
   const cancelado = params.get('estado') === 'cancelado';
   const { usuario } = useAuth();
   const [resultado, setResultado] = useState<ResultadoConfirmar | null>(null);
@@ -40,7 +41,7 @@ export function ResultadoPago() {
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
-    if (!usuario) return;
+    if (!usuario && !acceso) return;
     let activo = true;
     let timer: ReturnType<typeof setTimeout>;
     let intentos = 0;
@@ -50,7 +51,7 @@ export function ResultadoPago() {
     async function consultar() {
       try {
         if (!referencia) throw new Error('No se recibió la referencia del pago');
-        const res = await pagosService.confirmar(referencia);
+        const res = acceso ? await pagosService.confirmarCompartido(referencia, acceso) : await pagosService.confirmar(referencia);
         if (!activo) return;
         setResultado(res);
         if (res.estado === 'pendiente' && ++intentos < 6) timer = setTimeout(consultar, 5000);
@@ -60,9 +61,9 @@ export function ResultadoPago() {
     }
     void consultar();
     return () => { activo = false; clearTimeout(timer); };
-  }, [referencia, usuario, revision]);
+  }, [referencia, usuario, acceso, revision]);
 
-  if (!usuario) {
+  if (!usuario && !acceso) {
     const redirect = `${location.pathname}${location.search}`;
     return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
@@ -95,9 +96,9 @@ export function ResultadoPago() {
           <button className="pagar-button" onClick={() => setRevision(n => n + 1)}>Consultar estado nuevamente</button>
           {resultado?.url_pago && <a className="pagar-button pagar-button-secundario" href={resultado.url_pago}>Continuar con el mismo pago</a>}
         </>}
-        <Link to="/app/historial" className="pagar-link">Ver mi historial de pagos</Link>
-        <Link to="/app/dashboard" className="pagar-button pagar-button-enlace">Volver al panel</Link>
-        <Link to={volver} className="pagar-link">Consultar otro parqueo</Link>
+        {usuario && <Link to="/app/historial" className="pagar-link">Ver mi historial de pagos</Link>}
+        {usuario && <Link to="/app/dashboard" className="pagar-button pagar-button-enlace">Volver al panel</Link>}
+        {usuario && <Link to={volver} className="pagar-link">Consultar otro parqueo</Link>}
       </div>
     </main>
   </div>;

@@ -1,5 +1,20 @@
 import { api } from './api';
 
+export type TipoIndicador = 'espacios' | 'vehiculos' | 'entradas' | 'salidas' | 'pendientes' | 'sin_pago';
+export interface FilaDetalleIndicador {
+  id: number;
+  lugar: string | null;
+  zona: string | null;
+  tipo_vehiculo: string | null;
+  placa?: string;
+  ticket?: string;
+  fecha_entrada?: string;
+  fecha_salida?: string | null;
+  monto?: number | string | null;
+  estado_pago?: string;
+}
+export interface DetalleIndicador { tipo: TipoIndicador; total: number; filas: FilaDetalleIndicador[]; }
+
 export interface ResumenZonaGuardian {
   id: number;
   zona: string;
@@ -75,6 +90,8 @@ export interface EntradaGuardian {
   tipo_vehiculo: string;
   es_externo: boolean;
   lugar: { id: number; numero: string; zona: string };
+  pago_vigente: boolean;
+  pago: { metodo: string; referencia: string } | null;
 }
 
 export interface SalidaGuardian {
@@ -87,6 +104,7 @@ export interface SalidaGuardian {
 }
 
 export const guardianService = {
+  detalleIndicador: (tipo: TipoIndicador) => api.get<DetalleIndicador>(`/guardian/detalle/${tipo}`),
   resumen: () => api.get<ResumenGuardian>('/guardian/resumen'),
   estadisticas: () => api.get<EstadisticasGuardian>('/guardian/estadisticas'),
   lugares: () => api.get<LugarGuardian[]>('/guardian/lugares'),

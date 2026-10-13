@@ -1,32 +1,28 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { pagosService, type ResultadoConfirmar } from '../../services/pagos.service';
 import './PagarParqueo.css';
 
 export function SimuladorPago() {
   const [params] = useSearchParams();
   const referencia = params.get('referencia') || '';
-  const { usuario } = useAuth();
   const navigate = useNavigate();
   const [pago, setPago] = useState<ResultadoConfirmar | null>(null);
   const [error, setError] = useState('');
   const [procesando, setProcesando] = useState(false);
   useEffect(() => {
-    if (!usuario) return;
     let activo = true;
-    pagosService.confirmar(referencia).then(res => {
+    pagosService.confirmarPublico(referencia).then(res => {
       if (!activo) return;
       if (res.modo !== 'mock') setError('Este pago no pertenece al simulador local.');
       else setPago(res);
     }).catch(err => { if (activo) setError(err.message); });
     return () => { activo = false; };
-  }, [referencia, usuario]);
-  if (!usuario) return <Navigate to={`/login?redirect=${encodeURIComponent(`/pagar-parqueo/simulador?referencia=${referencia}`)}`} replace />;
+  }, [referencia]);
   const retorno = `/pagar-parqueo/resultado?referencia=${encodeURIComponent(referencia)}`;
   async function simular(estado: string) {
     setProcesando(true); setError('');
-    try { await pagosService.simular(referencia, estado); navigate(retorno); }
+    try { await pagosService.simularPublico(referencia, estado); navigate(retorno); }
     catch (err) { setError(err instanceof Error ? err.message : 'No se pudo simular el pago'); }
     finally { setProcesando(false); }
   }

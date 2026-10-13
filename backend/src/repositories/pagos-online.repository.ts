@@ -1,11 +1,14 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
 import { generarReferencia, PagoError, type ModoPago } from '../services/pasarela.service';
+import { hoyGuatemala } from '../utils/fecha';
 
 export interface PagoOnline extends RowDataPacket {
   id_pago: number; id_usuario: number; id_ticket: number; placa: string;
   monto: string | number; codigo_validacion: string; estado_pago: string;
   transaction_id: string | null; gateway_response: { modo: ModoPago; url_pago?: string } | string;
+  fecha_pago?: string; fecha_confirmacion?: string | null; fecha_vigencia?: string | null;
+  nit?: string | null; nombre_facturacion?: string | null;
 }
 export function gateway(pago: PagoOnline): { modo: ModoPago; url_pago?: string } {
   return typeof pago.gateway_response === 'string' ? JSON.parse(pago.gateway_response) : pago.gateway_response;
@@ -33,6 +36,11 @@ export async function reservar(parqueoId: number, usuario: number, modo: ModoPag
        WHERE p.id_parqueo = ? AND p.fecha_liberacion IS NULL AND t.activo = 1 AND t.fecha_salida IS NULL FOR UPDATE`, [parqueoId]);
     const ticket = tickets[0];
     if (!ticket) throw new PagoError(404, 'No hay un parqueo activo');
+    const hoy = hoyGuatemala();
+    // Un pago público del día (aún sin enlazar a este ticket) también cubre la estancia.
+    const [permisos] = await conn.query<RowDataPacket[]>(
+      "SELECT id_pago FROM Pagos WHERE placa = ? AND fecha_vigencia = ? AND estado_pago = 'completado' LIMIT 1 FOR UPDATE", [ticket.placa, hoy]);
+    if (permisos[0]) throw new PagoError(409, 'Este vehículo ya pagó hoy');
     const [pagos] = await conn.query<PagoOnline[]>('SELECT * FROM Pagos WHERE id_ticket = ? ORDER BY id_pago DESC FOR UPDATE', [ticket.id_ticket]);
     const existente = pagos[0];
     if (existente) {
@@ -48,9 +56,9 @@ export async function reservar(parqueoId: number, usuario: number, modo: ModoPag
     if (Math.round(monto * 100) !== Math.round(montoEsperado * 100)) throw new PagoError(409, 'La tarifa cambió. Consulta de nuevo tu parqueo');
     const referencia = generarReferencia();
     const [insert] = await conn.query<ResultSetHeader>(
-      `INSERT INTO Pagos (id_ticket, id_usuario, placa, id_tipo, metodo_pago, monto, codigo_validacion, estado_pago, gateway_response, observacion)
-       VALUES (?, ?, ?, ?, 'linea', ?, ?, 'pendiente', ?, ?)`,
-      [ticket.id_ticket, usuario, ticket.placa, ticket.id_tipo, monto, referencia, JSON.stringify({ modo }), modo === 'live' ? 'Recurrente' : `PRUEBA ${modo}: sin dinero real`]);
+      `INSERT INTO Pagos (id_ticket, id_usuario, placa, id_tipo, metodo_pago, monto, codigo_validacion, estado_pago, gateway_response, observacion, fecha_vigencia)
+       VALUES (?, ?, ?, ?, 'linea', ?, ?, 'pendiente', ?, ?, ?)`,
+      [ticket.id_ticket, usuario, ticket.placa, ticket.id_tipo, monto, referencia, JSON.stringify({ modo }), modo === 'live' ? 'Recurrente' : `PRUEBA ${modo}: sin dinero real`, hoy]);
     await conn.commit();
     return { nuevo: true, pago: { id_pago: insert.insertId, id_ticket: ticket.id_ticket, id_usuario: usuario, placa: ticket.placa,
       monto, codigo_validacion: referencia, estado_pago: 'pendiente', transaction_id: null, gateway_response: { modo } } as PagoOnline };
@@ -82,4 +90,26 @@ export async function pendientes(ultimoId = 0) {
     AND estado_pago IN ('pendiente', 'fallido') AND transaction_id LIKE 'ch_%'
     AND id_pago > ? ORDER BY id_pago LIMIT 100`, [ultimoId]);
   return rows;
+}
+
+
+/** La placa y el ticket identifican la estancia, sin exponer datos de la cuenta. */
+export async function obtenerTicketPublico(placa: string, numeroTicket: string) {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT p.id_parqueo, t.placa, t.numero_ticket, t.fecha_entrada,
+            COALESCE(ultimo.id_usuario, t.id_usuario, t.id_guardia_entrada) AS id_usuario_pago,
+            EXISTS(SELECT 1 FROM Pagos pagado WHERE pagado.id_ticket = t.id_ticket
+                   AND pagado.estado_pago = 'completado') AS pagado
+     FROM Tickets t
+     JOIN Parqueos p ON p.id_ticket = t.id_ticket AND p.fecha_liberacion IS NULL
+     LEFT JOIN Pagos ultimo ON ultimo.id_pago = (
+       SELECT pg.id_pago FROM Pagos pg WHERE pg.id_ticket = t.id_ticket ORDER BY pg.id_pago DESC LIMIT 1
+     )
+     WHERE UPPER(t.placa) = ? AND t.numero_ticket = ? AND t.activo = 1 AND t.fecha_salida IS NULL
+     LIMIT 1`, [placa, numeroTicket]);
+  const ticket = rows[0];
+  if (!ticket) throw new PagoError(404, 'No se encontró un ticket activo con esa placa y número');
+  if (Number(ticket.pagado) === 1) throw new PagoError(409, 'Este parqueo ya está pagado');
+  if (!ticket.id_usuario_pago) throw new PagoError(409, 'El ticket requiere revisión administrativa');
+  return ticket;
 }

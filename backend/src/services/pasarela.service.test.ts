@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from 'bun:test';
+import jwt from 'jsonwebtoken';
 import { createHmac } from 'node:crypto';
-import { crearCheckout, generarReferencia, modoPago, validarCheckout, validarConfiguracionPago, verificarFirma } from './pasarela.service';
+import { tokenConsultaPago, verificarTokenConsultaPago, urlRetorno, crearCheckout, generarReferencia, modoPago, validarCheckout, validarConfiguracionPago, verificarFirma } from './pasarela.service';
 const env = { ...process.env };
 const originalFetch = globalThis.fetch;
 afterEach(() => { process.env = { ...env }; globalThis.fetch = originalFetch; });
@@ -72,4 +73,34 @@ test('verifica cuerpo original, firmas múltiples y rechaza cambios y replay ant
 test('rechaza respuestas HTTP de error sin filtrar su contenido', async () => {
   sandbox(); globalThis.fetch = (async () => new Response('secret-details', { status: 401 })) as unknown as typeof fetch;
   await expect(crearCheckout({ referencia: 'P-123', monto: 27, placa: 'P123ABC' })).rejects.toThrow('HTTP 401');
+});
+
+
+test('enlace compartido consulta solo su pago y no es una sesión', () => {
+  process.env.JWT_SECRET = 'clave-de-prueba-de-al-menos-32-caracteres';
+  const token = tokenConsultaPago('P-123');
+  expect(() => verificarTokenConsultaPago(token, 'P-123')).not.toThrow();
+  expect(() => verificarTokenConsultaPago(token, 'P-456')).toThrow('inválido');
+  expect(() => verificarTokenConsultaPago(token.slice(0, -5) + 'xxxxx', 'P-123')).toThrow('inválido');
+  expect(() => verificarTokenConsultaPago(undefined, 'P-123')).toThrow('inválido');
+  expect(() => jwt.verify(token, process.env.JWT_SECRET!)).toThrow();
+  const session = jwt.sign({ referencia: 'P-123' }, process.env.JWT_SECRET!, { audience: 'consulta-pago' });
+  expect(() => verificarTokenConsultaPago(session, 'P-123')).toThrow('inválido');
+});
+
+test('enlace compartido expira y vuelve al dominio configurado', () => {
+  process.env.JWT_SECRET = 'clave-de-prueba-de-al-menos-32-caracteres';
+  process.env.FRONTEND_BASE_URL = 'https://parqueo.example/Sistemas-de-Control-de-Pago';
+  const enlace = urlRetorno('P-123', true);
+  expect(enlace).toStartWith('https://parqueo.example/Sistemas-de-Control-de-Pago/#/pagar-parqueo/resultado?');
+  const params = new URLSearchParams(enlace.split('?')[1]);
+  const token = params.get('acceso')!;
+  expect(params.get('estado')).toBe('cancelado');
+  expect(() => verificarTokenConsultaPago(token, 'P-123')).not.toThrow();
+  const payload = jwt.decode(token) as jwt.JwtPayload;
+  expect(payload.exp! - payload.iat!).toBe(7 * 24 * 60 * 60);
+  const now = Date.now;
+  Date.now = () => (payload.exp! + 1) * 1000;
+  try { expect(() => verificarTokenConsultaPago(token, 'P-123')).toThrow('expiró'); }
+  finally { Date.now = now; }
 });

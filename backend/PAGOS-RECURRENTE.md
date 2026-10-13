@@ -1,5 +1,26 @@
 # Pagos de parqueo con Recurrente
 
+## Pago público por placa (sin iniciar sesión)
+
+Flujo "pagar primero": cualquier persona paga desde el QR de la entrada, sin cuenta. El pago queda ligado a la **placa y al día** (`Pagos.fecha_vigencia`, hora de Guatemala), no a un ticket; la entrada del guardia lo enlaza al ticket y los reingresos del mismo día lo reutilizan.
+
+**Requiere aplicar `sql/migrations/20261012_pago_publico_permiso_dia.sql`** (una sola vez, con respaldo, desde un cliente que entienda `DELIMITER`). Sin la migración, la entrada, la búsqueda y la salida del guardia fallan porque consultan `Pagos.fecha_vigencia`. `bun run check:pagos-db` verifica el esquema.
+
+| Endpoint | Acceso | Uso |
+|---|---|---|
+| `GET /api/publico/pago/placa/:placa` | público | Tarifa, tipo y si ya pagó hoy (no devuelve referencia ni NIT) |
+| `POST /api/publico/pago` | público | `{ placa, nit, nombre, monto_esperado }` → `{ url_pago, referencia }` |
+| `GET /api/publico/pago/:referencia` | público | Estado del pago; con pago aprobado incluye el `recibo` |
+| `POST /api/publico/pago/:referencia/simular` | público, solo `mock` | Simulador local |
+| `GET /api/pagos/permiso/:placa` | guardia/cobrador/admin | Lo anterior + referencia y datos de facturación |
+| `GET /api/pagos/estado-hoy` | guardia/cobrador/admin | Pagados de hoy, totales y vehículos dentro sin pago |
+| `POST /api/pagos/efectivo` | guardia/cobrador/admin | Ahora acepta placas **sin ticket** (permiso del día) y `nit`/`nombre` opcionales |
+
+- La entrada del guardia devuelve `409 PAGO_PENDIENTE` si la placa no pagó hoy. `EXIGIR_PAGO_EN_ENTRADA=false` lo desactiva y deja solo el bloqueo de salida.
+- El tipo de vehículo y la tarifa los decide el servidor (prefijo de la placa o vehículo registrado); el cliente solo confirma el monto.
+- Los endpoints públicos tienen límite por IP (en memoria). Detrás de un proxy propio configura `TRUST_PROXY=true`.
+- NIT: se valida el formato (`CF` o dígitos con `K` final), no el dígito verificador.
+
 ## Al actualizar Rama/Combinada en otra computadora
 
 El diseño del formulario se comparte por Git; las credenciales no. Para abrir el formulario con número de tarjeta, vencimiento y CVC, configura en `backend/.env.local`:
@@ -137,3 +158,81 @@ Documentación oficial consultada:
 - https://docs.recurrente.com/referencia-api/api-reference/checkouts/create-checkout
 - https://docs.recurrente.com/referencia-api/api-reference/checkouts/get-checkout
 - https://docs.recurrente.com/guias-espanol/comenzar/webhooks
+
+
+## Compartir un pago sin iniciar sesión
+
+Desde Pago de Parqueo, inicia sesión, consulta la placa y prepara el formulario.
+El botón **Copiar enlace de pago** copia el checkout de Recurrente de ese ticket.
+Otra persona puede abrir ese enlace y pagar sin una cuenta del sistema.
+No se crea otro cobro al compartirlo. El pago permanece asociado al usuario que lo preparó.
+
+Los checkouts nuevos regresan a una pantalla pública de resultado con una credencial firmada
+válida durante siete días. Esta credencial permite consultar exclusivamente ese pago;
+no permite iniciar sesión, crear cobros ni aprobar simulaciones. Un enlace de checkout
+anterior a este cambio conserva su URL de retorno anterior. La expiración de la credencial
+no cancela el checkout de Recurrente; después, el usuario que preparó el pago puede consultar
+su historial y la administración puede verificarlo. Webhook y reconciliación siguen funcionando.
+
+## Direcciones del servidor
+
+No se fija una IP en el código. Configura las URLs HTTPS reales en el backend:
+`FRONTEND_BASE_URL` (incluyendo `/Sistemas-de-Control-de-Pago`) y `BACKEND_BASE_URL`.
+`HOST=0.0.0.0` permite escuchar en las interfaces del servidor. CORS acepta el origen
+configurado en `FRONTEND_BASE_URL`.
+
+Si publicas frontend y backend bajo el mismo dominio, el frontend compilado usa `/api`
+por defecto. Configura el proxy HTTPS del servidor para enviar `/api/` al backend
+(puerto 4000, conservando la ruta `/api/`) y servir el frontend en
+`/Sistemas-de-Control-de-Pago/`. Si están en dominios distintos, copia
+`frontend/.env.production.example` a `frontend/.env.production`, ajusta `VITE_API_URL`
+y compila con `npm run build`; modificar esa variable después de compilar no cambia el sitio.
+
+Para activar LIVE también necesitas la llave privada LIVE y la firma del webhook LIVE
+configuradas en el servidor. Registra el webhook público
+`BACKEND_BASE_URL/api/pagos/webhook/recurrente` en Recurrente.
+La IP o el dominio, TLS, las credenciales LIVE y el despliegue no se configuran automáticamente.
+
+
+## Iniciar el pago desde otra aplicación sin iniciar sesión
+
+El cliente reutilizable está en `integraciones/pagos.mjs`. Funciona en navegador y en
+Node/Bun con fetch. Necesita el backend desplegado con una URL pública HTTPS:
+
+```js
+import { iniciarPago, consultarPago } from './pagos.mjs';
+
+const pago = await iniciarPago({
+  apiUrl: 'https://tu-backend.example/api',
+  placa: 'P123ABC',
+  ticket: 'TK-NUMERO-DEL-TICKET',
+});
+// Guarda referencia y acceso para consultar después. No los publiques.
+window.location.assign(pago.url_pago);
+
+// Al consultar el estado desde tu aplicación:
+const estado = await consultarPago({
+  apiUrl: 'https://tu-backend.example/api',
+  referencia: pago.referencia,
+  acceso: pago.acceso,
+});
+// Solo estado.aprobado === true confirma que el servidor verificó el pago.
+```
+
+Endpoints públicos: `POST /api/pagos/publico/precio` recibe `{ placa, ticket }`;
+`POST /api/pagos/publico` recibe `{ placa, ticket, monto_esperado }`.
+La tarifa viene de la BD y se vuelve a verificar dentro de la reserva transaccional.
+No se aceptan montos ni conceptos libres, IDs de usuario ni datos de tarjeta.
+La coincidencia de placa y ticket es obligatoria. El checkout existente se reutiliza;
+los tickets pagados o cerrados se rechazan. En tickets de visitantes, el pago se asocia
+al guardia de entrada; en tickets con cuenta, a su usuario (o al usuario del pago existente).
+Esto no identifica al titular de la tarjeta.
+
+La pantalla `/Sistemas-de-Control-de-Pago/#/pagar-parqueo` también permite este flujo
+sin cuenta, solicitando placa y número de ticket. Se requiere Recurrente sandbox o LIVE;
+el simulador local sigue requiriendo sesión.
+
+Las rutas de pago público y consulta compartida aceptan CORS desde cualquier origen,
+sin cookies, para que otras aplicaciones puedan llamar la función. Las rutas privadas
+conservan sesión y su origen configurado. Esta API no elimina la necesidad de desplegar
+el backend, configurar HTTPS, las URLs de retorno y las credenciales del ambiente.

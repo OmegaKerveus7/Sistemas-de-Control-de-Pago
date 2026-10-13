@@ -1,6 +1,22 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usuariosService, type Usuario } from '../../services/usuarios.service';
 import './Usuarios.css';
+
+type IconoUsuarioTipo = 'volver' | 'nuevo' | 'buscar' | 'editar' | 'eliminar' | 'estado' | 'guardar' | 'cancelar';
+function IconoUsuario({ tipo }: { tipo: IconoUsuarioTipo }) {
+  const trazos: Record<IconoUsuarioTipo, string> = {
+    volver: 'M19 12H5 M12 19l-7-7 7-7',
+    nuevo: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M20 8v6 M17 11h6 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
+    buscar: 'M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
+    editar: 'M12 20H4v-8 M16 3l5 5-10 10-6 1 1-6Z M14 5l5 5',
+    eliminar: 'M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7',
+    estado: 'M12 2v10 M6 5a9 9 0 1 0 12 0',
+    guardar: 'M20 21H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h13l4 4v13a1 1 0 0 1-1 1 M7 3v6h10V3 M7 21v-8h10v8',
+    cancelar: 'M6 6l12 12 M6 18L18 6',
+  };
+  return <svg className="usuarios-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={trazos[tipo]} /></svg>;
+}
 
 const ROLES = [
   { id_rol: 1, nombre: 'administrador' },
@@ -32,6 +48,11 @@ const FORMULARIO_VACIO: FormularioUsuario = {
 };
 
 export function Usuarios() {
+  const navigate = useNavigate();
+  function regresar() {
+    if (typeof window.history.state?.idx === 'number' && window.history.state.idx > 0) navigate(-1);
+    else navigate('/app/dashboard');
+  }
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,6 +140,8 @@ export function Usuarios() {
       return;
     }
 
+    if (usuarioEditando?.activo && !formulario.activo && !confirmarDesactivacion(usuarioEditando)) return;
+
     setGuardando(true);
     setErrorForm(null);
     try {
@@ -156,7 +179,12 @@ export function Usuarios() {
     }
   }
 
+  function confirmarDesactivacion(usuario: Usuario): boolean {
+    return window.confirm(`¿Estás seguro de que deseas desactivar a ${usuario.nombres} ${usuario.apellidos}?`);
+  }
+
   async function alternarEstado(usuario: Usuario) {
+    if (usuario.activo && !confirmarDesactivacion(usuario)) return;
     try {
       if (usuario.activo) {
         await usuariosService.eliminar(usuario.id_usuario);
@@ -172,27 +200,40 @@ export function Usuarios() {
   return (
     <section className="usuarios-page">
       <div className="usuarios-header">
-        <div>
+        <div className="usuarios-encabezado">
+          <button type="button" className="usuarios-btn-volver" onClick={regresar} aria-label="Regresar a la vista anterior" title="Regresar">
+            <IconoUsuario tipo="volver" />
+          </button>
+          <div>
           <h1 className="usuarios-title">Usuarios</h1>
           <p className="usuarios-subtitle">Administra las cuentas del sistema</p>
+          </div>
         </div>
         <button className="usuarios-btn-nuevo" onClick={abrirCrear}>
-          Nuevo usuario
+          <IconoUsuario tipo="nuevo" /> Nuevo usuario
         </button>
       </div>
 
       {error && <div className="alerta alerta-error">{error}</div>}
 
       <div className="usuarios-toolbar">
+        <label className="usuarios-busqueda">
+        <IconoUsuario tipo="buscar" />
         <input
+          aria-label="Buscar usuarios por nombre, correo o DPI"
           className="form-input usuarios-input-plano usuarios-buscador"
           placeholder="Buscar por nombre, correo o DPI..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
+        </label>
       </div>
 
       <div className="card usuarios-card">
+        <div className="usuarios-lista-header">
+          <h2>Cuentas registradas</h2>
+          {!cargando && <span>{usuariosFiltrados.length} {usuariosFiltrados.length === 1 ? 'usuario' : 'usuarios'}{busqueda.trim() ? ' encontrados' : ''}</span>}
+        </div>
         {cargando ? (
           <div className="usuarios-estado"><span className="spinner" /> Cargando usuarios...</div>
         ) : usuariosFiltrados.length === 0 ? (
@@ -205,8 +246,7 @@ export function Usuarios() {
                   <tr>
                     <th>Nombre</th>
                     <th>DPI</th>
-                    <th>Correo</th>
-                    <th>Teléfono</th>
+                    <th>Contacto</th>
                     <th>Rol</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -215,25 +255,26 @@ export function Usuarios() {
                 <tbody>
                   {usuariosFiltrados.map((usuario) => (
                     <tr key={usuario.id_usuario}>
-                      <td>{usuario.nombres} {usuario.apellidos}</td>
+                      <td className="usuarios-nombre-celda">{usuario.nombres} {usuario.apellidos}</td>
                       <td>{usuario.dpi}</td>
-                      <td>{usuario.email}</td>
-                      <td>{usuario.telefono || '—'}</td>
-                      <td className="usuarios-rol">{usuario.nom_rol ?? '—'}</td>
+                      <td><div className="usuarios-contacto"><span>{usuario.email}</span><span className="usuarios-contacto-telefono">{usuario.telefono ? `Tel. ${usuario.telefono}` : 'Sin teléfono'}</span></div></td>
+                      <td><span className="usuarios-rol usuarios-rol-etiqueta">{usuario.nom_rol ?? '—'}</span></td>
                       <td>
                         <span className={`usuarios-estado-texto ${usuario.activo ? 'activo' : 'inactivo'}`}>
                           {usuario.activo ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
-                      <td className="usuarios-acciones">
-                        <button className="usuarios-btn-accion" onClick={() => abrirEditar(usuario)}>Editar</button>
+                      <td><div className="usuarios-acciones">
+                        <button className="usuarios-btn-accion" onClick={() => abrirEditar(usuario)} title={`Editar a ${usuario.nombres}`} aria-label={`Editar a ${usuario.nombres}`}><IconoUsuario tipo="editar" /><span className="usuarios-accion-texto">Editar</span></button>
                         <button
                           className={`usuarios-btn-accion ${usuario.activo ? 'usuarios-btn-desactivar' : 'usuarios-btn-activar'}`}
                           onClick={() => alternarEstado(usuario)}
+                          title={`${usuario.activo ? 'Desactivar' : 'Activar'} a ${usuario.nombres}`}
+                          aria-label={`${usuario.activo ? 'Desactivar' : 'Activar'} a ${usuario.nombres}`}
                         >
-                          {usuario.activo ? 'Desactivar' : 'Activar'}
+                          <IconoUsuario tipo={usuario.activo ? "eliminar" : "estado"} /><span className="usuarios-accion-texto">{usuario.activo ? 'Desactivar' : 'Activar'}</span>
                         </button>
-                      </td>
+                      </div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -257,12 +298,12 @@ export function Usuarios() {
                     </div>
                   </div>
                   <div className="usuarios-card-acciones">
-                    <button className="usuarios-btn-accion" onClick={() => abrirEditar(usuario)}>Editar</button>
+                    <button className="usuarios-btn-accion" onClick={() => abrirEditar(usuario)}><IconoUsuario tipo="editar" /> Editar</button>
                     <button
                       className={`usuarios-btn-accion ${usuario.activo ? 'usuarios-btn-desactivar' : 'usuarios-btn-activar'}`}
                       onClick={() => alternarEstado(usuario)}
                     >
-                      {usuario.activo ? 'Desactivar' : 'Activar'}
+                      <IconoUsuario tipo={usuario.activo ? "eliminar" : "estado"} /> {usuario.activo ? 'Desactivar' : 'Activar'}
                     </button>
                   </div>
                 </div>
@@ -377,10 +418,10 @@ export function Usuarios() {
 
               <div className="usuarios-modal-acciones">
                 <button type="button" className="usuarios-btn-cancelar" onClick={cerrarModal}>
-                  Cancelar
+                  <IconoUsuario tipo="cancelar" /> Cancelar
                 </button>
                 <button type="submit" className="usuarios-btn-guardar" disabled={guardando}>
-                  {guardando ? <span className="spinner" /> : usuarioEditando ? 'Guardar cambios' : 'Crear usuario'}
+                  {guardando ? <><span className="spinner" /> Guardando...</> : <><IconoUsuario tipo="guardar" /> {usuarioEditando ? 'Guardar cambios' : 'Crear usuario'}</>}
                 </button>
               </div>
             </form>

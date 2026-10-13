@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { pagosService } from '../../services/pagos.service';
+import { pagosService, type ResultadoConfirmar } from '../../services/pagos.service';
 
 const ORIGEN = 'https://app.recurrente.com';
 
@@ -13,17 +13,19 @@ function urlEmbebida(url: string): string | null {
   } catch { return null; }
 }
 
-export function FormularioRecurrente({ url, referencia, sandbox }: {
-  url: string; referencia: string; sandbox: boolean;
+export function FormularioRecurrente({ url, referencia, sandbox, acceso, onResultado, confirmar = pagosService.confirmar }: {
+  url: string; referencia: string; sandbox: boolean; acceso?: string; onResultado?: (pago: ResultadoConfirmar) => void; confirmar?: (referencia: string) => Promise<ResultadoConfirmar>;
 }) {
   const iframe = useRef<HTMLIFrameElement>(null);
   const navigate = useNavigate();
   const [cargando, setCargando] = useState(true);
   const [aviso, setAviso] = useState(sandbox ? 'Completa el formulario para probar el pago.' : 'Completa el formulario para realizar el pago.');
   const [error, setError] = useState('');
+  const [revision, setRevision] = useState(0);
+  const [copiado, setCopiado] = useState(false);
   const ruta = useLocation().pathname;
   const base = ruta.startsWith('/app/') ? ruta : '/pagar-parqueo';
-  const resultado = `${base}/resultado?referencia=${encodeURIComponent(referencia)}`;
+  const resultado = `${base}/resultado?referencia=${encodeURIComponent(referencia)}${acceso ? `&acceso=${encodeURIComponent(acceso)}` : ''}`;
   const checkout = urlEmbebida(url);
   const urlValida = checkout !== null;
 
@@ -35,10 +37,13 @@ export function FormularioRecurrente({ url, referencia, sandbox }: {
       if (consultando) return;
       consultando = true;
       try {
-        const pago = await pagosService.confirmar(referencia);
+        const pago = acceso ? await pagosService.confirmarCompartido(referencia, acceso) : await confirmar(referencia);
         if (!activo) return;
         setError('');
-        if (pago.aprobado || pago.estado === 'reembolsado') navigate(resultado, { replace: true });
+        if (pago.aprobado || pago.estado === 'reembolsado') {
+          if (onResultado) onResultado(pago);
+          else navigate(resultado, { replace: true });
+        } else if (onResultado) setAviso(pago.estado === 'fallido' ? 'El intento falló. Puedes reintentar en el mismo formulario.' : 'Pago pendiente de confirmación.');
       } catch {
         if (activo) setError('No pudimos consultar el estado. Puedes seguir verificándolo sin crear otro pago.');
       } finally { consultando = false; }
@@ -59,11 +64,12 @@ export function FormularioRecurrente({ url, referencia, sandbox }: {
     }
     window.addEventListener('message', recibir);
     // También confirma si el proveedor no emite el callback o el usuario vuelve de 3DS.
+    void consultar();
     const intervalo = window.setInterval(() => { void consultar(); }, 5000);
     return () => { activo = false; window.clearInterval(intervalo); window.removeEventListener('message', recibir); };
-  }, [referencia, resultado, navigate, urlValida]);
+  }, [referencia, resultado, navigate, urlValida, acceso, onResultado, revision, confirmar]);
 
-  if (!checkout) return <p role="alert">El enlace no corresponde a un formulario de Recurrente. <Link to={resultado}>Consultar el pago</Link></p>;
+  if (!checkout) return <p role="alert">El enlace no corresponde a un formulario de Recurrente. {!onResultado && <Link to={resultado}>Consultar el pago</Link>}</p>;
 
   return <section className="pagar-formulario" aria-label="Formulario de tarjeta">
     <h2 className="pagar-resumen-titulo">{sandbox ? 'Prueba tu pago con tarjeta' : 'Datos de la tarjeta'}</h2>
@@ -79,7 +85,15 @@ export function FormularioRecurrente({ url, referencia, sandbox }: {
     <p className="pagar-estado-tarjeta" role="status">{aviso}</p>
     {error && <p className="pagar-alerta pagar-alerta-error" role="alert">{error}</p>}
     <div className="pagar-checkout-acciones">
-    <Link to={resultado} className="pagar-link">Consultar resultado</Link>
+    <div>
+      <p>Comparte este pago para que otra persona pague con tarjeta sin iniciar sesión.</p>
+      <input className="pagar-input" aria-label="Enlace para compartir el pago" readOnly value={url} onFocus={e => e.currentTarget.select()} />
+      <button type="button" className="pagar-button pagar-button-secundario" onClick={async () => {
+        try { await navigator.clipboard.writeText(url); setCopiado(true); }
+        catch { setError('Selecciona y copia el enlace del pago que aparece arriba.'); }
+      }}>{copiado ? 'Enlace copiado' : 'Copiar enlace de pago'}</button>
+    </div>
+    {onResultado ? <button type="button" className="pagar-button pagar-button-secundario" onClick={() => setRevision(n => n + 1)}>Consultar estado del pago</button> : <Link to={resultado} className="pagar-link">Consultar resultado</Link>}
     <details><summary>¿No aparece el formulario?</summary>
       <p>Puedes abrir el mismo checkout en otra pestaña y volver aquí para verificarlo.</p>
       <a href={url} target="_blank" rel="noopener noreferrer">Abrir este pago en Recurrente</a>

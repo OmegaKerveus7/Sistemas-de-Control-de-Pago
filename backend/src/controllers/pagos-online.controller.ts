@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { AuthRequest } from '../types';
 import * as service from '../services/pagos-online.service';
-import { cotizar } from '../repositories/pagos-online.repository';
-import { PagoError, modoPago } from '../services/pasarela.service';
+import { cotizar, porReferencia } from '../repositories/pagos-online.repository';
+import { PagoError, modoPago, verificarTokenConsultaPago } from '../services/pasarela.service';
 
 export const manejarPago = (handler: (req: Request, res: Response) => Promise<void>) => async (req: Request, res: Response, next: NextFunction) => {
   try { await handler(req, res); }
@@ -39,4 +39,35 @@ export const webhook = manejarPago(async (req, res) => {
   if (!Buffer.isBuffer(req.body)) throw new PagoError(400, 'Se requiere el cuerpo original del webhook');
   await service.webhook(req.body, { id: req.get('svix-id'), timestamp: req.get('svix-timestamp'), signature: req.get('svix-signature') });
   res.sendStatus(204);
+});
+
+export const confirmarCompartido = manejarPago(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  const referencia = referenciaValida(req.params.referencia);
+  verificarTokenConsultaPago(req.query.acceso, referencia);
+  const pago = await service.sincronizar(await porReferencia(referencia));
+  res.json(pago);
+});
+
+
+function datosTicketPublico(req: Request) {
+  const placa = typeof req.body?.placa === 'string' ? req.body.placa.trim().toUpperCase() : '';
+  const ticket = typeof req.body?.ticket === 'string' ? req.body.ticket.trim().toUpperCase() : '';
+  if (!/^[PM][0-9]{3}[A-Z]{3}$/.test(placa) || !/^TK-[A-Z0-9-]{1,60}$/.test(ticket)) {
+    throw new PagoError(400, 'Indica una placa válida y el número de ticket TK-...');
+  }
+  return { placa, ticket };
+}
+export const precioPublico = manejarPago(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const { placa, ticket } = datosTicketPublico(req);
+  res.json(await service.cotizarPublico(placa, ticket));
+});
+export const crearPublico = manejarPago(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const { placa, ticket } = datosTicketPublico(req);
+  const monto = req.body?.monto_esperado;
+  if (typeof monto !== 'number' || !Number.isFinite(monto) || monto < 5) throw new PagoError(400, 'Consulta la tarifa antes de pagar');
+  res.status(201).json(await service.crearPublico(placa, ticket, monto));
 });

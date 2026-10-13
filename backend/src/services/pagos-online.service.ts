@@ -10,7 +10,10 @@ function resultado(pago: repo.PagoOnline) {
 }
 export async function crear(parqueoId: number, usuario: number, monto: number) {
   const modo = pasarela.validarConfiguracionPago();
-  const { pago, nuevo } = await repo.reservar(parqueoId, usuario, modo, monto);
+  return prepararCheckout(await repo.reservar(parqueoId, usuario, modo, monto), modo);
+}
+/** Crea el checkout de una reserva ya persistida, o reutiliza el existente. Lo comparten el flujo con sesión y el público. */
+export async function prepararCheckout({ pago, nuevo }: { pago: repo.PagoOnline; nuevo: boolean }, modo: pasarela.ModoPago) {
   if (!nuevo) {
     const url = repo.gateway(pago).url_pago;
     if (!url) throw new pasarela.PagoError(409, `El pago ${pago.codigo_validacion} está en preparación o requiere revisión. No se generará otro cobro.`);
@@ -32,8 +35,8 @@ export async function sincronizar(pago: repo.PagoOnline) {
   if (pasarela.validarCheckout(checkout, pago, pasarela.modoPago())) await repo.actualizarEstado(pago.id_pago, 'completado');
   return resultado(await repo.porReferencia(pago.codigo_validacion));
 }
-export async function confirmar(referencia: string, usuario: number) { return sincronizar(await repo.porReferencia(referencia, usuario)); }
-export async function simular(referencia: string, usuario: number, estado: string) {
+export async function confirmar(referencia: string, usuario?: number) { return sincronizar(await repo.porReferencia(referencia, usuario)); }
+export async function simular(referencia: string, usuario: number | undefined, estado: string) {
   if (pasarela.modoPago() !== 'mock') throw new pasarela.PagoError(404, 'Simulador no disponible');
   if (!['completado', 'fallido', 'pendiente'].includes(estado)) throw new pasarela.PagoError(400, 'Resultado de prueba inválido');
   const pago = await repo.porReferencia(referencia, usuario);
@@ -77,4 +80,23 @@ export async function reconciliarPendientes() {
     }
     if (pagos.length < 100) ultimoId = 0;
   } finally { reconciliando = false; }
+}
+
+
+function validarPagoPublico() {
+  const modo = pasarela.validarConfiguracionPago();
+  if (modo === 'mock') throw new pasarela.PagoError(503, 'El pago público requiere Recurrente en sandbox o live');
+  return modo;
+}
+export async function cotizarPublico(placa: string, numeroTicket: string) {
+  const modo = validarPagoPublico();
+  const ticket = await repo.obtenerTicketPublico(placa, numeroTicket);
+  return { placa: ticket.placa as string, ticket: ticket.numero_ticket as string,
+    fecha_entrada: ticket.fecha_entrada, ...await repo.cotizar(Number(ticket.id_parqueo)), modo };
+}
+export async function crearPublico(placa: string, numeroTicket: string, montoEsperado: number) {
+  validarPagoPublico();
+  const ticket = await repo.obtenerTicketPublico(placa, numeroTicket);
+  const pago = await crear(Number(ticket.id_parqueo), Number(ticket.id_usuario_pago), montoEsperado);
+  return { ...pago, acceso: pasarela.tokenConsultaPago(pago.referencia) };
 }
