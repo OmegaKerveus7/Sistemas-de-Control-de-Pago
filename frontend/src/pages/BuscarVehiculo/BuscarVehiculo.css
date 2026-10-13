@@ -1,5 +1,6 @@
 .buscar-vehiculo-page {
-  max-width: 1080px;
+  width: calc(100% * 10 / 12);
+  min-width: 0;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -69,28 +70,30 @@
 
 .buscar-vehiculo-tabla {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.88rem;
 }
 
 .buscar-vehiculo-tabla th {
   text-align: left;
-  padding: 14px 16px;
-  background: var(--color-fondo-input);
-  color: var(--belen-azul);
+  padding: 14px 10px;
+  background: var(--belen-azul);
+  color: var(--color-blanco);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--color-borde);
-  white-space: nowrap;
+  border-bottom: 2px solid var(--belen-dorado);
+  overflow-wrap: anywhere;
 }
 
 .buscar-vehiculo-tabla td {
-  padding: 12px 16px;
+  padding: 12px 10px;
   border-bottom: 1px solid var(--color-borde-suave);
   color: var(--color-texto);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
 }
 
 .buscar-vehiculo-tabla tbody tr:last-child td {
@@ -110,3 +113,30 @@
   color: var(--color-texto-secundario);
   font-size: 0.82rem;
 }
+
+
+.buscar-vehiculo-header { display: flex; align-items: flex-start; gap: 12px; }
+.buscar-vehiculo-icono { width: 18px; height: 18px; flex-shrink: 0; }
+.buscar-vehiculo-volver { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--color-borde); border-radius: var(--radio-sm); background: #fff; color: var(--belen-azul); cursor: pointer; }
+.buscar-vehiculo-volver:hover { background: var(--color-fondo-input); border-color: var(--belen-dorado); }
+.buscar-vehiculo-consulta { padding: 22px; border-top: 3px solid var(--belen-azul); }
+.buscar-vehiculo-consulta h2 { font-size: 1rem; color: var(--belen-azul); margin-bottom: 16px; }
+.buscar-vehiculo-consulta > .form-label { display: block; margin-bottom: 8px; }
+.buscar-vehiculo-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.buscar-vehiculo-form .form-input { height: 44px; padding-left: 16px; min-width: 0; }
+.buscar-vehiculo-ayuda { margin-top: 12px; font-size: .82rem; color: var(--color-texto-secundario); }
+.buscar-vehiculo-resultados-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 18px 20px; }
+.buscar-vehiculo-resultados-header h2 { font-size: 1rem; color: var(--belen-azul); }
+.buscar-vehiculo-resultados-header span { font-size: .8rem; color: var(--color-texto-secundario); }
+.buscar-vehiculo-tabla tbody tr:nth-child(even) { background: #faf9f5; }
+.buscar-vehiculo-tabla tbody tr:hover { background: #fff5de; }
+.buscar-vehiculo-tabla .buscar-vehiculo-placa { color: var(--belen-azul); }
+.buscar-vehiculo-tabla th:nth-child(1) { width: 12%; }
+.buscar-vehiculo-tabla th:nth-child(2) { width: 20%; }
+.buscar-vehiculo-tabla th:nth-child(3) { width: 10%; }
+.buscar-vehiculo-tabla th:nth-child(4) { width: 22%; }
+.buscar-vehiculo-tabla th:nth-child(5) { width: 14%; }
+.buscar-vehiculo-tabla th:nth-child(6) { width: 22%; }
+@media (max-width: 1200px) { .buscar-vehiculo-page { width: 100%; max-width: 1000px; } }
+@media (max-width: 768px) { .buscar-vehiculo-tabla { min-width: 650px; } .buscar-vehiculo-consulta { padding: 18px; } }
+@media (max-width: 480px) { .buscar-vehiculo-form { flex-direction: column; } .buscar-vehiculo-btn { width: 100%; } }

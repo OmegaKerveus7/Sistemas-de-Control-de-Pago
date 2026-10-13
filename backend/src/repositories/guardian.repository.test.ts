@@ -54,7 +54,7 @@ const pool = {
 };
 
 mock.module('../config/database', () => ({ getPool: () => pool }));
-const { registrarEntrada, registrarSalida, resumen, buscar } = await import('./guardian.repository');
+const { registrarEntrada, registrarSalida, resumen, buscar, detalleIndicador } = await import('./guardian.repository');
 const hoy = hoyGuatemala();
 
 afterEach(() => {
@@ -281,4 +281,36 @@ test('la salida acepta el pago del día de la placa y sigue bloqueada sin pago',
 
   pagoSalida = undefined;
   await expect(registrarSalida({ placa: 'P123ABC' }, 1, '127.0.0.1')).rejects.toMatchObject({ codigo: 'PAGO_NO_COMPLETADO' });
+});
+
+test('rechaza indicadores inválidos antes de consultar la BD', async () => {
+  for (const tipo of ['otro', '__proto__', 'entradas OR 1=1']) await expect(detalleIndicador(tipo)).rejects.toMatchObject({ status: 400 });
+  expect(statements).toEqual([]);
+});
+
+test('detalle de espacios filtra habilitados y disponibles y devuelve el total del listado', async () => {
+  queryResponses = [[{ id: 1, lugar: 'A01', zona: 'A' }]];
+  const detalle = await detalleIndicador('espacios');
+  expect(detalle.total).toBe(detalle.filas.length);
+  expect(detalle.total).toBe(1);
+  expect(statements[0]).toContain("l.activo = 1 AND el.nombre = 'disponible'");
+});
+
+test('detalle de pagos pendientes elige el pago pendiente de cada ticket activo', async () => {
+  await detalleIndicador('pendientes');
+  expect(statements[0]).toContain("t.activo = 1 AND EXISTS (SELECT 1 FROM Pagos pendiente");
+  expect(statements[0]).toContain("AND ultimo.estado_pago = 'pendiente'");
+  expect(statements[0]).toContain('pg.id_pago = (');
+});
+
+test('sin pago excluye cualquier pago, entradas y salidas usan la fecha de la BD', async () => {
+  await detalleIndicador('sin_pago');
+  expect(statements[0]).toContain('t.activo = 1 AND NOT EXISTS (SELECT 1 FROM Pagos ninguno WHERE ninguno.id_ticket = t.id_ticket)');
+  await detalleIndicador('entradas');
+  expect(statements[1]).toContain('WHERE DATE(t.fecha_entrada) = CURDATE()');
+  await detalleIndicador('salidas');
+  expect(statements[2]).toContain('WHERE DATE(t.fecha_salida) = CURDATE()');
+  await detalleIndicador('vehiculos');
+  expect(statements[3]).toContain('WHERE t.activo = 1');
+  expect(statements[3]).not.toContain('CURDATE()');
 });

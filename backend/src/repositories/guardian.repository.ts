@@ -498,3 +498,44 @@ export async function registrarSalida(criterio: CriterioGuardian, idGuardia: num
     conn.release();
   }
 }
+
+
+/** Mismos criterios que resumen() y estadisticas(), una fila por espacio o ticket. */
+export async function detalleIndicador(tipo: string) {
+  const filtros: Record<string, string> = {
+    vehiculos: 't.activo = 1',
+    entradas: 'DATE(t.fecha_entrada) = CURDATE()',
+    salidas: 'DATE(t.fecha_salida) = CURDATE()',
+    pendientes: "t.activo = 1 AND EXISTS (SELECT 1 FROM Pagos pendiente WHERE pendiente.id_ticket = t.id_ticket AND pendiente.estado_pago = 'pendiente')",
+    sin_pago: 't.activo = 1 AND NOT EXISTS (SELECT 1 FROM Pagos ninguno WHERE ninguno.id_ticket = t.id_ticket)',
+  };
+  if (tipo === 'espacios') {
+    const [filas] = await getPool().query<RowDataPacket[]>(
+      `SELECT l.id_lugar AS id, l.codigo AS lugar, z.nombre AS zona,
+              COALESCE(tv.nombre, 'Cualquier tipo') AS tipo_vehiculo
+       FROM Lugares l JOIN Estado_Lugar el ON el.id_estado = l.id_estado
+       LEFT JOIN Zonas z ON z.id_zona = l.id_zona
+       LEFT JOIN Tipo_vehiculo tv ON tv.id_tipo = l.id_tipo_permitido
+       WHERE l.activo = 1 AND el.nombre = 'disponible'
+       ORDER BY z.nombre, l.codigo`);
+    return { tipo, total: filas.length, filas };
+  }
+  if (!Object.hasOwn(filtros, tipo)) throw new GuardianError(400, 'Indicador de parqueo inválido', 'INDICADOR_INVALIDO');
+  const [filas] = await getPool().query<RowDataPacket[]>(
+    `SELECT t.id_ticket AS id, t.numero_ticket AS ticket, t.placa,
+            l.codigo AS lugar, z.nombre AS zona, tv.nombre AS tipo_vehiculo,
+            t.fecha_entrada, t.fecha_salida, pg.monto,
+            COALESCE(pg.estado_pago, 'sin_pago') AS estado_pago
+     FROM Tickets t
+     LEFT JOIN Lugares l ON l.id_lugar = t.id_lugar
+     LEFT JOIN Zonas z ON z.id_zona = l.id_zona
+     LEFT JOIN Tipo_vehiculo tv ON tv.id_tipo = t.id_tipo
+     LEFT JOIN Pagos pg ON pg.id_pago = (
+       SELECT ultimo.id_pago FROM Pagos ultimo WHERE ultimo.id_ticket = t.id_ticket
+       ${tipo === 'pendientes' ? "AND ultimo.estado_pago = 'pendiente'" : ''}
+       ORDER BY (ultimo.estado_pago = 'completado') DESC, ultimo.id_pago DESC LIMIT 1
+     )
+     WHERE ${filtros[tipo]}
+     ORDER BY ${tipo === 'salidas' ? 't.fecha_salida' : 't.fecha_entrada'} DESC, t.id_ticket DESC`);
+  return { tipo, total: filas.length, filas };
+}

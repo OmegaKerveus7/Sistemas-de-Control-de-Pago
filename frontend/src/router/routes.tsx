@@ -8,6 +8,7 @@ import { ForgotPassword } from '../pages/ForgotPassword';
 import { Dashboard } from '../pages/Dashboard';
 import { PagarParqueo, ResultadoPago } from '../pages/PagarParqueo';
 import { PagoPublico, ResultadoPagoPublico } from '../pages/PagoPublico';
+import { FormularioTarjeta } from '../pages/PagarParqueo/FormularioTarjeta';
 import { SimuladorPago } from '../pages/PagarParqueo/Simulador';
 import { Guardian } from '../pages/Guardian';
 import { HistorialPagos } from '../pages/HistorialPagos';
@@ -23,6 +24,7 @@ import { Tarifas } from '../pages/Tarifas';
 import { QrPago } from '../pages/QrPago';
 
 export const router = createHashRouter([
+  { path: '/pago-tarjeta/formulario', element: <FormularioTarjeta /> },
   {
     path: '/',
     element: <Main />,

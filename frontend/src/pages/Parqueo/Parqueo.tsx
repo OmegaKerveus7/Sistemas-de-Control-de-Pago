@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { parqueoService, type Parqueo as RegistroParqueo } from '../../services/parqueo.service';
 import './Parqueo.css';
 
+function IconoParqueo({ tipo }: { tipo: 'volver' | 'buscar' }) {
+  return <svg className="parqueo-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d={tipo === 'volver' ? 'M19 12H5 M12 19l-7-7 7-7' : 'M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0'} />
+  </svg>;
+}
+
 export function Parqueo() {
+  const navigate = useNavigate();
+  function regresar() {
+    if (typeof window.history.state?.idx === 'number' && window.history.state.idx > 0) navigate(-1);
+    else navigate('/app/dashboard');
+  }
   const [registros, setRegistros] = useState<RegistroParqueo[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,22 +47,31 @@ export function Parqueo() {
 
   return (
     <section className="parqueo-page">
-      <div>
+      <div className="parqueo-encabezado">
+        <button type="button" className="parqueo-btn-volver" onClick={regresar} aria-label="Regresar a la vista anterior" title="Regresar">
+          <IconoParqueo tipo="volver" />
+        </button>
+        <div>
         <h1 className="parqueo-title">Parqueo</h1>
         <p className="parqueo-subtitle">
           {activos} vehículo{activos === 1 ? '' : 's'} actualmente dentro, {registros.length} registros en total.
         </p>
+        </div>
       </div>
 
       {error && <div className="alerta alerta-error">{error}</div>}
 
       <div className="parqueo-toolbar">
+        <label className="parqueo-busqueda">
+        <IconoParqueo tipo="buscar" />
         <input
-          className="form-input usuarios-input-plano parqueo-buscador"
+          aria-label="Buscar parqueo por placa, lugar, zona o ticket"
+          className="form-input parqueo-buscador"
           placeholder="Buscar por placa, lugar, zona o ticket..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
+        </label>
         <div className="parqueo-filtros">
           {(['todos', 'activo', 'completado'] as const).map((opcion) => (
             <button
@@ -58,6 +79,7 @@ export function Parqueo() {
               className={`parqueo-filtro-btn ${filtro === opcion ? 'activo' : ''}`}
               onClick={() => setFiltro(opcion)}
               type="button"
+              aria-pressed={filtro === opcion}
             >
               {opcion === 'todos' ? 'Todos' : opcion === 'activo' ? 'Activos' : 'Completados'}
             </button>
@@ -66,6 +88,10 @@ export function Parqueo() {
       </div>
 
       <div className="card parqueo-card">
+        <div className="parqueo-lista-header">
+          <h2>Registros de parqueo</h2>
+          {!cargando && <span>{registrosFiltrados.length} {registrosFiltrados.length === 1 ? 'registro' : 'registros'}{busqueda.trim() || filtro !== 'todos' ? ' encontrados' : ''}</span>}
+        </div>
         {cargando ? (
           <div className="parqueo-estado"><span className="spinner" /> Cargando parqueo...</div>
         ) : registrosFiltrados.length === 0 ? (

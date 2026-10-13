@@ -102,7 +102,7 @@ export interface OpcionMenu {
 
 const OPCIONES_POR_ROL: Record<NombreRol, OpcionMenu[]> = {
   administrador: [
-    { path: '/app/dashboard', etiqueta: 'Dashboard', Icono: IconoDashboard },
+    { path: '/app/dashboard', etiqueta: 'Panel de control', Icono: IconoDashboard },
     { path: '/app/usuarios', etiqueta: 'Usuarios', Icono: IconoUsuarios },
     { path: '/app/parqueo', etiqueta: 'Parqueo', Icono: IconoParqueo },
     { path: '/app/pagos', etiqueta: 'Pagos', Icono: IconoPagos },
@@ -112,7 +112,7 @@ const OPCIONES_POR_ROL: Record<NombreRol, OpcionMenu[]> = {
     { path: '/app/buscar-vehiculo', etiqueta: 'Buscar vehículo', Icono: IconoBuscar },
   ],
   guardia: [
-    { path: '/app/dashboard', etiqueta: 'Dashboard', Icono: IconoDashboard },
+    { path: '/app/dashboard', etiqueta: 'Panel de control', Icono: IconoDashboard },
     { path: '/app/guardian', etiqueta: 'Control de acceso', Icono: IconoGuardian },
     { path: '/app/pagos', etiqueta: 'Cobro en efectivo', Icono: IconoPagos },
     { path: '/app/qr-pago', etiqueta: 'QR de pago', Icono: IconoQr },

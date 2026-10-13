@@ -91,3 +91,25 @@ export async function pendientes(ultimoId = 0) {
     AND id_pago > ? ORDER BY id_pago LIMIT 100`, [ultimoId]);
   return rows;
 }
+
+
+/** La placa y el ticket identifican la estancia, sin exponer datos de la cuenta. */
+export async function obtenerTicketPublico(placa: string, numeroTicket: string) {
+  const [rows] = await getPool().query<RowDataPacket[]>(
+    `SELECT p.id_parqueo, t.placa, t.numero_ticket, t.fecha_entrada,
+            COALESCE(ultimo.id_usuario, t.id_usuario, t.id_guardia_entrada) AS id_usuario_pago,
+            EXISTS(SELECT 1 FROM Pagos pagado WHERE pagado.id_ticket = t.id_ticket
+                   AND pagado.estado_pago = 'completado') AS pagado
+     FROM Tickets t
+     JOIN Parqueos p ON p.id_ticket = t.id_ticket AND p.fecha_liberacion IS NULL
+     LEFT JOIN Pagos ultimo ON ultimo.id_pago = (
+       SELECT pg.id_pago FROM Pagos pg WHERE pg.id_ticket = t.id_ticket ORDER BY pg.id_pago DESC LIMIT 1
+     )
+     WHERE UPPER(t.placa) = ? AND t.numero_ticket = ? AND t.activo = 1 AND t.fecha_salida IS NULL
+     LIMIT 1`, [placa, numeroTicket]);
+  const ticket = rows[0];
+  if (!ticket) throw new PagoError(404, 'No se encontró un ticket activo con esa placa y número');
+  if (Number(ticket.pagado) === 1) throw new PagoError(409, 'Este parqueo ya está pagado');
+  if (!ticket.id_usuario_pago) throw new PagoError(409, 'El ticket requiere revisión administrativa');
+  return ticket;
+}
