@@ -75,6 +75,8 @@ export interface EntradaGuardian {
   tipo_vehiculo: string;
   es_externo: boolean;
   lugar: { id: number; numero: string; zona: string };
+  pago_vigente: boolean;
+  pago: { metodo: string; referencia: string } | null;
 }
 
 export interface SalidaGuardian {

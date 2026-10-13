@@ -7,7 +7,8 @@
     "dev": "bun --watch src/index.ts",
     "build": "tsc",
     "start": "bun src/index.ts",
-    "test:pagos": "bun test src/services/pasarela.service.test.ts && bun test src/repositories/pagos-online.test.ts",
+    "test": "bun test",
+    "test:pagos": "bun test src/services/pasarela.service.test.ts && bun test src/repositories/pagos-online.test.ts src/repositories/pagos-publico.test.ts",
     "check:pagos-db": "bun tools/verificar-esquema-pagos.ts"
   },
   "devDependencies": {

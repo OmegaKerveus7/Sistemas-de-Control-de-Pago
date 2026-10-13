@@ -1,11 +1,14 @@
 import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
 import { generarReferencia, PagoError, type ModoPago } from '../services/pasarela.service';
+import { hoyGuatemala } from '../utils/fecha';
 
 export interface PagoOnline extends RowDataPacket {
   id_pago: number; id_usuario: number; id_ticket: number; placa: string;
   monto: string | number; codigo_validacion: string; estado_pago: string;
   transaction_id: string | null; gateway_response: { modo: ModoPago; url_pago?: string } | string;
+  fecha_pago?: string; fecha_confirmacion?: string | null; fecha_vigencia?: string | null;
+  nit?: string | null; nombre_facturacion?: string | null;
 }
 export function gateway(pago: PagoOnline): { modo: ModoPago; url_pago?: string } {
   return typeof pago.gateway_response === 'string' ? JSON.parse(pago.gateway_response) : pago.gateway_response;
@@ -33,6 +36,11 @@ export async function reservar(parqueoId: number, usuario: number, modo: ModoPag
        WHERE p.id_parqueo = ? AND p.fecha_liberacion IS NULL AND t.activo = 1 AND t.fecha_salida IS NULL FOR UPDATE`, [parqueoId]);
     const ticket = tickets[0];
     if (!ticket) throw new PagoError(404, 'No hay un parqueo activo');
+    const hoy = hoyGuatemala();
+    // Un pago público del día (aún sin enlazar a este ticket) también cubre la estancia.
+    const [permisos] = await conn.query<RowDataPacket[]>(
+      "SELECT id_pago FROM Pagos WHERE placa = ? AND fecha_vigencia = ? AND estado_pago = 'completado' LIMIT 1 FOR UPDATE", [ticket.placa, hoy]);
+    if (permisos[0]) throw new PagoError(409, 'Este vehículo ya pagó hoy');
     const [pagos] = await conn.query<PagoOnline[]>('SELECT * FROM Pagos WHERE id_ticket = ? ORDER BY id_pago DESC FOR UPDATE', [ticket.id_ticket]);
     const existente = pagos[0];
     if (existente) {
@@ -48,9 +56,9 @@ export async function reservar(parqueoId: number, usuario: number, modo: ModoPag
     if (Math.round(monto * 100) !== Math.round(montoEsperado * 100)) throw new PagoError(409, 'La tarifa cambió. Consulta de nuevo tu parqueo');
     const referencia = generarReferencia();
     const [insert] = await conn.query<ResultSetHeader>(
-      `INSERT INTO Pagos (id_ticket, id_usuario, placa, id_tipo, metodo_pago, monto, codigo_validacion, estado_pago, gateway_response, observacion)
-       VALUES (?, ?, ?, ?, 'linea', ?, ?, 'pendiente', ?, ?)`,
-      [ticket.id_ticket, usuario, ticket.placa, ticket.id_tipo, monto, referencia, JSON.stringify({ modo }), modo === 'live' ? 'Recurrente' : `PRUEBA ${modo}: sin dinero real`]);
+      `INSERT INTO Pagos (id_ticket, id_usuario, placa, id_tipo, metodo_pago, monto, codigo_validacion, estado_pago, gateway_response, observacion, fecha_vigencia)
+       VALUES (?, ?, ?, ?, 'linea', ?, ?, 'pendiente', ?, ?, ?)`,
+      [ticket.id_ticket, usuario, ticket.placa, ticket.id_tipo, monto, referencia, JSON.stringify({ modo }), modo === 'live' ? 'Recurrente' : `PRUEBA ${modo}: sin dinero real`, hoy]);
     await conn.commit();
     return { nuevo: true, pago: { id_pago: insert.insertId, id_ticket: ticket.id_ticket, id_usuario: usuario, placa: ticket.placa,
       monto, codigo_validacion: referencia, estado_pago: 'pendiente', transaction_id: null, gateway_response: { modo } } as PagoOnline };

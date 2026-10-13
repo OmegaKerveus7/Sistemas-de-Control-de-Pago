@@ -6,6 +6,7 @@ import {
   type LugarGuardian,
   type ResumenGuardian,
 } from '../../services/guardian.service';
+import { CobroPlaca } from '../../components/CobroPlaca';
 import './Guardian.css';
 
 type EstadoMensaje = 'exito' | 'error' | 'bloqueo';
@@ -265,7 +266,7 @@ export function Guardian() {
       setLugarEntrada('');
       setMensaje({
         tipo: 'exito',
-        texto: `Entrada registrada: ${resultado.placa} asignado a ${resultado.lugar.numero} (${resultado.lugar.zona}). Ticket ${resultado.ticket}.${resultado.es_externo ? ' Vehículo registrado como visitante.' : ''}`,
+        texto: `Entrada registrada: ${resultado.placa} asignado a ${resultado.lugar.numero} (${resultado.lugar.zona}). Ticket ${resultado.ticket}.${resultado.pago_vigente ? ' Pago del día verificado.' : ' Entró sin pago vigente: la salida seguirá bloqueada.'}${resultado.es_externo ? ' Vehículo registrado como visitante.' : ''}`,
       });
       await cargarEstado(true);
     } catch (error) {
@@ -409,7 +410,8 @@ export function Guardian() {
               {registrandoEntrada ? 'Registrando...' : lugarEntrada ? 'Registrar en el espacio seleccionado' : 'Registrar y asignar al azar'}
             </button>
           </form>
-          <p className="guardian-hint">Si no eliges ubicación, el sistema asignará un espacio compatible al azar. Si seleccionas solo el parqueo, buscará al azar dentro de ese parqueo.</p>
+          <CobroPlaca placa={placaEntrada.trim()} />
+          <p className="guardian-hint">La entrada exige que la placa haya pagado hoy: en línea con el QR de la entrada o en efectivo aquí mismo. Si no eliges ubicación, el sistema asignará un espacio compatible al azar. Si seleccionas solo el parqueo, buscará al azar dentro de ese parqueo.</p>
         </article>
 
         <article className="guardian-card guardian-exit-card">

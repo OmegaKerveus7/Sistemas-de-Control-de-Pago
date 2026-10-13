@@ -1,49 +1,20 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { pagosService, type Pago } from '../../services/pagos.service';
+import { CobroPlaca } from '../../components/CobroPlaca';
+import { REGEX_PLACA } from '../../utils/placa';
 import './Pagos.css';
-
-const REGEX_PLACA = /^([PM])\d{3}[A-Z]{3}$/;
-
-function detectarTipoVehiculo(placa: string): 'carro' | 'moto' | null {
-  const coincidencia = REGEX_PLACA.exec(placa.trim().toUpperCase());
-  if (!coincidencia) return null;
-  return coincidencia[1] === 'P' ? 'carro' : 'moto';
-}
-
-const MAPA_TIPO_ID: Record<string, number> = {
-  carro: 2,
-  moto: 1,
-};
-
-const PRECIOS_EFECTIVO = [
-  { tipo: 'Motocicleta', precio: 22 },
-  { tipo: 'Carro', precio: 27 },
-  { tipo: 'Camioneta', precio: 27 },
-];
 
 export function Pagos() {
   const { usuario } = useAuth();
   const puedeVerListado = usuario?.rol === 'administrador';
-  const esCobrador = usuario?.rol === 'cobrador';
 
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [cargando, setCargando] = useState(puedeVerListado);
   const [error, setError] = useState<string | null>(null);
 
   const [placa, setPlaca] = useState('');
-  const [registrando, setRegistrando] = useState(false);
-  const [errorForm, setErrorForm] = useState<string | null>(null);
-  const [exito, setExito] = useState<string | null>(null);
-
-  const tipoDetectado = useMemo(() => detectarTipoVehiculo(placa), [placa]);
-
-  const precioEstimado = useMemo(() => {
-    if (!tipoDetectado) return null;
-    const tipo = tipoDetectado === 'carro' ? 'Carro' : 'Motocicleta';
-    return PRECIOS_EFECTIVO.find((p) => p.tipo === tipo)?.precio ?? null;
-  }, [tipoDetectado]);
 
   async function cargar() {
     if (!puedeVerListado) return;
@@ -63,34 +34,6 @@ export function Pagos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function registrarPago(evento: FormEvent) {
-    evento.preventDefault();
-    const placaLimpia = placa.trim().toUpperCase();
-    if (!placaLimpia) {
-      setErrorForm('Ingresa la placa del vehículo');
-      return;
-    }
-    if (!tipoDetectado) {
-      setErrorForm('La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras. Ej: P123ABC');
-      return;
-    }
-
-    const idTipo = MAPA_TIPO_ID[tipoDetectado];
-    setRegistrando(true);
-    setErrorForm(null);
-    setExito(null);
-    try {
-      const resultado = await pagosService.registrarEfectivo({ placa: placaLimpia, id_tipo_vehiculo: idTipo });
-      setExito(`Pago registrado: Q${resultado.monto.toFixed(2)}`);
-      setPlaca('');
-      await cargar();
-    } catch (err) {
-      setErrorForm(err instanceof Error ? err.message : 'No se pudo registrar el pago');
-    } finally {
-      setRegistrando(false);
-    }
-  }
-
   const totalCobrado = pagos
     .filter((p) => p.estado === 'completado')
     .reduce((suma, p) => suma + Number(p.monto), 0);
@@ -102,59 +45,31 @@ export function Pagos() {
         <p className="pagos-subtitle">
           {puedeVerListado
             ? `${pagos.length} pago${pagos.length === 1 ? '' : 's'} registrados · Q${totalCobrado.toFixed(2)} cobrados`
-            : 'Registra el cobro en efectivo de un ticket'}
+            : 'Registra el cobro en efectivo de un vehículo'}
         </p>
       </div>
 
       <div className="card pagos-form-card">
-        <h2 className="pagos-form-title">Registrar pago en efectivo</h2>
-        <form className="pagos-form" onSubmit={registrarPago}>
-          <div className="form-group pagos-placa-group">
-            <label className="form-label">Placa del vehículo</label>
-            <input
-              className="form-input usuarios-input-plano"
-              placeholder="Ej. P123ABC"
-              value={placa}
-              maxLength={7}
-              onChange={(e) => setPlaca(e.target.value.toUpperCase())}
-              autoComplete="off"
-            />
-            {placa && (
-              tipoDetectado ? (
-                <p className="pagos-tipo-detectado">
-                  Tipo: <strong>{tipoDetectado === 'carro' ? 'Carro' : 'Moto'}</strong>
-                  {precioEstimado !== null && (
-                    <span className="pagos-precio-estimado"> — Q{precioEstimado}.00</span>
-                  )}
-                </p>
-              ) : (
-                <p className="pagos-tipo-detectado pagos-tipo-error">
-                  La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras.
-                </p>
-              )
-            )}
-          </div>
-          <button type="submit" className="pagos-btn-registrar" disabled={registrando || !tipoDetectado}>
-            {registrando ? 'Registrando...' : 'Registrar pago'}
-          </button>
-        </form>
-        {errorForm && <div className="alerta alerta-error">{errorForm}</div>}
-        {exito && <div className="pagos-exito">{exito}</div>}
-      </div>
-
-      {esCobrador && (
-        <div className="pagos-precios">
-          <h3 className="pagos-precios-titulo">Tarifas en efectivo</h3>
-          <div className="pagos-precios-grid">
-            {PRECIOS_EFECTIVO.map((p) => (
-              <div className="pagos-precio-item" key={p.tipo}>
-                <span className="pagos-precio-tipo">{p.tipo}</span>
-                <span className="pagos-precio-monto">Q{p.precio}.00</span>
-              </div>
-            ))}
-          </div>
+        <h2 className="pagos-form-title">Cobro en efectivo</h2>
+        <p className="pagos-subtitle">Ingresa la placa: el cobro queda vigente para hoy, aunque el vehículo todavía no haya entrado.</p>
+        <div className="form-group pagos-placa-group">
+          <label className="form-label">Placa del vehículo</label>
+          <input
+            className="form-input usuarios-input-plano"
+            placeholder="Ej. P123ABC"
+            value={placa}
+            maxLength={7}
+            onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+            autoComplete="off"
+          />
+          {placa && !REGEX_PLACA.test(placa) && (
+            <p className="pagos-tipo-detectado pagos-tipo-error">
+              La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras.
+            </p>
+          )}
         </div>
-      )}
+        <CobroPlaca placa={placa} onCobrado={() => { setPlaca(''); void cargar(); }} />
+      </div>
 
       {puedeVerListado && (
         <div className="card pagos-form-card">
@@ -180,8 +95,9 @@ export function Pagos() {
               <thead>
                 <tr>
                   <th>Ticket</th>
+                  <th>NIT</th>
                   <th>Placa</th>
-                  <th>Pagador</th>
+                  <th>Recibo a nombre de</th>
                   <th>Método</th>
                   <th>Monto</th>
                   <th>Estado</th>
@@ -191,9 +107,10 @@ export function Pagos() {
               <tbody>
                 {pagos.map((p) => (
                   <tr key={p.id}>
-                    <td>{p.ticket}</td>
+                    <td>{p.ticket || 'Sin entrada'}</td>
+                    <td>{p.nit ?? '—'}</td>
                     <td className="pagos-placa">{p.placa}</td>
-                    <td>{p.pagador_nombres} {p.pagador_apellidos}</td>
+                    <td>{p.nombre_facturacion || `${p.pagador_nombres ?? ''} ${p.pagador_apellidos ?? ''}`.trim() || '—'}</td>
                     <td className="pagos-metodo">{p.metodo}</td>
                     <td>Q{Number(p.monto).toFixed(2)}</td>
                     <td>

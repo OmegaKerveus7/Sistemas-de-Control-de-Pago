@@ -1,5 +1,26 @@
 # Pagos de parqueo con Recurrente
 
+## Pago público por placa (sin iniciar sesión)
+
+Flujo "pagar primero": cualquier persona paga desde el QR de la entrada, sin cuenta. El pago queda ligado a la **placa y al día** (`Pagos.fecha_vigencia`, hora de Guatemala), no a un ticket; la entrada del guardia lo enlaza al ticket y los reingresos del mismo día lo reutilizan.
+
+**Requiere aplicar `sql/migrations/20261012_pago_publico_permiso_dia.sql`** (una sola vez, con respaldo, desde un cliente que entienda `DELIMITER`). Sin la migración, la entrada, la búsqueda y la salida del guardia fallan porque consultan `Pagos.fecha_vigencia`. `bun run check:pagos-db` verifica el esquema.
+
+| Endpoint | Acceso | Uso |
+|---|---|---|
+| `GET /api/publico/pago/placa/:placa` | público | Tarifa, tipo y si ya pagó hoy (no devuelve referencia ni NIT) |
+| `POST /api/publico/pago` | público | `{ placa, nit, nombre, monto_esperado }` → `{ url_pago, referencia }` |
+| `GET /api/publico/pago/:referencia` | público | Estado del pago; con pago aprobado incluye el `recibo` |
+| `POST /api/publico/pago/:referencia/simular` | público, solo `mock` | Simulador local |
+| `GET /api/pagos/permiso/:placa` | guardia/cobrador/admin | Lo anterior + referencia y datos de facturación |
+| `GET /api/pagos/estado-hoy` | guardia/cobrador/admin | Pagados de hoy, totales y vehículos dentro sin pago |
+| `POST /api/pagos/efectivo` | guardia/cobrador/admin | Ahora acepta placas **sin ticket** (permiso del día) y `nit`/`nombre` opcionales |
+
+- La entrada del guardia devuelve `409 PAGO_PENDIENTE` si la placa no pagó hoy. `EXIGIR_PAGO_EN_ENTRADA=false` lo desactiva y deja solo el bloqueo de salida.
+- El tipo de vehículo y la tarifa los decide el servidor (prefijo de la placa o vehículo registrado); el cliente solo confirma el monto.
+- Los endpoints públicos tienen límite por IP (en memoria). Detrás de un proxy propio configura `TRUST_PROXY=true`.
+- NIT: se valida el formato (`CF` o dígitos con `K` final), no el dígito verificador.
+
 ## Al actualizar Rama/Combinada en otra computadora
 
 El diseño del formulario se comparte por Git; las credenciales no. Para abrir el formulario con número de tarjeta, vencimiento y CVC, configura en `backend/.env.local`:

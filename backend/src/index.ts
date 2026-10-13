@@ -10,6 +10,7 @@ import { recuperacionRouter } from './routes/recuperacion.routes';
 import { guardianRouter } from './routes/guardian.routes';
 import { auditoriaRouter } from './routes/auditoria.routes';
 import { tarifasRouter } from './routes/tarifas.routes';
+import { publicoRouter } from './routes/publico.routes';
 import { manejadorErrores } from './middleware/error.middleware';
 import { closePool, testConnection } from './config/database';
 import { webhook } from './controllers/pagos-online.controller';
@@ -54,6 +55,7 @@ app.use('/api/pagos', pagosRouter);
 app.use('/api/guardian', guardianRouter);
 app.use('/api/auditoria', auditoriaRouter);
 app.use('/api/tarifas', tarifasRouter);
+app.use('/api/publico', publicoRouter);
 
 // Error handler
 app.use(manejadorErrores);

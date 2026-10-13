@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { pagosService } from '../../services/pagos.service';
+import { pagosService, type ResultadoConfirmar } from '../../services/pagos.service';
 
 const ORIGEN = 'https://app.recurrente.com';
 
@@ -13,8 +13,10 @@ function urlEmbebida(url: string): string | null {
   } catch { return null; }
 }
 
-export function FormularioRecurrente({ url, referencia, sandbox }: {
+export function FormularioRecurrente({ url, referencia, sandbox, confirmar = pagosService.confirmar }: {
   url: string; referencia: string; sandbox: boolean;
+  /** Consulta el estado del pago; el flujo público usa el endpoint sin sesión. */
+  confirmar?: (referencia: string) => Promise<ResultadoConfirmar>;
 }) {
   const iframe = useRef<HTMLIFrameElement>(null);
   const navigate = useNavigate();
@@ -35,7 +37,7 @@ export function FormularioRecurrente({ url, referencia, sandbox }: {
       if (consultando) return;
       consultando = true;
       try {
-        const pago = await pagosService.confirmar(referencia);
+        const pago = await confirmar(referencia);
         if (!activo) return;
         setError('');
         if (pago.aprobado || pago.estado === 'reembolsado') navigate(resultado, { replace: true });
@@ -61,7 +63,7 @@ export function FormularioRecurrente({ url, referencia, sandbox }: {
     // También confirma si el proveedor no emite el callback o el usuario vuelve de 3DS.
     const intervalo = window.setInterval(() => { void consultar(); }, 5000);
     return () => { activo = false; window.clearInterval(intervalo); window.removeEventListener('message', recibir); };
-  }, [referencia, resultado, navigate, urlValida]);
+  }, [referencia, resultado, navigate, urlValida, confirmar]);
 
   if (!checkout) return <p role="alert">El enlace no corresponde a un formulario de Recurrente. <Link to={resultado}>Consultar el pago</Link></p>;
 

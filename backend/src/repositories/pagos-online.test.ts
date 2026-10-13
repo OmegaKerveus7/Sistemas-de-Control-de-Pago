@@ -7,8 +7,10 @@ let committed = false;
 let rolledBack = false;
 let created = 0;
 let tarifa = 27;
+let permisoDelDia = false;
 async function query(sql: string, args: unknown[] = []): Promise<unknown[]> {
   calls.push(sql);
+  if (sql.includes('FROM Pagos WHERE placa = ? AND fecha_vigencia')) return [permisoDelDia ? [{ id_pago: 99 }] : []];
   if (sql.includes('FROM Tickets t')) return [[{ id_ticket: 5, placa: 'P123ABC', id_tipo: 2, precio_linea: tarifa }]];
   if (sql.includes('FROM Pagos WHERE id_ticket')) return [pago ? [{ ...pago }] : []];
   if (sql.includes('FROM Pagos WHERE codigo_validacion')) return [pago && pago.codigo_validacion === args[0] && (args.length === 1 || pago.id_usuario === args[1]) ? [{ ...pago }] : []];
@@ -33,7 +35,7 @@ const service = await import('../services/pagos-online.service');
 const { reservar } = await import('./pagos-online.repository');
 const originalFetch = globalThis.fetch;
 const env = { ...process.env };
-beforeEach(() => { pago = undefined; calls = []; committed = rolledBack = false; created = 0; tarifa = 27; process.env.NODE_ENV = 'test'; process.env.PAYMENT_PROVIDER = 'mock'; });
+beforeEach(() => { pago = undefined; calls = []; committed = rolledBack = false; created = 0; tarifa = 27; permisoDelDia = false; process.env.NODE_ENV = 'test'; process.env.PAYMENT_PROVIDER = 'mock'; });
 afterEach(() => { process.env = { ...env }; globalThis.fetch = originalFetch; });
 function sandbox(status = 'unpaid', override: Record<string, unknown> = {}) {
   process.env.PAYMENT_PROVIDER = 'recurrente'; process.env.PAYMENT_MODE = 'sandbox'; process.env.RECURRENTE_SECRET_KEY = 'sk_test_fixture';
@@ -53,6 +55,11 @@ test('usa tarifa de BD y bloquea cambios de monto antes del insert', async () =>
   await expect(service.crear(3, 7, 5)).rejects.toThrow('tarifa cambió');
   expect(pago).toBeUndefined(); expect(rolledBack).toBe(true);
   expect(calls.some(sql => sql.includes('FROM Tickets t') && sql.includes('FOR UPDATE'))).toBe(true);
+});
+test('un pago público del día ya cubre el ticket: no se crea otro cobro con sesión', async () => {
+  permisoDelDia = true;
+  await expect(service.crear(3, 7, 27)).rejects.toThrow('ya pagó hoy');
+  expect(pago).toBeUndefined(); expect(rolledBack).toBe(true);
 });
 test('reutiliza el checkout y restringe el pago al usuario que lo inició', async () => {
   sandbox();

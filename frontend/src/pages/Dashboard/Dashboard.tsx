@@ -4,16 +4,18 @@ import { OPCIONES_POR_ROL } from '../../components/Menu';
 import { useAuth } from '../../hooks/useAuth';
 import type { OpcionMenu } from '../../components/Menu';
 import { guardianService, type EstadisticasGuardian, type ResumenGuardian } from '../../services/guardian.service';
+import { PagosHoy } from './PagosHoy';
 import './Dashboard.css';
 
 const DETALLE: Record<string, { descripcion: string }> = {
   '/app/dashboard': { descripcion: 'Vista general del sistema' },
   '/app/usuarios': { descripcion: 'Administra usuarios y roles' },
   '/app/parqueo': { descripcion: 'Consulta la ocupación y el historial de parqueo' },
-  '/app/pagos': { descripcion: 'Registra pagos en efectivo y consulta el historial' },
+  '/app/pagos': { descripcion: 'Cobra en efectivo por placa y consulta el historial' },
   '/app/tarifas': { descripcion: 'Configura precios por vehículo y método de pago' },
   '/app/auditoria': { descripcion: 'Historial de acciones sobre usuarios, tickets, parqueo y pagos' },
   '/app/guardian': { descripcion: 'Registra entradas, salidas y valida pagos' },
+  '/app/qr-pago': { descripcion: 'Imprime el QR para que el público pague con su placa' },
   '/app/buscar-vehiculo': { descripcion: 'Encuentra al dueño de un vehículo' },
   '/app/validar': { descripcion: 'Verifica el estado de un vehículo' },
   '/app/reportes': { descripcion: 'Consulta reportes' },
@@ -70,6 +72,8 @@ export function Dashboard() {
           )}
         </section>
       )}
+
+      {esPersonalParqueo && <PagosHoy />}
 
       <div className="dashboard-cards">
         {opciones.map((opcion) => (

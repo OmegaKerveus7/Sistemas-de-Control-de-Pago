@@ -67,9 +67,9 @@ export function Main() {
             <p className="brand-subtitle">Zona 19 · Colegio Mixto Belén</p>
           </div>
         </div>
-        <button className="btn-login-header" onClick={handleLogin} aria-label="Iniciar sesión">
+        <button className="btn-login-header" onClick={handleLogin} aria-label="Acceso para personal del parqueo">
           <IconoUsuario />
-          <span>Iniciar Sesión</span>
+          <span>Acceso personal</span>
         </button>
       </header>
 
@@ -84,7 +84,7 @@ export function Main() {
               onKeyDown={(e) => e.key === 'Enter' && handlePagarParqueo()}
               tabIndex={0}
               role="button"
-              aria-label="Pagar parqueo - Acceder al sistema de pagos"
+              aria-label="Pagar parqueo - Pagar con tu placa, sin iniciar sesión"
             >
               <div className="option-icon pago">
                 <IconoPago />
@@ -92,7 +92,7 @@ export function Main() {
               <div className="option-content">
                 <h3 className="option-title">Pagar Parqueo</h3>
                 <p className="option-description">
-                  Realiza el pago de tu estancia de forma rápida y segura.
+                  Paga con tarjeta sin crear cuenta: solo necesitas tu placa. Tu pago vale por todo el día.
                 </p>
                 <span className="option-action">
                   Acceder

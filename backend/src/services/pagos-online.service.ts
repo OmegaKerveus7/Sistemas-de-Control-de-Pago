@@ -10,7 +10,10 @@ function resultado(pago: repo.PagoOnline) {
 }
 export async function crear(parqueoId: number, usuario: number, monto: number) {
   const modo = pasarela.validarConfiguracionPago();
-  const { pago, nuevo } = await repo.reservar(parqueoId, usuario, modo, monto);
+  return prepararCheckout(await repo.reservar(parqueoId, usuario, modo, monto), modo);
+}
+/** Crea el checkout de una reserva ya persistida, o reutiliza el existente. Lo comparten el flujo con sesión y el público. */
+export async function prepararCheckout({ pago, nuevo }: { pago: repo.PagoOnline; nuevo: boolean }, modo: pasarela.ModoPago) {
   if (!nuevo) {
     const url = repo.gateway(pago).url_pago;
     if (!url) throw new pasarela.PagoError(409, `El pago ${pago.codigo_validacion} está en preparación o requiere revisión. No se generará otro cobro.`);
@@ -32,8 +35,8 @@ export async function sincronizar(pago: repo.PagoOnline) {
   if (pasarela.validarCheckout(checkout, pago, pasarela.modoPago())) await repo.actualizarEstado(pago.id_pago, 'completado');
   return resultado(await repo.porReferencia(pago.codigo_validacion));
 }
-export async function confirmar(referencia: string, usuario: number) { return sincronizar(await repo.porReferencia(referencia, usuario)); }
-export async function simular(referencia: string, usuario: number, estado: string) {
+export async function confirmar(referencia: string, usuario?: number) { return sincronizar(await repo.porReferencia(referencia, usuario)); }
+export async function simular(referencia: string, usuario: number | undefined, estado: string) {
   if (pasarela.modoPago() !== 'mock') throw new pasarela.PagoError(404, 'Simulador no disponible');
   if (!['completado', 'fallido', 'pendiente'].includes(estado)) throw new pasarela.PagoError(400, 'Resultado de prueba inválido');
   const pago = await repo.porReferencia(referencia, usuario);
