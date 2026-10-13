@@ -41,6 +41,8 @@ export async function registrarEfectivo(req: Request, res: Response) {
       placa: String(placa),
       id_tipo_vehiculo: Number(id_tipo_vehiculo),
       id_guardia: usuario.id,
+      nit: req.body.nit,
+      nombre: req.body.nombre,
     });
     res.status(201).json({ id: resultado.id, monto: resultado.monto });
 

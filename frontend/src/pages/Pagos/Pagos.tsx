@@ -15,6 +15,7 @@ export function Pagos() {
   const [error, setError] = useState<string | null>(null);
 
   const [placa, setPlaca] = useState('');
+  const [exito, setExito] = useState<string | null>(null);
 
   async function cargar() {
     if (!puedeVerListado) return;
@@ -59,7 +60,7 @@ export function Pagos() {
             placeholder="Ej. P123ABC"
             value={placa}
             maxLength={7}
-            onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+            onChange={(e) => { setPlaca(e.target.value.toUpperCase()); setExito(null); }}
             autoComplete="off"
           />
           {placa && !REGEX_PLACA.test(placa) && (
@@ -68,7 +69,8 @@ export function Pagos() {
             </p>
           )}
         </div>
-        <CobroPlaca placa={placa} onCobrado={() => { setPlaca(''); void cargar(); }} />
+        <CobroPlaca placa={placa} onCobrado={(monto) => { setExito(`Cobro registrado: ${placa} · Q${monto.toFixed(2)} en efectivo, vigente hoy.`); setPlaca(''); void cargar(); }} />
+        {exito && <div className="pagos-exito" role="status">{exito}</div>}
       </div>
 
       {puedeVerListado && (
