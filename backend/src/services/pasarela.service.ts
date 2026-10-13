@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import jwt from 'jsonwebtoken';
 
 export type ModoPago = 'mock' | 'sandbox' | 'live';
 export class PagoError extends Error {
@@ -33,9 +34,25 @@ export function validarConfiguracionPago() {
 }
 
 export function generarReferencia() { return `P-${randomBytes(9).toString('hex')}`; }
+// Credencial limitada a consultar un pago; no sirve como sesión de usuario.
+function secretoEnlace() {
+  const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'parqueo-zona19-secret-key-2026' : '');
+  if (!secret) throw new PagoError(503, 'Configura JWT_SECRET para compartir pagos');
+  return createHmac('sha256', secret).update('consulta-pago-v1').digest('hex');
+}
+export function tokenConsultaPago(referencia: string) {
+  return jwt.sign({ referencia }, secretoEnlace(), { algorithm: 'HS256', audience: 'consulta-pago', expiresIn: '7d' });
+}
+export function verificarTokenConsultaPago(token: unknown, referencia: string) {
+  try {
+    if (typeof token !== 'string' || token.length > 2048) throw new Error('Token inválido');
+    const payload = jwt.verify(token, secretoEnlace(), { algorithms: ['HS256'], audience: 'consulta-pago' });
+    if (typeof payload === 'string' || payload.referencia !== referencia) throw new Error('Otro pago');
+  } catch { throw new PagoError(403, 'El enlace de pago es inválido o expiró'); }
+}
 export function urlRetorno(referencia: string, cancelado = false) {
   const base = (process.env.FRONTEND_BASE_URL || 'http://localhost:5173/Sistemas-de-Control-de-Pago').replace(/\/$/, '');
-  return `${base}/#/pagar-parqueo/resultado?referencia=${encodeURIComponent(referencia)}${cancelado ? '&estado=cancelado' : ''}`;
+  return `${base}/#/pagar-parqueo/resultado?referencia=${encodeURIComponent(referencia)}&acceso=${encodeURIComponent(tokenConsultaPago(referencia))}${cancelado ? '&estado=cancelado' : ''}`;
 }
 export function urlSimulador(referencia: string) {
   const base = (process.env.FRONTEND_BASE_URL || 'http://localhost:5173/Sistemas-de-Control-de-Pago').replace(/\/$/, '');

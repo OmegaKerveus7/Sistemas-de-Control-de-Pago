@@ -30,14 +30,15 @@ export function PagarParqueo() {
   const integrado = location.pathname.startsWith('/app/');
   const [params] = useSearchParams();
 
+  const [ticket, setTicket] = useState(() => (params.get('ticket') || '').toUpperCase());
   const [placa, setPlaca] = useState(() => (params.get('placa') || '').toUpperCase());
   const tipo = detectarTipoVehiculo(placa);
-  const [parqueo, setParqueo] = useState<Parqueo | null>(null);
+  const [parqueo, setParqueo] = useState<Pick<Parqueo, 'placa' | 'fecha_entrada'> & { id?: number } | null>(null);
   const [precio, setPrecio] = useState<PrecioInfo | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [cargandoPago, setCargandoPago] = useState(false);
-  const [checkout, setCheckout] = useState<{ url_pago: string; referencia: string } | null>(null);
+  const [checkout, setCheckout] = useState<{ url_pago: string; referencia: string; acceso?: string } | null>(null);
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export function PagarParqueo() {
     return () => { activo = false; };
   }, [usuario]);
 
-  if (!usuario) {
+  if (!usuario && integrado) {
     const redirect = `${location.pathname}${location.search}`;
     return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
@@ -74,6 +75,12 @@ export function PagarParqueo() {
 
     setLoading(true);
     try {
+      if (!usuario) {
+        const info = await pagosService.precioPublico({ placa: limpio, ticket: ticket.trim().toUpperCase() });
+        setParqueo({ placa: info.placa, fecha_entrada: info.fecha_entrada });
+        setPrecio(info);
+        return;
+      }
       const activo = await parqueoService.obtenerActivoPorPlaca(limpio);
       if (activo.estado_pago === 'completado') throw new Error('Este parqueo ya está pagado');
       const info = await pagosService.precio(activo.id);
@@ -91,10 +98,9 @@ export function PagarParqueo() {
     setCargandoPago(true);
     setError('');
     try {
-      const resultado = await pagosService.crear({
-        parqueo_id: parqueo.id,
-        monto_esperado: precio.online,
-      });
+      const resultado = usuario
+        ? await pagosService.crear({ parqueo_id: parqueo.id!, monto_esperado: precio.online })
+        : await pagosService.crearPublicoTicket({ placa: parqueo.placa!, ticket: ticket.trim().toUpperCase(), monto_esperado: precio.online });
       if (precio.modo === 'mock') window.location.href = resultado.url_pago;
       else setCheckout(resultado);
     } catch (err) {
@@ -110,7 +116,7 @@ export function PagarParqueo() {
         <Link to="/" className="pagar-logo">
           Sistema de Gestión de Parqueo
         </Link>
-        <button className="pagar-volver" onClick={() => navigate('/app/dashboard')}>
+        <button className="pagar-volver" onClick={() => navigate(usuario ? '/app/dashboard' : '/')}>
           Volver
         </button>
       </header>}
@@ -118,7 +124,7 @@ export function PagarParqueo() {
       <main className={`pagar-main${checkout ? ' pagar-main-checkout' : ''}`}>
         <h1 className="pagar-title">Pago de Parqueo</h1>
         <p className="pagar-subtitle" hidden={!!checkout}>
-          Bienvenido(a), {usuario.nombres} {usuario.apellidos}. Paga tu estancia de forma rápida y segura con tarjeta.
+          {usuario ? `Bienvenido(a), ${usuario.nombres} ${usuario.apellidos}.` : 'No necesitas una cuenta. Ingresa la placa y el número de tu ticket.'} Paga tu estancia con tarjeta.
         </p>
 
         {error && <div className="pagar-alerta pagar-alerta-error" role="alert">{error}</div>}
@@ -155,6 +161,11 @@ export function PagarParqueo() {
                 maxLength={7}
               />
 
+              {!usuario && <>
+                <label className="pagar-label" htmlFor="ticket">Número de ticket</label>
+                <input id="ticket" className="pagar-input" placeholder="TK-..." value={ticket}
+                  onChange={e => setTicket(e.target.value.toUpperCase())} disabled={loading} maxLength={63} required />
+              </>}
               {placa && (
                 tipo ? (
                   <p className="pagar-tipo-detectado">Tipo detectado: <strong>{ETIQUETAS[tipo]}</strong></p>
@@ -165,8 +176,8 @@ export function PagarParqueo() {
                 )
               )}
 
-              <button type="submit" className="pagar-button" disabled={loading || !tipo}>
-                {loading ? 'Consultando...' : 'Consultar mi parqueo'}
+              <button type="submit" className="pagar-button" disabled={loading || !tipo || (!usuario && !ticket.trim())}>
+                {loading ? 'Consultando...' : 'Consultar parqueo'}
               </button>
             </form>
           </>
@@ -206,13 +217,14 @@ export function PagarParqueo() {
                 setParqueo(null);
                 setPrecio(null);
                 setPlaca('');
+                setTicket('');
               }}
               disabled={cargandoPago}
             >
               Cambiar vehículo
             </button>
           </div>
-          {checkout && <div className="pagar-card pagar-tarjeta"><FormularioRecurrente url={checkout.url_pago} referencia={checkout.referencia} sandbox={precio.modo === 'sandbox'} /></div>}
+          {checkout && <div className="pagar-card pagar-tarjeta"><FormularioRecurrente url={checkout.url_pago} referencia={checkout.referencia} acceso={checkout.acceso} sandbox={precio.modo === 'sandbox'} /></div>}
           </div>
         )}
       </main>

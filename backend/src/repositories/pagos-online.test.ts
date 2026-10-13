@@ -8,9 +8,18 @@ let rolledBack = false;
 let created = 0;
 let tarifa = 27;
 let permisoDelDia = false;
+let ticketPublicoExiste = true;
+let usuarioTicket: number | null = 7;
+let guardiaTicket = 9;
 async function query(sql: string, args: unknown[] = []): Promise<unknown[]> {
   calls.push(sql);
   if (sql.includes('FROM Pagos WHERE placa = ? AND fecha_vigencia')) return [permisoDelDia ? [{ id_pago: 99 }] : []];
+  if (sql.includes('COALESCE(ultimo.id_usuario')) {
+    const found = ticketPublicoExiste && args[0] === 'P123ABC' && args[1] === 'TK-TEST-1';
+    return [found ? [{ id_parqueo: 3, placa: 'P123ABC', numero_ticket: 'TK-TEST-1', fecha_entrada: '2026-10-12T12:00:00Z',
+      id_usuario_pago: pago?.id_usuario ?? usuarioTicket ?? guardiaTicket, pagado: pago?.estado_pago === 'completado' ? 1 : 0 }] : []];
+  }
+  if (sql.includes('SELECT tv.precio_efectivo')) return [[{ precio_efectivo: 20, precio_linea: tarifa, placa: 'P123ABC' }]];
   if (sql.includes('FROM Tickets t')) return [[{ id_ticket: 5, placa: 'P123ABC', id_tipo: 2, precio_linea: tarifa }]];
   if (sql.includes('FROM Pagos WHERE id_ticket')) return [pago ? [{ ...pago }] : []];
   if (sql.includes('FROM Pagos WHERE codigo_validacion')) return [pago && pago.codigo_validacion === args[0] && (args.length === 1 || pago.id_usuario === args[1]) ? [{ ...pago }] : []];
@@ -35,7 +44,7 @@ const service = await import('../services/pagos-online.service');
 const { reservar } = await import('./pagos-online.repository');
 const originalFetch = globalThis.fetch;
 const env = { ...process.env };
-beforeEach(() => { pago = undefined; calls = []; committed = rolledBack = false; created = 0; tarifa = 27; permisoDelDia = false; process.env.NODE_ENV = 'test'; process.env.PAYMENT_PROVIDER = 'mock'; });
+beforeEach(() => { pago = undefined; calls = []; committed = rolledBack = false; created = 0; tarifa = 27; permisoDelDia = false; ticketPublicoExiste = true; usuarioTicket = 7; guardiaTicket = 9; process.env.NODE_ENV = 'test'; process.env.PAYMENT_PROVIDER = 'mock'; });
 afterEach(() => { process.env = { ...env }; globalThis.fetch = originalFetch; });
 function sandbox(status = 'unpaid', override: Record<string, unknown> = {}) {
   process.env.PAYMENT_PROVIDER = 'recurrente'; process.env.PAYMENT_MODE = 'sandbox'; process.env.RECURRENTE_SECRET_KEY = 'sk_test_fixture';
@@ -141,5 +150,81 @@ test('rutas HTTP exigen sesión y permiten el flujo completo del simulador', asy
     expect(approved.status).toBe(200); expect((await approved.json() as { aprobado: boolean }).aprobado).toBe(true);
     const again = await originalFetch(base, { method: 'POST', headers, body: JSON.stringify({ parqueo_id: 3, monto_esperado: 27 }) });
     expect(again.status).toBe(409);
+  } finally { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); }
+});
+
+test('pago público cotiza desde BD, reutiliza checkout y bloquea tarifas alteradas', async () => {
+  sandbox();
+  const quote = await service.cotizarPublico('P123ABC', 'TK-TEST-1');
+  expect(quote.online).toBe(27);
+  expect(quote).not.toHaveProperty('id_usuario_pago');
+  expect(quote).not.toHaveProperty('id_parqueo');
+  await expect(service.crearPublico('P123ABC', 'TK-TEST-1', 5)).rejects.toThrow('tarifa cambió');
+  expect(pago).toBeUndefined();
+  const first = await service.crearPublico('P123ABC', 'TK-TEST-1', 27);
+  const second = await service.crearPublico('P123ABC', 'TK-TEST-1', 27);
+  expect(second.url_pago).toBe(first.url_pago);
+  expect(second.referencia).toBe(first.referencia);
+  expect(first.acceso).toBeTruthy();
+  expect(created).toBe(1);
+  expect(pago?.id_usuario).toBe(7);
+  sandbox('paid');
+  await service.confirmar(first.referencia, 7);
+  await expect(service.crearPublico('P123ABC', 'TK-TEST-1', 27)).rejects.toThrow('ya está pagado');
+});
+
+test('pago público exige placa y ticket coincidentes y admite visitantes', async () => {
+  sandbox();
+  await expect(service.crearPublico('P123ABC', 'TK-OTRO', 27)).rejects.toThrow('No se encontró');
+  await expect(service.crearPublico('P999ABC', 'TK-TEST-1', 27)).rejects.toThrow('No se encontró');
+  expect(pago).toBeUndefined();
+  usuarioTicket = null;
+  await service.crearPublico('P123ABC', 'TK-TEST-1', 27);
+  expect(pago?.id_usuario).toBe(9);
+  expect(created).toBe(1);
+});
+
+test('pago público rechaza mock y reutiliza un checkout iniciado por otro usuario', async () => {
+  await expect(service.crearPublico('P123ABC', 'TK-TEST-1', 27)).rejects.toThrow('requiere Recurrente');
+  sandbox();
+  const authenticated = await service.crear(3, 11, 27);
+  const publicPayment = await service.crearPublico('P123ABC', 'TK-TEST-1', 27);
+  expect(publicPayment.url_pago).toBe(authenticated.url_pago);
+  expect(created).toBe(1);
+});
+
+test('API pública prepara un pago sin sesión y rechaza datos inválidos', async () => {
+  sandbox();
+  const { default: express } = await import('express');
+  const { pagosRouter } = await import('../routes/pagos.routes');
+  const app = express(); app.use(express.json()); app.use('/api/pagos', pagosRouter);
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise<void>(resolve => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${(server.address() as { port: number }).port}/api/pagos/publico`;
+  const post = (path: string, data: unknown) => originalFetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  try {
+    expect((await post('/precio', { placa: 'P123ABC' })).status).toBe(400);
+    expect((await post('', { placa: 'P123ABC', ticket: 'TK-OTRO', monto_esperado: 27 })).status).toBe(404);
+    expect((await post('', { placa: 'P123ABC', ticket: 'TK-TEST-1', monto_esperado: 5 })).status).toBe(409);
+    const quote = await post('/precio', { placa: 'p123abc', ticket: 'tk-test-1' });
+    expect(quote.status).toBe(200);
+    expect((await quote.json() as { online: number }).online).toBe(27);
+    const checkout = await post('', { placa: 'P123ABC', ticket: 'TK-TEST-1', monto_esperado: 27 });
+    expect(checkout.status).toBe(201);
+    const result = await checkout.json() as { url_pago: string; acceso: string };
+    expect(result.url_pago).toStartWith('https://app.recurrente.com/');
+    expect(result.acceso).toBeTruthy();
+    const providerFetch = globalThis.fetch;
+    globalThis.fetch = ((url, options) => String(url).startsWith('http://127.0.0.1:')
+      ? originalFetch(url, options) : providerFetch(url, options)) as typeof fetch;
+    // Se ejecuta el mismo módulo que se comparte con aplicaciones externas.
+    const cliente = await import('../../../integraciones/pagos.mjs');
+    const apiUrl = base.replace('/pagos/publico', '');
+    const prepared = await cliente.iniciarPago({ apiUrl, placa: 'p123abc', ticket: 'tk-test-1' }) as { url_pago: string; referencia: string; acceso: string };
+    expect(prepared.url_pago).toBe(result.url_pago);
+    expect(created).toBe(1);
+    const state = await cliente.consultarPago({ apiUrl, referencia: prepared.referencia, acceso: prepared.acceso }) as { aprobado: boolean };
+    expect(state.aprobado).toBe(false);
+    await expect(cliente.iniciarPago({ apiUrl, placa: 'P123ABC', ticket: 'TK-OTRO' })).rejects.toThrow('No se encontró');
   } finally { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); }
 });

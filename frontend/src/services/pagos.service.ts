@@ -110,10 +110,16 @@ export const pagosService = {
           }
         : undefined,
     }),
+  precioPublico: (data: { placa: string; ticket: string }) =>
+    api.post<PrecioInfo & { placa: string; ticket: string; fecha_entrada: string }>('/pagos/publico/precio', data),
+  crearPublicoTicket: (data: { placa: string; ticket: string; monto_esperado: number }) =>
+    api.post<{ url_pago: string; referencia: string; acceso: string; modo: 'sandbox' | 'live' }>('/pagos/publico', data),
   precio: (parqueoId: number) => api.get<PrecioInfo>('/pagos/precio', { params: { parqueo_id: String(parqueoId) } }),
   crear: (data: { parqueo_id: number; monto_esperado: number }) =>
     api.post<{ url_pago: string; referencia: string; modo: 'mock' | 'sandbox' | 'live' }>('/pagos', data),
   confirmar: (referencia: string) => api.get<ResultadoConfirmar>(`/pagos/confirmar/${referencia}`),
+  confirmarCompartido: (referencia: string, acceso: string) =>
+    api.get<ResultadoConfirmar>(`/pagos/compartido/${encodeURIComponent(referencia)}`, { params: { acceso } }),
   simular: (referencia: string, estado: string) => api.post<ResultadoConfirmar>(`/pagos/simular/${referencia}`, { estado }),
   // Pago público por placa (sin sesión).
   consultarPlaca: (placa: string) => api.get<ConsultaPlaca>(`/publico/pago/placa/${encodeURIComponent(placa)}`),

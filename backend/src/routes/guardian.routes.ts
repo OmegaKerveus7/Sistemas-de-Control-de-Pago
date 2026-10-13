@@ -5,6 +5,7 @@ import { verificarRol, verificarToken } from '../middleware/auth.middleware';
 export const guardianRouter = Router();
 
 guardianRouter.use(verificarToken, verificarRol('guardia', 'administrador'));
+guardianRouter.get('/detalle/:tipo', guardianController.detalleIndicador);
 guardianRouter.get('/resumen', guardianController.obtenerResumen);
 guardianRouter.get('/estadisticas', guardianController.obtenerEstadisticas);
 guardianRouter.get('/lugares', guardianController.listarLugares);

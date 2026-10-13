@@ -20,7 +20,14 @@ import { reconciliarPendientes } from './services/pagos-online.service';
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
-app.use(cors());
+const origenFrontend = process.env.FRONTEND_BASE_URL ? new URL(process.env.FRONTEND_BASE_URL).origin : 'http://localhost:5173';
+// Solo la API pública de tickets permite llamadas desde aplicaciones externas sin cookies.
+app.use('/api/pagos/publico', cors());
+app.use('/api/pagos/compartido', cors());
+app.use((req, res, next) => {
+  if (/^\/api\/pagos\/(publico|compartido)(?:\/|$)/.test(req.path)) { next(); return; }
+  cors({ origin: origenFrontend })(req, res, next);
+});
 validarConfiguracionPago();
 app.post('/api/pagos/webhook/recurrente', express.raw({ type: 'application/json', limit: '256kb' }), webhook);
 app.use(express.json());
@@ -77,7 +84,7 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, process.env.HOST || '0.0.0.0', () => {
   console.log(`[API] Servidor corriendo en http://localhost:${PORT}`);
   console.log(`[API] Health check: http://localhost:${PORT}/api/health`);
 });

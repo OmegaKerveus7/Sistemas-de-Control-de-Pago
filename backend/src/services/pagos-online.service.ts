@@ -81,3 +81,22 @@ export async function reconciliarPendientes() {
     if (pagos.length < 100) ultimoId = 0;
   } finally { reconciliando = false; }
 }
+
+
+function validarPagoPublico() {
+  const modo = pasarela.validarConfiguracionPago();
+  if (modo === 'mock') throw new pasarela.PagoError(503, 'El pago público requiere Recurrente en sandbox o live');
+  return modo;
+}
+export async function cotizarPublico(placa: string, numeroTicket: string) {
+  const modo = validarPagoPublico();
+  const ticket = await repo.obtenerTicketPublico(placa, numeroTicket);
+  return { placa: ticket.placa as string, ticket: ticket.numero_ticket as string,
+    fecha_entrada: ticket.fecha_entrada, ...await repo.cotizar(Number(ticket.id_parqueo)), modo };
+}
+export async function crearPublico(placa: string, numeroTicket: string, montoEsperado: number) {
+  validarPagoPublico();
+  const ticket = await repo.obtenerTicketPublico(placa, numeroTicket);
+  const pago = await crear(Number(ticket.id_parqueo), Number(ticket.id_usuario_pago), montoEsperado);
+  return { ...pago, acceso: pasarela.tokenConsultaPago(pago.referencia) };
+}

@@ -6,6 +6,10 @@ import { verificarToken, verificarRol } from '../middleware/auth.middleware';
 
 export const pagosRouter = Router();
 
+pagosRouter.get('/compartido/:referencia', online.confirmarCompartido);
+pagosRouter.post('/publico/precio', online.precioPublico);
+pagosRouter.post('/publico', online.crearPublico);
+
 pagosRouter.get('/precio', verificarToken, online.precio);
 pagosRouter.post('/', verificarToken, online.crear);
 pagosRouter.get('/confirmar/:referencia', verificarToken, online.confirmar);

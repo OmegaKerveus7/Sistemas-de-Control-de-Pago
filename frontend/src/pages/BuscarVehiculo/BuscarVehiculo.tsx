@@ -1,11 +1,21 @@
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { VehiculoConDueno } from '../../models';
 import { vehiculosService } from '../../services/vehiculos.service';
 import './BuscarVehiculo.css';
 
 const REGEX_PLACA = /^[PM]\d{3}[A-Z]{3}$/;
 
+function IconoBusqueda({ volver = false }: { volver?: boolean }) {
+  return <svg className="buscar-vehiculo-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={volver ? 'M19 12H5 M12 19l-7-7 7-7' : 'M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0'} /></svg>;
+}
+
 export function BuscarVehiculo() {
+  const navigate = useNavigate();
+  function regresar() {
+    if (typeof window.history.state?.idx === 'number' && window.history.state.idx > 0) navigate(-1);
+    else navigate('/app/dashboard');
+  }
   const [termino, setTermino] = useState('');
   const [resultados, setResultados] = useState<VehiculoConDueno[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -42,16 +52,24 @@ export function BuscarVehiculo() {
 
   return (
     <section className="buscar-vehiculo-page">
-      <div>
+      <div className="buscar-vehiculo-header">
+        <button type="button" className="buscar-vehiculo-volver" onClick={regresar} aria-label="Regresar a la vista anterior" title="Regresar"><IconoBusqueda volver /></button>
+        <div>
         <h1 className="buscar-vehiculo-title">Buscar vehículo</h1>
         <p className="buscar-vehiculo-subtitle">
           Busca un vehículo ingresando su placa completa.
         </p>
+        </div>
       </div>
 
+      <div className="card buscar-vehiculo-consulta">
+      <h2>Consultar vehículo</h2>
+      <label className="form-label" htmlFor="buscar-vehiculo-placa">Placa del vehículo</label>
       <form className="buscar-vehiculo-form" onSubmit={buscar}>
         <input
-          className="form-input usuarios-input-plano"
+          id="buscar-vehiculo-placa"
+          className="form-input"
+          disabled={buscando}
           placeholder="Ej. P123ABC"
           value={termino}
           onChange={(e) => setTermino(e.target.value.toUpperCase())}
@@ -60,15 +78,18 @@ export function BuscarVehiculo() {
           aria-label="Placa del vehículo"
         />
         <button type="submit" className="buscar-vehiculo-btn" disabled={buscando}>
-          {buscando ? 'Buscando...' : 'Buscar'}
+          <IconoBusqueda /> {buscando ? 'Buscando...' : 'Buscar'}
         </button>
       </form>
+      <p className="buscar-vehiculo-ayuda">Ingresa la placa completa: P123ABC para carro o M123ABC para moto.</p>
+      </div>
 
-      {error && <div className="alerta alerta-error">{error}</div>}
+      {error && <div className="alerta alerta-error" role="alert">{error}</div>}
 
       {buscoAlgunaVez && !error && (
-        <div className="card buscar-vehiculo-card">
-          {resultados.length === 0 ? (
+        <div className="card buscar-vehiculo-card" aria-live="polite" aria-busy={buscando}>
+          <div className="buscar-vehiculo-resultados-header"><h2>Resultado de la búsqueda</h2>{!buscando && <span>{resultados.length} {resultados.length === 1 ? 'vehículo encontrado' : 'vehículos encontrados'}</span>}</div>
+          {buscando ? <div className="buscar-vehiculo-vacio"><span className="spinner" /> Buscando vehículo...</div> : resultados.length === 0 ? (
             <div className="buscar-vehiculo-vacio">No se encontró ningún vehículo con esa placa.</div>
           ) : (
             <div className="buscar-vehiculo-tabla-wrapper">

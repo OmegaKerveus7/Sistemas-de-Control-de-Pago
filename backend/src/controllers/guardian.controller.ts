@@ -89,3 +89,10 @@ export async function salida(req: Request, res: Response) {
     res.json({ mensaje: 'Salida registrada y lugar liberado', ...resultado });
   } catch (error) { responderError(error, res); }
 }
+
+
+export async function detalleIndicador(req: Request, res: Response) {
+  res.setHeader('Cache-Control', 'no-store');
+  try { res.json(await guardianService.detalleIndicador(String(req.params.tipo))); }
+  catch (error) { responderError(error, res); }
+}
