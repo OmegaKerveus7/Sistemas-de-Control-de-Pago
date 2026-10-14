@@ -1,0 +1,10 @@
+FROM oven/bun:1
+
+WORKDIR /app
+
+ENV NODE_ENV=development
+ENV HOST=0.0.0.0
+
+EXPOSE 5147
+
+CMD ["sh", "-c", "bun install && bunx vite --host 0.0.0.0 --port 5147"]
