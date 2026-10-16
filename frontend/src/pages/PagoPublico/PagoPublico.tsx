@@ -1,5 +1,6 @@
+import { PublicHeader } from '../../components/PublicHeader/PublicHeader';
 import { useState, type FormEvent } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { pagosService, type ConsultaPlaca } from '../../services/pagos.service';
 import { FormularioRecurrente } from '../PagarParqueo/FormularioRecurrente';
 import { formatoDia, formatoQuetzales } from '../../utils/formato';
@@ -70,10 +71,8 @@ export function PagoPublico() {
 
   const enCheckout = checkout !== null && consulta !== null;
   return (
-    <div className={`pagar-page${enCheckout ? ' pagar-page-checkout' : ''}`}>
-      <header className="pagar-header">
-        <Link to="/" className="pagar-logo">Parqueo Zona 19 · Colegio Mixto Belén</Link>
-      </header>
+    <div className={`public-page pagar-page${enCheckout ? ' pagar-page-checkout' : ''}`}>
+      <PublicHeader />
 
       <main className={`pagar-main${enCheckout ? ' pagar-main-checkout' : ''}`}>
         <h1 className="pagar-title">Paga tu parqueo</h1>
@@ -88,7 +87,7 @@ export function PagoPublico() {
             <label className="pagar-label" htmlFor="placa">Placa del vehículo</label>
             <input id="placa" className="pagar-input pagar-input-placa" placeholder="Ej. P123ABC" value={placa}
               onChange={(e) => setPlaca(e.target.value.toUpperCase())} disabled={buscando} maxLength={7}
-              autoComplete="off" autoCapitalize="characters" inputMode="text" autoFocus />
+              autoComplete="off" autoCapitalize="characters" inputMode="text" />
             <button type="submit" className="pagar-button" disabled={buscando || !placa}>
               {buscando ? 'Consultando...' : 'Continuar'}
             </button>
@@ -154,7 +153,7 @@ export function PagoPublico() {
           </div>
         )}
 
-        <p className="pagar-pie">¿Prefieres pagar en efectivo? Hazlo con el guardia al ingresar.</p>
+        <p className="pagar-pie">¿Prefieres pagar en efectivo? Hazlo con el guardia antes de salir.</p>
       </main>
     </div>
   );

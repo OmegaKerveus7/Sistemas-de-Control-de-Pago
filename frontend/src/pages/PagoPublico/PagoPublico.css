@@ -13,3 +13,15 @@
   .pagar-page { background: #fff; min-height: 0; }
   .pagar-card { box-shadow: none; border: 1px solid #999; }
 }
+
+/* Keep public navigation available at every payment step. */
+.pagar-header { flex-wrap: wrap; gap: 16px; }
+.pagar-header .pagar-volver { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; font-size: .9rem; font-weight: 600; }
+.pagar-header .pagar-volver:hover { background: #ffffff18; }
+.pagar-main, .pagar-card, .pagar-facturacion { min-width: 0; }
+.pagar-resumen-linea { flex-wrap: wrap; overflow-wrap: anywhere; }
+@media (max-width: 540px) {
+  .pagar-header { padding: 20px 16px; align-items: flex-start; flex-direction: column; }
+  .pagar-main { padding-inline: 16px; margin-block: 24px; }
+  .pagar-card { padding: 20px; }
+}

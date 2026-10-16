@@ -43,7 +43,7 @@ export function FormularioRecurrente({ url, referencia, sandbox, acceso, onResul
         if (pago.aprobado || pago.estado === 'reembolsado') {
           if (onResultado) onResultado(pago);
           else navigate(resultado, { replace: true });
-        } else if (onResultado) setAviso(pago.estado === 'fallido' ? 'El intento falló. Puedes reintentar en el mismo formulario.' : 'Pago pendiente de confirmación.');
+        } else setAviso(pago.estado === 'fallido' ? 'El intento falló. Puedes reintentar en el mismo formulario.' : 'Pago pendiente de confirmación.');
       } catch {
         if (activo) setError('No pudimos consultar el estado. Puedes seguir verificándolo sin crear otro pago.');
       } finally { consultando = false; }

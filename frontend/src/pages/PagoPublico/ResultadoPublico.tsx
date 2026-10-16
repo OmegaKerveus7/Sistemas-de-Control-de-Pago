@@ -1,3 +1,4 @@
+import { PublicHeader } from '../../components/PublicHeader/PublicHeader';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { pagosService, type ResultadoPublico } from '../../services/pagos.service';
@@ -50,7 +51,7 @@ export function ResultadoPagoPublico() {
   };
   const descripciones: Record<string, string> = {
     verificando: 'Estamos consultando el estado de tu pago.',
-    aprobado: resultado?.modo === 'live' ? 'Presenta tu placa al guardia al ingresar. Tu pago es válido solo por el día indicado.' : 'La prueba quedó registrada. No se cobró dinero real.',
+    aprobado: resultado?.modo === 'live' ? 'Indica tu placa al guardia al salir. Tu pago es válido solo por el día indicado.' : 'La prueba quedó registrada. No se cobró dinero real.',
     pendiente: cancelado ? 'Saliste del checkout. Todavía no hay un pago confirmado; puedes consultar de nuevo o continuar con el mismo enlace.' : 'Aún no se ha confirmado el cobro. Consulta de nuevo antes de intentar otro pago.',
     rechazado: 'Puedes volver al mismo enlace para reintentar el pago.', reembolsado: 'Consulta con la administración del parqueo.', error,
   };
@@ -58,10 +59,8 @@ export function ResultadoPagoPublico() {
   const recibo = resultado?.recibo;
 
   return (
-    <div className="pagar-page">
-      <header className="pagar-header pagar-no-imprimir">
-        <Link to="/" className="pagar-logo">Parqueo Zona 19 · Colegio Mixto Belén</Link>
-      </header>
+    <div className="public-page pagar-page">
+      <PublicHeader />
       <main className="pagar-main">
         <div className={`pagar-card pagar-resultado pagar-resultado-${estado}`} aria-live="polite" aria-busy={cargando}>
           {resultado && resultado.modo !== 'live' && <p className="pagar-aviso-prueba">{resultado.modo === 'mock' ? 'Simulador local' : 'Sandbox Recurrente'} · Sin dinero real</p>}
@@ -95,7 +94,7 @@ export function ResultadoPagoPublico() {
               {resultado?.url_pago && <a className="pagar-button pagar-button-secundario" href={resultado.url_pago}>Continuar con el mismo pago</a>}
             </>}
             <Link to="/pagar-parqueo" className="pagar-link">Pagar otra placa</Link>
-            <Link to="/" className="pagar-link">Volver al inicio</Link>
+            <Link to="/" className="pagar-link">Volver al menú principal</Link>
           </div>
         </div>
       </main>

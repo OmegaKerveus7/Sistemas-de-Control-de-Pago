@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { reportesService, type ReporteDetallado, type ReporteMensual } from '../../services/reportes.service';
 import { crearLibroPagos } from './libroPagos';
+import { totalPagos as sumarPagos } from './totalesPagos';
 import './Reportes.css';
 
 function IconoReporte({ tipo }: { tipo: 'volver' | 'calendario' | 'descargar' | 'pagos' | 'cobrado' | 'pendiente' }) {
@@ -58,9 +59,8 @@ export function Reportes() {
     return () => { vigente = false; };
   }, [anioSeleccionado, mesSeleccionada]);
 
-  const totalMonto = useMemo(() => detalle.reduce((s, d) => s + Number(d.monto), 0), [detalle]);
-  const totalPagos = detalle.length;
-  const totalCobrado = useMemo(() => detalle.filter(d => d.estado === 'completado').reduce((s, d) => s + Number(d.monto), 0), [detalle]);
+  const totalCobrado = useMemo(() => sumarPagos(detalle, 'completado'), [detalle]);
+  const totalPendiente = useMemo(() => sumarPagos(detalle, 'pendiente'), [detalle]);
   const pagosPendientes = detalle.filter(d => d.estado === 'pendiente').length;
   const aniosDisponibles = Array.from(new Set([
     ...Array.from({ length: 5 }, (_, i) => ahora.getFullYear() - i),
@@ -82,8 +82,10 @@ export function Reportes() {
       const a = document.createElement('a');
       a.href = url;
       a.download = `registro-pagos-parqueo-${nombreMes}-${anioSeleccionado}.xlsx`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
       setError('No se pudo generar el archivo Excel');
     } finally {
@@ -140,12 +142,13 @@ export function Reportes() {
             <IconoReporte tipo="descargar" /> {descargando ? 'Generando...' : 'Descargar Excel'}
           </button>
         </div>
+        {!cargandoDetalle && pagosCompletados === 0 && <p role="status">No hay pagos completados en este periodo para exportar. Los pagos pendientes aún no cuentan como cobros.</p>}
       </div>
 
       <div className="reportes-resumen-grid">
         <div className="reportes-resumen-item">
-          <span className="reportes-resumen-label"><IconoReporte tipo="pagos" /> Pagos en el mes</span>
-          <strong className="reportes-resumen-valor">{cargandoDetalle ? '—' : totalPagos}</strong>
+          <span className="reportes-resumen-label"><IconoReporte tipo="pagos" /> Pagos cobrados en el mes</span>
+          <strong className="reportes-resumen-valor">{cargandoDetalle ? '—' : pagosCompletados}</strong>
           <span className="reportes-resumen-ayuda">{MESES[mesSeleccionada - 1]} {anioSeleccionado}</span>
         </div>
         <div className="reportes-resumen-item reportes-resumen-cobrado">
@@ -156,7 +159,7 @@ export function Reportes() {
         <div className="reportes-resumen-item reportes-resumen-pendiente">
           <span className="reportes-resumen-label"><IconoReporte tipo="pendiente" /> Pagos pendientes</span>
           <strong className="reportes-resumen-valor">{cargandoDetalle ? '—' : pagosPendientes}</strong>
-          <span className="reportes-resumen-ayuda">Pendientes de confirmación</span>
+          <span className="reportes-resumen-ayuda">{cargandoDetalle ? 'Consultando pagos…' : `Q${totalPendiente.toFixed(2)} pendientes de confirmación`}</span>
         </div>
       </div>
 
@@ -211,7 +214,7 @@ export function Reportes() {
                     <th>Tipo</th>
                     <th>Pagador</th>
                     <th>Método</th>
-                    <th>Monto</th>
+                    <th>Monto cobrado</th>
                     <th>Estado</th>
                     <th>Fecha</th>
                   </tr>
@@ -225,7 +228,7 @@ export function Reportes() {
                       <td className="reportes-capitalize">{d.tipo_vehiculo}</td>
                       <td>{d.pagador?.trim() || 'Visitante'}</td>
                       <td className="reportes-capitalize">{d.metodo}</td>
-                      <td className="reportes-bold">Q{Number(d.monto).toFixed(2)}</td>
+                      <td className="reportes-bold">Q{(d.estado === 'completado' ? Number(d.monto) : 0).toFixed(2)}</td>
                       <td>
                         <span className={`reportes-estado-badge ${d.estado}`}>
                           {d.estado}
@@ -237,9 +240,8 @@ export function Reportes() {
                 </tbody>
                 <tfoot>
                   <tr className="reportes-total-row">
-                    <td colSpan={6}>Total registrado (todos los estados)</td>
-                    <td className="reportes-bold">Q{totalMonto.toFixed(2)}</td>
-                    <td colSpan={2}></td>
+                    <td colSpan={6}>Total cobrado</td>
+                    <td className="reportes-bold">Q{totalCobrado.toFixed(2)}</td><td colSpan={2}></td>
                   </tr>
                 </tfoot>
               </table>
@@ -254,7 +256,7 @@ export function Reportes() {
                   </div>
                   <span className="reportes-card-pagador">{d.pagador?.trim() || 'Visitante'}</span>
                   <div className="reportes-card-item-bottom">
-                    <span className="reportes-bold">Q{Number(d.monto).toFixed(2)}</span>
+                    <span className="reportes-bold">Cobrado: Q{(d.estado === 'completado' ? Number(d.monto) : 0).toFixed(2)}</span>
                     <span>{new Date(d.fecha_pago).toLocaleDateString('es-GT')}</span>
                   </div>
                 </div>

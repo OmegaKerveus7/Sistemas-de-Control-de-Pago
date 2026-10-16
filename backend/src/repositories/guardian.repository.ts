@@ -57,11 +57,6 @@ interface PermisoDia extends RowDataPacket {
   codigo_validacion: string;
 }
 
-/** Con EXIGIR_PAGO_EN_ENTRADA=false la entrada vuelve a permitirse sin pago y solo se bloquea la salida. */
-function exigirPagoEnEntrada(): boolean {
-  return process.env.EXIGIR_PAGO_EN_ENTRADA !== 'false';
-}
-
 function normalizarPlaca(placa: string): string {
   return placa.trim().toUpperCase();
 }
@@ -312,7 +307,7 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
     );
     if (duplicados.length > 0) throw new GuardianError(409, 'Ya existe una entrada activa para esta placa', 'PLACA_ACTIVA');
 
-    // Flujo "pagar primero": el pago del día (en línea por QR o en efectivo con el guardia) autoriza la entrada.
+    // El pago del día se reutiliza en reingresos, pero no es un requisito para entrar.
     const [permisos] = await conn.execute<PermisoDia[]>(
       `SELECT id_pago, id_ticket, metodo_pago, codigo_validacion FROM Pagos
        WHERE placa = ? AND fecha_vigencia = ? AND estado_pago = 'completado'
@@ -320,10 +315,6 @@ export async function registrarEntrada(registro: RegistroEntradaGuardian, idGuar
       [placaNormalizada, hoyGuatemala()],
     );
     const permiso = permisos[0];
-    if (!permiso && exigirPagoEnEntrada()) {
-      throw new GuardianError(409, 'Pago pendiente: esta placa aún no ha pagado hoy. Cóbralo en efectivo o indícale que pague con el QR de la entrada', 'PAGO_PENDIENTE');
-    }
-
     const filtrosLugar = [
       'l.activo = 1',
       "el.nombre = 'disponible'",

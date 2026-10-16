@@ -1,3 +1,4 @@
+import { UserSectionHeader } from '../../components/UserSectionHeader/UserSectionHeader';
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useSearchParams, useLocation } from 'react-router-dom';
 import { pagosService, type ResultadoConfirmar } from '../../services/pagos.service';
@@ -76,13 +77,14 @@ export function ResultadoPago() {
   };
   const descripciones: Record<string, string> = {
     verificando: 'Estamos consultando el estado de tu pago.',
-    aprobado: resultado?.modo === 'live' ? 'Tu estancia quedó pagada. Presenta la referencia al guardia para validar la salida.' : 'La prueba quedó registrada en la BD de pruebas. No se cobró dinero real.',
+    aprobado: resultado?.modo === 'live' ? 'Tu estancia quedó pagada. Indica tu placa al guardia para que verifique el pago y confirme la salida.' : 'La prueba quedó registrada en la BD de pruebas. No se cobró dinero real.',
     pendiente: cancelado ? 'Saliste del checkout. Todavía no hay un pago confirmado; puedes consultar de nuevo o continuar con el mismo enlace.' : 'Aún no se ha confirmado el cobro. Consulta de nuevo antes de intentar otro pago.',
     rechazado: 'Puedes volver al mismo enlace para reintentar el pago.', reembolsado: 'Consulta con la administración del parqueo.', error,
   };
   return <div className={`pagar-page${integrado ? ' pagar-integrado' : ''}`}>
     {!integrado && <header className="pagar-header"><Link to="/" className="pagar-logo">Sistema de Gestión de Parqueo</Link></header>}
     <main className="pagar-main">
+      {integrado && <UserSectionHeader title="Resultado de mi pago" description="Consulta la confirmación del pago antes de salir del parqueo." />}
       <div className={`pagar-card pagar-resultado pagar-resultado-${estado}`} aria-live="polite" aria-busy={cargando}>
         {resultado && resultado.modo !== 'live' && <p className="pagar-aviso-prueba">{resultado.modo === 'mock' ? 'Simulador local' : 'Sandbox Recurrente'} · Sin dinero real</p>}
         <div className="pagar-resultado-icono" aria-hidden="true">
@@ -97,7 +99,7 @@ export function ResultadoPago() {
           {resultado?.url_pago && <a className="pagar-button pagar-button-secundario" href={resultado.url_pago}>Continuar con el mismo pago</a>}
         </>}
         {usuario && <Link to="/app/historial" className="pagar-link">Ver mi historial de pagos</Link>}
-        {usuario && <Link to="/app/dashboard" className="pagar-button pagar-button-enlace">Volver al panel</Link>}
+        {usuario && <Link to="/app/pagar" className="pagar-button pagar-button-enlace">Volver a mi parqueo</Link>}
         {usuario && <Link to={volver} className="pagar-link">Consultar otro parqueo</Link>}
       </div>
     </main>

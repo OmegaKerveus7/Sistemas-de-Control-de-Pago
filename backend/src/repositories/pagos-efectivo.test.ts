@@ -18,7 +18,7 @@ const conn = {
     if (sql.includes('FROM Vehiculos')) return [vehiculo ? [vehiculo] : []];
     if (sql.includes('FROM Tipo_vehiculo')) return [tipoCatalogo ? [tipoCatalogo] : []];
     if (sql.includes('INSERT INTO Vehiculos')) { visitanteInsertado = args; return [{ insertId: 0 }]; }
-    if (sql.includes('FROM Tickets')) { expect(sql).toContain('FOR UPDATE'); return [ticket ? [ticket] : []]; }
+    if (sql.includes('FROM Tickets')) { expect(sql).toContain('FOR UPDATE'); expect(sql).toContain('p.fecha_liberacion IS NULL'); return [ticket ? [ticket] : []]; }
     if (sql.includes('FROM Pagos')) { expect(sql).toContain('FOR UPDATE'); return [pagos]; }
     if (sql.includes('INSERT INTO Pagos')) { if (failInsert) throw new Error('fallo de escritura'); insertArgs = args; return [{ insertId: 3 }]; }
     if (sql.includes('FROM Usuarios')) {
@@ -63,35 +63,13 @@ test('rechaza un tipo manipulado sin cobrar', async () => {
   await expect(crearEfectivo({ ...datos, id_tipo_vehiculo: 1 })).rejects.toThrow('no coincide');
   expect(insertArgs).toBeUndefined();
 });
-test('sin ticket activo registra el pago del día por placa y registra al visitante', async () => {
+test('sin ingreso activo no cobra ni crea el vehículo, aunque esté registrado o haya pagado antes', async () => {
   ticket = null;
-  const r = await crearEfectivo(datos);
-  expect(r).toMatchObject({ id: 3, monto: 20, placa: 'P123ABC', ticket: '', lugar: 'N/A', zona: 'N/A' });
-  expect(insertArgs?.slice(0, 5)).toEqual([null, 7, 'P123ABC', 2, 20]);
-  expect(insertArgs?.slice(7)).toEqual([expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), 'CF', 'Consumidor Final']);
-  expect(visitanteInsertado).toEqual(['P123ABC', 2]);
-  expect(sqls.find(sql => sql.includes('FROM Pagos'))).not.toContain('id_ticket');
-  expect(committed).toBe(true);
-});
-test('sin ticket cobra a un vehículo registrado con su tarifa y avisa al dueño', async () => {
-  ticket = null;
-  vehiculo = { id_usuario: 5, activo: 1, id_tipo: 2, nombre: 'carro', precio_efectivo: '25.00' };
-  dueno = { email: 'ana@correo.test', nombres: 'Ana', apellidos: 'Pérez' };
-  expect(await crearEfectivo(datos)).toMatchObject({ monto: 25, dueno_email: 'ana@correo.test' });
-  expect(insertArgs?.slice(0, 2)).toEqual([null, 5]);
-  expect(visitanteInsertado).toBeUndefined();
-});
-test('sin ticket rechaza un vehículo desactivado, un tipo manipulado y una placa que ya pagó hoy', async () => {
-  ticket = null;
-  vehiculo = { id_usuario: 5, activo: 0, id_tipo: 2, nombre: 'carro', precio_efectivo: '25.00' };
-  await expect(crearEfectivo(datos)).rejects.toThrow('desactivado');
-  vehiculo = { id_usuario: 5, activo: 1, id_tipo: 2, nombre: 'carro', precio_efectivo: '25.00' };
-  await expect(crearEfectivo({ ...datos, id_tipo_vehiculo: 1 })).rejects.toThrow('no coincide');
-  vehiculo = null; tipoCatalogo = { id_tipo: 1, nombre: 'moto', precio_efectivo: '10.00' };
-  await expect(crearEfectivo({ ...datos, id_tipo_vehiculo: 1 })).rejects.toThrow('prefijo');
+  await expect(crearEfectivo(datos)).rejects.toThrow('no tiene una entrada activa');
+  vehiculo = { id_usuario: 5, activo: 1, id_tipo: 2, nombre: 'carro', precio_efectivo: '20.00' };
   pagos = [{ id_pago: 9, estado_pago: 'completado' }];
-  await expect(crearEfectivo(datos)).rejects.toThrow('ya pagó hoy');
-  expect(insertArgs).toBeUndefined();
+  await expect(crearEfectivo(datos)).rejects.toThrow('no tiene una entrada activa');
+  expect(insertArgs).toBeUndefined(); expect(visitanteInsertado).toBeUndefined(); expect(rolledBack).toBe(true);
 });
 test('guarda NIT y nombre del recibo y rechaza un NIT inválido antes de abrir la transacción', async () => {
   await crearEfectivo({ ...datos, nit: '1234567-8', nombre: 'Ana Pérez' });

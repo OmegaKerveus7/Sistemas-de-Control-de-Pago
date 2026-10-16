@@ -1,6 +1,5 @@
 .vp-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
   padding: 24px 16px 64px;
 }
 
@@ -335,4 +334,15 @@
   .vp-form-row {
     grid-template-columns: 1fr;
   }
+}
+
+.vp-form-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+.vp-input { width: 100%; min-width: 0; }
+.vp-volver, .vp-btn-primary, .vp-btn-secondary { min-height: 44px; }
+.vp-resultado { overflow-wrap: anywhere; }
+.vp-qr-block svg { max-width: 100%; height: auto; }
+@media (max-width: 540px) {
+  .vp-form-row { grid-template-columns: minmax(0, 1fr); }
+  .vp-form, .vp-resultado { padding: 18px; }
+  .vp-grid { grid-template-columns: minmax(0, 1fr); }
 }

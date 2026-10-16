@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Main.css';
 
 const IconoUsuario = () => (
@@ -28,8 +28,6 @@ const BASE = import.meta.env.BASE_URL;
 export function Main() {
   const navigate = useNavigate();
 
-  const handlePagarParqueo = () => navigate('/pagar-parqueo');
-  const handleValidarParqueo = () => navigate('/validar-parqueo');
   const handleLogin = () => navigate('/login');
 
   return (
@@ -37,14 +35,14 @@ export function Main() {
       {/* Background carousel - estilo Login */}
       <div className="main-background">
         <div className="brand-stripe" />
-        <div className="brand-overlay" />
-        <div className="brand-vignette" />
+        <div className="main-brand-overlay" />
+        <div className="main-brand-vignette" />
       </div>
 
       {/* Header */}
       <header className="main-header">
         <div className="header-left">
-          <div className="brand-logo">
+          <div className="main-brand-logo">
             <picture>
               <source
                 type="image/webp"
@@ -62,9 +60,9 @@ export function Main() {
               />
             </picture>
           </div>
-          <div className="brand-info">
-            <h1 className="brand-title">Sistema de Gestión de Parqueo</h1>
-            <p className="brand-subtitle">Zona 19 · Colegio Mixto Belén</p>
+          <div className="main-brand-info">
+            <h1 className="main-brand-title">Sistema de Gestión de Parqueo</h1>
+            <p className="main-brand-subtitle">Zona 19 · Colegio Mixto Belén</p>
           </div>
         </div>
         <button className="btn-login-header" onClick={handleLogin} aria-label="Acceso para personal del parqueo">
@@ -77,15 +75,9 @@ export function Main() {
       <section className="options-section" aria-labelledby="options-title">
         <div className="options-container">
           <h2 id="options-title" className="section-title">¿Qué deseas hacer?</h2>
+          <p className="options-intro">Tu parqueo, en pocos pasos. Elige una opción para continuar.</p>
           <div className="options-grid">
-            <article
-              className="option-card"
-              onClick={handlePagarParqueo}
-              onKeyDown={(e) => e.key === 'Enter' && handlePagarParqueo()}
-              tabIndex={0}
-              role="button"
-              aria-label="Pagar parqueo - Pagar con tu placa, sin iniciar sesión"
-            >
+            <Link to="/pagar-parqueo" className="option-card option-card-pago">
               <div className="option-icon pago">
                 <IconoPago />
               </div>
@@ -95,23 +87,16 @@ export function Main() {
                   Paga con tarjeta sin crear cuenta: solo necesitas tu placa. Tu pago vale por todo el día.
                 </p>
                 <span className="option-action">
-                  Acceder
+                  Pagar ahora
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12" />
                     <polyline points="12 5 19 12 12 19" />
                   </svg>
                 </span>
               </div>
-            </article>
+            </Link>
 
-            <article
-              className="option-card"
-              onClick={handleValidarParqueo}
-              onKeyDown={(e) => e.key === 'Enter' && handleValidarParqueo()}
-              tabIndex={0}
-              role="button"
-              aria-label="Validar parqueo - Verificar estado de tu vehículo"
-            >
+            <Link to="/validar-parqueo" className="option-card option-card-validar">
               <div className="option-icon validar">
                 <IconoValidar />
               </div>
@@ -121,14 +106,14 @@ export function Main() {
                   Verifica el estado de tu vehículo y valida tu salida.
                 </p>
                 <span className="option-action">
-                  Acceder
+                  Consultar mi parqueo
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12" />
                     <polyline points="12 5 19 12 12 19" />
                   </svg>
                 </span>
               </div>
-            </article>
+            </Link>
           </div>
         </div>
       </section>

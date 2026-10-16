@@ -1,3 +1,4 @@
+import { UserSectionHeader } from '../../components/UserSectionHeader/UserSectionHeader';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { PagoHistorial } from '../../models';
@@ -20,7 +21,7 @@ function formatearFecha(iso?: string | null): string {
   if (!iso) return '—';
   const fecha = new Date(iso);
   if (Number.isNaN(fecha.getTime())) return iso;
-  return fecha.toLocaleString('es-GT', { dateStyle: 'medium', timeStyle: 'short' });
+  return fecha.toLocaleString('es-GT', { timeZone: 'America/Guatemala', dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function formatearFechaCorta(iso?: string | null): string {
@@ -92,12 +93,7 @@ export function HistorialPagos() {
 
   return (
     <section className="historial-page">
-      <div className="historial-hello">
-        <h1 className="historial-title">Mi Historial de Pagos</h1>
-        <p className="historial-subtitle">
-          Consulta todos los pagos de parqueo que has realizado. Usa los filtros para acotar por fecha.
-        </p>
-      </div>
+      <UserSectionHeader title="Mis pagos" description="Consulta los importes y el estado de tus pagos. Solo los completados cuentan como pagados." />
 
       <form className="historial-filtros" onSubmit={aplicarFiltros}>
         <div className="historial-filtro-grupo">
@@ -202,13 +198,13 @@ export function HistorialPagos() {
                     </p>
                   )}
                   <p className="historial-item-fechas">
-                    Pagado el {formatearFecha(pago.fecha_pago)}
+                    {pago.estado_pago === 'completado' ? 'Pagado el' : 'Operación registrada el'} {formatearFecha(pago.fecha_pago)}
                     {' · '}
                     <span className="historial-item-metodo">{ETIQUETAS_METODO[pago.metodo_pago] ?? pago.metodo_pago}</span>
                     {pago.fecha_confirmacion && <> · Confirmado {formatearFecha(pago.fecha_confirmacion)}</>}
                   </p>
                   {pago.metodo_pago === 'linea' && /^P-[a-f0-9]{18}$/.test(pago.codigo_validacion) && (
-                    <Link className="historial-link-secundario" to={`/pagar-parqueo/resultado?referencia=${encodeURIComponent(pago.codigo_validacion)}`}>
+                    <Link className="historial-link-secundario" to={`/app/pagar/resultado?referencia=${encodeURIComponent(pago.codigo_validacion)}`}>
                       Consultar o continuar pago
                     </Link>
                   )}
