@@ -17,6 +17,8 @@ const COLUMNAS = [
   { titulo: 'Tipo de vehículo', ancho: 19 },
   { titulo: 'Fecha de pago', ancho: 16 },
   { titulo: 'Hora de pago', ancho: 14 },
+  { titulo: 'NIT', ancho: 16 },
+  { titulo: 'Nombre en el recibo', ancho: 34 },
 ];
 
 const centrado: Partial<ExcelJS.Alignment> = { horizontal: 'center' };
@@ -80,11 +82,14 @@ export function crearLibroPagos(detalle: ReporteDetallado[], nombreHoja: string)
       i + 1,
       d.nombre_completo?.trim() || 'Visitante',
       formatearDpi(d.dpi ?? ''),
-      d.id_ticket,
+      // Un pago hecho por adelantado todavía no tiene ticket: el vehículo no ha entrado.
+      d.id_ticket ?? 'Sin ingreso',
       formatearPlaca(d.placa),
       formatearTipoVehiculo(d.tipo_vehiculo),
       fecha,
       hora,
+      d.nit?.trim() || '—',
+      d.nombre_facturacion?.trim() || '—',
     ]);
     fila.eachCell({ includeEmpty: true }, (celda) => {
       celda.font = FUENTE;
@@ -92,6 +97,7 @@ export function crearLibroPagos(detalle: ReporteDetallado[], nombreHoja: string)
       celda.alignment = centrado;
     });
     fila.getCell(2).alignment = {};
+    fila.getCell(10).alignment = {};
     fila.getCell(4).numFmt = '00000';
     fila.getCell(7).numFmt = 'mm-dd-yy';
     fila.getCell(8).numFmt = 'h:mm:ss';
