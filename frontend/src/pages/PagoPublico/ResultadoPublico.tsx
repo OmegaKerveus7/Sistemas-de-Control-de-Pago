@@ -77,7 +77,7 @@ export function ResultadoPagoPublico() {
               <p className="pagar-resumen-linea"><span>Monto</span><strong>{formatoQuetzales(recibo.monto)}</strong></p>
               <p className="pagar-resumen-linea"><span>NIT</span><strong>{recibo.nit ?? 'CF'}</strong></p>
               <p className="pagar-resumen-linea"><span>Nombre</span><strong>{recibo.nombre ?? 'Consumidor Final'}</strong></p>
-              <p className="pagar-resumen-linea"><span>Válido para</span><strong>{formatoDia(recibo.fecha_vigencia)}</strong></p>
+              <p className="pagar-resumen-linea"><span>Válido hasta</span><strong>{formatoDia(recibo.fecha_vigencia)}, 11:59 p. m.</strong></p>
               <p className="pagar-resumen-linea"><span>Fecha de pago</span><strong>{recibo.fecha_pago ? new Date(recibo.fecha_pago).toLocaleString('es-GT') : '—'}</strong></p>
               <p className="pagar-referencia">Referencia: <strong>{recibo.referencia}</strong></p>
             </div>
