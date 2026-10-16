@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { pagosService, type ConsultaPlaca } from '../../services/pagos.service';
 import { FormularioRecurrente } from '../PagarParqueo/FormularioRecurrente';
@@ -26,24 +26,22 @@ export function PagoPublico() {
     setConsulta(null); setCheckout(null); setError(''); setPlaca(''); setNit(''); setNombre(''); setConsumidorFinal(true);
   };
 
-  const buscar = async (e: FormEvent) => {
-    e.preventDefault();
-    const limpia = placa.trim().toUpperCase();
-    setError('');
+  // Una sola pantalla: en cuanto la placa es válida se consulta sola y aparece el precio.
+  const placaLimpia = placa.trim().toUpperCase();
+  const placaValida = REGEX_PLACA.test(placaLimpia);
+  useEffect(() => {
     setConsulta(null);
-    if (!REGEX_PLACA.test(limpia)) {
-      setError('La placa debe iniciar con P (carro) o M (moto), seguido de 3 números y 3 letras. Ej: P123ABC');
-      return;
-    }
+    setCheckout(null);
+    if (!placaValida) { setBuscando(false); return; }
+    let vigente = true;
     setBuscando(true);
-    try {
-      setConsulta(await pagosService.consultarPlaca(limpia));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo consultar la placa');
-    } finally {
-      setBuscando(false);
-    }
-  };
+    setError('');
+    pagosService.consultarPlaca(placaLimpia)
+      .then((datos) => { if (vigente) setConsulta(datos); })
+      .catch((err) => { if (vigente) setError(err instanceof Error ? err.message : 'No se pudo consultar la placa'); })
+      .finally(() => { if (vigente) setBuscando(false); });
+    return () => { vigente = false; };
+  }, [placaLimpia, placaValida]);
 
   const pagar = async (e: FormEvent) => {
     e.preventDefault();
@@ -78,21 +76,22 @@ export function PagoPublico() {
       <main className={`pagar-main${enCheckout ? ' pagar-main-checkout' : ''}`}>
         <h1 className="pagar-title">Paga tu parqueo</h1>
         <p className="pagar-subtitle" hidden={enCheckout}>
-          Sin crear cuenta. Ingresa tu placa, paga con tarjeta y presenta tu placa al guardia: tu pago vale por todo el día.
+          Sin crear cuenta: escribe tu placa y paga con tarjeta. Tu pago vale por todo el día; solo muestra tu placa al guardia.
         </p>
 
         {error && <div className="pagar-alerta pagar-alerta-error" role="alert">{error}</div>}
 
-        {!consulta && (
-          <form className="pagar-card" onSubmit={buscar}>
+        {!enCheckout && (
+          <div className="pagar-card">
             <label className="pagar-label" htmlFor="placa">Placa del vehículo</label>
             <input id="placa" className="pagar-input pagar-input-placa" placeholder="Ej. P123ABC" value={placa}
-              onChange={(e) => setPlaca(e.target.value.toUpperCase())} disabled={buscando} maxLength={7}
+              onChange={(e) => { setPlaca(e.target.value.toUpperCase()); setError(''); }} disabled={pagando} maxLength={7}
               autoComplete="off" autoCapitalize="characters" inputMode="text" autoFocus />
-            <button type="submit" className="pagar-button" disabled={buscando || !placa}>
-              {buscando ? 'Consultando...' : 'Continuar'}
-            </button>
-          </form>
+            {placa && !placaValida && (
+              <p className="pagar-ayuda-placa">Empieza con P (carro) o M (moto), seguido de 3 números y 3 letras. Ej: P123ABC</p>
+            )}
+            {buscando && <p className="pagar-ayuda-placa" role="status">Consultando tu placa…</p>}
+          </div>
         )}
 
         {consulta?.pagado_hoy && (
@@ -101,7 +100,7 @@ export function PagoPublico() {
             <p className="pagar-resumen-linea"><span>Placa</span><strong>{consulta.placa}</strong></p>
             <p className="pagar-resumen-linea"><span>Monto</span><strong>{formatoQuetzales(consulta.pago?.monto ?? 0)}</strong></p>
             <p className="pagar-resumen-linea"><span>Forma de pago</span><strong>{consulta.pago?.metodo === 'efectivo' ? 'Efectivo' : 'Tarjeta'}</strong></p>
-            <p className="pagar-resumen-linea"><span>Válido</span><strong>{formatoDia(consulta.fecha_vigencia)}</strong></p>
+            <p className="pagar-resumen-linea"><span>Válido hasta</span><strong>{formatoDia(consulta.fecha_vigencia)}, 11:59 p. m.</strong></p>
             <p className="pagar-subtitle">No necesitas pagar de nuevo: puedes entrar y salir hoy.</p>
             <button type="button" className="pagar-button" onClick={reiniciar}>Pagar otra placa</button>
           </div>
@@ -113,7 +112,7 @@ export function PagoPublico() {
               <h2 className="pagar-resumen-titulo">Resumen de pago</h2>
               <p className="pagar-resumen-linea"><span>Placa</span><strong>{consulta.placa}</strong></p>
               <p className="pagar-resumen-linea"><span>Vehículo</span><strong>{consulta.tipo === 'moto' ? 'Motocicleta' : 'Automóvil'}{consulta.registrada ? '' : ' · visitante'}</strong></p>
-              <p className="pagar-resumen-linea"><span>Válido para</span><strong>{formatoDia(consulta.fecha_vigencia)}</strong></p>
+              <p className="pagar-resumen-linea"><span>Válido hasta</span><strong>{formatoDia(consulta.fecha_vigencia)}, 11:59 p. m.</strong></p>
               <p className="pagar-resumen-linea pagar-resumen-total"><span>Total a pagar</span><strong>{formatoQuetzales(consulta.tarifa_online)}</strong></p>
 
               {!enCheckout && (
@@ -141,9 +140,11 @@ export function PagoPublico() {
                   {pagando ? 'Preparando pago...' : `Pagar ${formatoQuetzales(consulta.tarifa_online)} con tarjeta`}
                 </button>
               )}
-              <button type="button" className="pagar-button pagar-button-secundario" onClick={reiniciar} disabled={pagando}>
-                Cambiar placa
-              </button>
+              {enCheckout && (
+                <button type="button" className="pagar-button pagar-button-secundario" onClick={reiniciar} disabled={pagando}>
+                  Cambiar placa
+                </button>
+              )}
             </form>
             {checkout && (
               <div className="pagar-card pagar-tarjeta">

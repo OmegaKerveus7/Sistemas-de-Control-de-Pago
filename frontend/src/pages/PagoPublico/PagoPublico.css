@@ -13,3 +13,5 @@
   .pagar-page { background: #fff; min-height: 0; }
   .pagar-card { box-shadow: none; border: 1px solid #999; }
 }
+
+.pagar-ayuda-placa { margin: 8px 0 0; font-size: .85rem; color: #5a6472; }
