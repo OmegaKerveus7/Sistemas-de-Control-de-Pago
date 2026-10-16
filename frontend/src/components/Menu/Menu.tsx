@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import type { NombreRol } from '../../models';
@@ -137,6 +137,24 @@ const BASE = import.meta.env.BASE_URL;
 export function Menu() {
   const { usuario, cerrarSesion } = useAuth();
   const location = useLocation();
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const menuMovil = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => { setMenuAbierto(false); }, [location.pathname]);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1000px)');
+    const cerrarEnEscritorio = () => { if (!media.matches) setMenuAbierto(false); };
+    media.addEventListener('change', cerrarEnEscritorio);
+    return () => media.removeEventListener('change', cerrarEnEscritorio);
+  }, []);
+  useEffect(() => {
+    const dialog = menuMovil.current;
+    if (!menuAbierto || !dialog) return;
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialog.showModal();
+    return () => { dialog.close(); document.body.style.overflow = overflowAnterior; };
+  }, [menuAbierto]);
 
   if (!usuario) return <Navigate to="/login" replace />;
 
@@ -146,8 +164,9 @@ export function Menu() {
   if (!permitido) return <Navigate to={rutaInicial} replace />;
 
   return (
-    <div className="app-dashboard">
+    <div className={`app-dashboard${usuario.rol === 'usuario' ? ' user-account' : ''}`}>
       <header className="app-header">
+        <button type="button" className="app-menu-toggle" aria-label="Abrir menú de navegación" aria-expanded={menuAbierto} aria-controls="app-mobile-navigation" onClick={() => setMenuAbierto(true)}><svg viewBox="0 0 24 24" {...trazo} aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg><span>Menú</span></button>
         <div className="app-header-brand">
           <div className="app-brand-logo">
             <img src={`${BASE}colegio_belen-192w.webp`} alt="Colegio Mixto Belén" width="42" height="42" />
@@ -166,7 +185,7 @@ export function Menu() {
             </span>
             <span className="app-user-rol">{usuario.rol}</span>
           </div>
-          <button className="app-logout" onClick={cerrarSesion} title="Cerrar sesión">
+          <button className="app-logout" aria-label="Cerrar sesión" onClick={cerrarSesion} title="Cerrar sesión">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
@@ -177,6 +196,12 @@ export function Menu() {
         </div>
       </header>
 
+      <dialog ref={menuMovil} className="app-mobile-drawer" aria-labelledby="app-mobile-title" onCancel={() => setMenuAbierto(false)} onClose={() => setMenuAbierto(false)} onClick={(event) => { if (event.target === event.currentTarget) { const bounds = event.currentTarget.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) setMenuAbierto(false); } }}>
+        <div className="app-drawer-heading"><h2 id="app-mobile-title">Menú de navegación</h2><button type="button" aria-label="Cerrar menú" onClick={() => setMenuAbierto(false)}>✕</button></div>
+        <div className="app-drawer-user"><strong>{usuario.nombres} {usuario.apellidos}</strong><span>{usuario.rol}</span></div>
+        <nav id="app-mobile-navigation" aria-label="Navegación móvil">{opciones.map(opcion => <NavLink key={opcion.path} to={opcion.path} onClick={() => setMenuAbierto(false)} className={({ isActive }) => `app-menu-item ${isActive ? 'activo' : ''}`}><span className="app-menu-icon"><opcion.Icono /></span><span>{opcion.etiqueta}</span></NavLink>)}</nav>
+        <button type="button" className="app-drawer-logout" onClick={() => { setMenuAbierto(false); cerrarSesion(); }}>Cerrar sesión</button>
+      </dialog>
       <div className="app-body">
         <main className="app-content">
           <div className="app-content-inner" key={location.pathname}>

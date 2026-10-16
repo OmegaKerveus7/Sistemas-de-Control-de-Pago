@@ -1,3 +1,4 @@
+import { UserSectionHeader } from '../../components/UserSectionHeader/UserSectionHeader';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -9,7 +10,7 @@ import './ValidarParqueo.css';
 
 const REGEX_PLACA = /^([PM])\d{3}[A-Z]{3}$/;
 
-type EstadoPago = 'pagado' | 'pendiente' | 'sin_pago';
+type EstadoPago = 'pagado' | 'pendiente' | 'fallido' | 'sin_pago';
 
 interface ResultadoValidacion {
   parqueo: Parqueo;
@@ -20,7 +21,7 @@ function formatearFecha(iso?: string | null): string {
   if (!iso) return '—';
   const fecha = new Date(iso);
   if (Number.isNaN(fecha.getTime())) return iso;
-  return fecha.toLocaleString('es-GT', { dateStyle: 'medium', timeStyle: 'short' });
+  return fecha.toLocaleString('es-GT', { timeZone: 'America/Guatemala', dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function formatearMonto(valor: number | string | null | undefined): string {
@@ -46,13 +47,15 @@ function formatearDuracion(entradaIso?: string | null): string {
 
 function clasificarPago(parqueo: Parqueo): EstadoPago {
   if (parqueo.estado_pago === 'completado') return 'pagado';
-  if (parqueo.estado_pago === 'pendiente' || parqueo.estado_pago === 'fallido') return 'pendiente';
+  if (parqueo.estado_pago === 'pendiente') return 'pendiente';
+  if (parqueo.estado_pago === 'fallido') return 'fallido';
   return 'sin_pago';
 }
 
 function etiquetaEstado(estado: EstadoPago): string {
   if (estado === 'pagado') return 'Pagado';
   if (estado === 'pendiente') return 'Pago pendiente';
+  if (estado === 'fallido') return 'Pago fallido';
   return 'Sin pago';
 }
 
@@ -145,12 +148,7 @@ export function ValidarParqueo() {
 
   return (
     <section className="validar-page">
-      <div className="validar-header">
-        <h1 className="validar-title">Validar Parqueo</h1>
-        <p className="validar-subtitle">
-          Consulta si tu vehículo tiene un parqueo activo y si ya fue pagado. Si registraste vehículos, selecciónalos para validar más rápido.
-        </p>
-      </div>
+      <UserSectionHeader title="Estado de mi parqueo" description="Consulta tu ubicación y verifica si tu pago está confirmado antes de salir." />
 
       <div className="validar-card">
         <form onSubmit={manejarSubmit} className="validar-form" noValidate>
@@ -243,15 +241,16 @@ export function ValidarParqueo() {
           <div className="validar-resultado-mensaje" role="status">
             {estadoPago === 'pagado' && (
               <>
-                Tu estancia está pagada. Presenta esta pantalla o el ticket al guardia cuando salgas del parqueo.
+                Tu pago está confirmado. Al salir, indica tu placa al guardia para que registre la salida.
               </>
             )}
             {estadoPago === 'pendiente' && (
               <>
-                Hay un intento de pago en proceso o fallido. Vuelve a intentarlo desde <Link to={`/app/pagar?placa=${resultado.parqueo.placa}`}>Pagar Parqueo</Link> para completar el pago.
+                El pago todavía no está confirmado. Revisa el estado en <Link to={`/app/pagar?placa=${resultado.parqueo.placa}`}>Pagar Parqueo</Link> antes de iniciar otro pago.
               </>
             )}
-            {estadoPago === 'sin_pago' && (
+            {estadoPago === 'fallido' && <p>El intento de pago falló. Revisa tus pagos desde <Link to="/app/historial">Mis pagos</Link> o paga en efectivo con el guardia.</p>}
+            {estadoPago === 'sin_pago'  && (
               <>
                 Aún no has pagado este parqueo. Puedes hacerlo ahora en línea con tarjeta desde <Link to={`/app/pagar?placa=${resultado.parqueo.placa}`}>Pagar Parqueo</Link>.
               </>

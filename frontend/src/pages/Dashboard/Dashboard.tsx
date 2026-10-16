@@ -129,29 +129,28 @@ export function Dashboard() {
 
   return <section className="dashboard-page">
     <header className="dashboard-hello">
-      <h1 className="dashboard-title">Panel de control</h1>
-      <p className="dashboard-subtitle">Hola, {usuario?.nombres}. {esPersonalParqueo ? 'Controla la ocupación, los movimientos y los pagos del parqueo.' : 'Desde aquí puedes acceder a las tareas disponibles para tu cuenta.'}</p>
+      <h1 className="dashboard-title">Resumen del parqueo</h1>
+      <p className="dashboard-subtitle">Hola, {usuario?.nombres}. {esPersonalParqueo ? 'Revisa la disponibilidad, los cobros de hoy y los vehículos que requieren atención.' : 'Desde aquí puedes acceder a las tareas disponibles para tu cuenta.'}</p>
       <span className="dashboard-rol">{rol}</span>
     </header>
 
+    {esPersonalParqueo && <div className="dashboard-daybar"><div><span className="dashboard-section-label">JORNADA ACTUAL</span><strong>{new Date().toLocaleDateString('es-GT', { timeZone: 'America/Guatemala', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong></div><Link className="dashboard-primary-action" to="/app/guardian">Registrar entrada o salida →</Link></div>}
     {esPersonalParqueo && <section className="dashboard-stats" aria-label="Estado actual del parqueo" aria-busy={cargando}>
-      <div className="dashboard-stats-heading"><div><h2>Estado del parqueo</h2><p>Ocupación actual y movimientos registrados hoy.</p></div>
+      <div className="dashboard-stats-heading"><div><h2>Disponibilidad y movimientos</h2><p>Los espacios y vehículos muestran el estado actual. Las entradas y salidas corresponden a hoy.</p></div>
         <button type="button" className="dashboard-control-link" disabled={cargando} onClick={() => void cargarResumen()}><IconoIndicador tipo="actualizar" />{cargando ? 'Actualizando…' : 'Actualizar'}</button>
       </div>
       {errorEstadisticas && <p className="dashboard-stats-error" role="alert">{errorEstadisticas}</p>}
-      <div className="dashboard-stats-grid">
+      <div className="dashboard-stats-grid dashboard-occupancy-grid">
         <button type="button" className="dashboard-stat dashboard-stat-free" onClick={e => abrirDetalle('espacios', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Espacios libres"><IconoIndicador tipo="espacio" /><span>Espacios libres</span><strong>{numero(resumen?.disponibles)}</strong><small>De {numero(resumen?.total)} espacios habilitados</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
         <button type="button" className="dashboard-stat dashboard-stat-busy" onClick={e => abrirDetalle('vehiculos', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Vehículos dentro"><IconoIndicador tipo="vehiculo" /><span>Vehículos dentro</span><strong>{numero(estadisticas?.vehiculos_activos)}</strong><small>Incluye ingresos de días anteriores</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
         <button type="button" className="dashboard-stat" onClick={e => abrirDetalle('entradas', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Entradas de hoy"><IconoIndicador tipo="entrada" /><span>Entradas de hoy</span><strong>{numero(estadisticas?.entradas_hoy)}</strong><small>Vehículos que ingresaron hoy</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
         <button type="button" className="dashboard-stat dashboard-stat-exit" onClick={e => abrirDetalle('salidas', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Salidas de hoy"><IconoIndicador tipo="salida" /><span>Salidas de hoy</span><strong>{numero(estadisticas?.salidas_hoy)}</strong><small>Vehículos que salieron hoy</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
-        <button type="button" className="dashboard-stat dashboard-stat-warning" onClick={e => abrirDetalle('pendientes', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Pagos pendientes"><IconoIndicador tipo="pago" /><span>Pagos pendientes</span><strong>{numero(estadisticas?.pagos_pendientes)}</strong><small>Tickets activos con pago pendiente</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
-        <button type="button" className="dashboard-stat dashboard-stat-unpaid" onClick={e => abrirDetalle('sin_pago', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Sin pago registrado"><IconoIndicador tipo="sinpago" /><span>Sin pago registrado</span><strong>{numero(estadisticas?.sin_pago)}</strong><small>Tickets activos sin ningún pago</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
       </div>
       {actualizado && <p className="dashboard-actualizado">Última actualización: {actualizado.toLocaleTimeString('es-GT', { timeZone: 'America/Guatemala', hour: '2-digit', minute: '2-digit' })}</p>}
     </section>}
 
-    {esPersonalParqueo && <PagosHoy />}
-    <nav className="dashboard-modulos" aria-label="Accesos a los módulos">{tarjetas(opciones)}</nav>
+    {esPersonalParqueo && <PagosHoy revision={actualizado?.getTime() ?? 0} />}
+    <nav className="dashboard-modulos" aria-label="Accesos a los módulos"><h2>Herramientas de trabajo</h2><p>Accede a los registros y a la administración del sistema.</p>{tarjetas(opciones)}</nav>
     {indicadorAbierto && <dialog ref={dialogo} className="dashboard-detalle-modal" aria-labelledby="dashboard-detalle-titulo" onCancel={() => setIndicadorAbierto(null)} onClose={() => setIndicadorAbierto(null)}>
       <header className="dashboard-detalle-header"><div><h2 id="dashboard-detalle-titulo">{NOMBRES_INDICADOR[indicadorAbierto]}</h2><p>{CRITERIOS_INDICADOR[indicadorAbierto]}</p></div><button type="button" className="dashboard-control-link" onClick={() => setIndicadorAbierto(null)} aria-label="Cerrar detalle">Cerrar ✕</button></header>
       {cargandoDetalle ? <p role="status">Cargando detalle…</p> : errorDetalle ? <div role="alert"><p className="dashboard-stats-error">{errorDetalle}</p><button type="button" className="dashboard-control-link" onClick={() => setRevisionDetalle(n => n + 1)}>Reintentar</button></div> : detalle && <>

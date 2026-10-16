@@ -241,12 +241,13 @@ test('la búsqueda considera pagado al ticket cubierto por el pago del día de s
   expect(consultaBusqueda?.sql).toContain('p.placa = t.placa AND p.fecha_vigencia = ?');
 });
 
-test('la entrada exige el pago del día y no crea ticket sin él', async () => {
+test('la entrada sin pago crea el ticket incluso si la configuración antigua exigía pagar primero', async () => {
+  process.env.EXIGIR_PAGO_EN_ENTRADA = 'true';
   permisoDia = undefined;
-  await expect(registrarEntrada({ placa: 'P123ABC' }, 1, '127.0.0.1')).rejects.toMatchObject({ status: 409, codigo: 'PAGO_PENDIENTE' });
-  expect(consultaPermiso?.params).toEqual(['P123ABC', hoy]);
-  expect(statements.some(sql => sql.includes('INSERT INTO Tickets ('))).toBe(false);
-  expect(rolledBack).toBe(true);
+  const result = await registrarEntrada({ placa: 'P123ABC' }, 1, '127.0.0.1');
+  expect(result).toMatchObject({ pago_vigente: false, pago: null });
+  expect(statements.some(sql => sql.includes('INSERT INTO Tickets ('))).toBe(true);
+  expect(committed).toBe(true);
 });
 
 test('con EXIGIR_PAGO_EN_ENTRADA=false permite entrar sin pago y reporta que no hay pago vigente', async () => {

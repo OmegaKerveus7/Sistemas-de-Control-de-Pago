@@ -82,3 +82,49 @@ button.dashboard-stat:disabled { cursor: wait; }
 .pagoshoy-pendiente { background: #fef3c7; color: #92400e; }
 .pagoshoy-fallido, .pagoshoy-reembolsado { background: #fee2e2; color: #991b1b; }
 .pagoshoy-mas { margin-top: 10px; background: transparent; border: 1px solid var(--belen-azul, #1A237E); color: var(--belen-azul, #1A237E); border-radius: 8px; padding: 7px 12px; font-weight: 700; cursor: pointer; }
+
+/* Clear separation of current occupancy, today's income and work to attend. */
+.dashboard-page { width: 100%; max-width: 1240px; display: flex; flex-direction: column; gap: 22px; }
+.dashboard-hello { margin-bottom: 0; }
+.dashboard-daybar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 26px; border-radius: 16px; background: #202e70; color: #fff; }
+.dashboard-section-label { display: block; font-size: .65rem; font-weight: 800; letter-spacing: .1em; margin-bottom: 8px; }
+.dashboard-daybar strong { font-size: 1rem; text-transform: capitalize; }
+.dashboard-primary-action { padding: 14px 20px; border-radius: 10px; background: #ffbf40; color: #182452; font-weight: 700; font-size: .9rem; text-align: center; }
+.dashboard-primary-action:hover { background: #ffd373; }
+.dashboard-page .dashboard-stats { padding: 24px; border-color: #e1e5ee; border-radius: 18px; }
+.dashboard-page .dashboard-stats-heading h2, .dashboard-modulos h2 { font-size: 1.15rem; color: #202e70; }
+.dashboard-page .dashboard-stats-heading p { line-height: 1.6; max-width: 650px; margin-top: 6px; }
+.dashboard-page .dashboard-occupancy-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.dashboard-page .dashboard-payments-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.dashboard-page .dashboard-stat { padding: 20px; gap: 10px; }
+.dashboard-page .dashboard-stat > strong { font-size: clamp(1.7rem, 2.8vw, 2.3rem); overflow-wrap: anywhere; }
+.dashboard-page .dashboard-stat > span { font-size: .85rem; }
+.dashboard-page .dashboard-stat > small { font-size: .78rem; line-height: 1.5; }
+.dashboard-payments-grid .dashboard-stat { display: flex; flex-direction: column; }
+.dashboard-payments-grid .dashboard-stat > strong { order: -1; text-align: left; margin-bottom: 8px; }
+.dashboard-attention { margin-top: 24px; border: 1px solid #ecd8aa; border-left: 4px solid #e9a632; border-radius: 12px; background: #fffbf2; padding: 20px; }
+.dashboard-attention-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.dashboard-attention h3 { color: #725019; font-size: 1rem; margin-bottom: 8px; }
+.dashboard-attention p { color: #6d6557; font-size: .85rem; line-height: 1.6; }
+.dashboard-attention .dashboard-section-label { color: #89662c; }
+.dashboard-attention details { margin-top: 16px; }
+.dashboard-attention summary, .dashboard-transactions summary { cursor: pointer; color: #263573; font-size: .9rem; font-weight: 700; min-height: 36px; padding-block: 8px; }
+.dashboard-transactions { margin-top: 20px; border-top: 1px solid #e2e6ef; padding-top: 14px; }
+.dashboard-modulos { margin-top: 0; }
+.dashboard-modulos > p { font-size: .9rem; color: #647088; margin: 8px 0 18px; }
+.dashboard-page .dashboard-card { padding: 20px; border-top-width: 1px; box-shadow: none; }
+.dashboard-page .dashboard-card-desc { font-size: .83rem; line-height: 1.6; }
+.dashboard-page .dashboard-control-link { min-height: 44px; }
+@media (max-width: 900px) {
+  .dashboard-page .dashboard-occupancy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-attention-heading { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 600px) {
+  .dashboard-daybar, .dashboard-page .dashboard-stats-heading { flex-direction: column; align-items: stretch; }
+  .dashboard-daybar { padding: 20px; }
+  .dashboard-page .dashboard-stats { padding: 18px; }
+  .dashboard-page .dashboard-stats-heading p { max-width: none; }
+  .dashboard-page .dashboard-payments-grid { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-page .dashboard-stat { padding: 14px; }
+  .pagoshoy-tabla { min-width: 560px; }
+}

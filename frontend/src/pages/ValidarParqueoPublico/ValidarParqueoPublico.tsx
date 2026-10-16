@@ -1,51 +1,10 @@
+import { PublicHeader } from '../../components/PublicHeader/PublicHeader';
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import { Link } from 'react-router-dom';
 import { parqueoService, type ValidarParqueoRespuesta } from '../../services/parqueo.service';
 import './ValidarParqueoPublico.css';
 
 const REGEX_PLACA = /^([PM])\d{3}[A-Z]{3}$/;
-
-const IconoVolver = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12" />
-    <polyline points="12 19 5 12 12 5" />
-  </svg>
-);
-
-/** Mismo formato que lee el guardia (BELEN-TKT): identifica el ticket, esté pagado o no. */
-function construirQrTicket(numeroTicket: string, placa: string): string {
-  return `BELEN-TKT|v1|${numeroTicket.toUpperCase()}|${placa.toUpperCase()}`;
-}
-
-function QrTicket({ numeroTicket, placa }: { numeroTicket: string; placa: string }) {
-  const idSvg = `vp-qr-${placa}`;
-  const descargar = () => {
-    const svg = document.getElementById(idSvg);
-    if (!svg) return;
-    const source = new XMLSerializer().serializeToString(svg);
-    const url = URL.createObjectURL(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ticket-${placa}.svg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  return (
-    <div className="vp-qr-block">
-      <QRCodeSVG id={idSvg} value={construirQrTicket(numeroTicket, placa)} size={200} level="M" includeMargin />
-      <p className="vp-qr-ayuda">
-        Ticket: <strong>{numeroTicket}</strong>
-      </p>
-      <button type="button" className="vp-btn-secondary" onClick={descargar}>
-        Descargar QR
-      </button>
-    </div>
-  );
-}
 
 function formatearMonto(valor: number | string | null | undefined): string {
   return new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(Number(valor ?? 0));
@@ -65,7 +24,6 @@ interface ResultadoCompleto {
 }
 
 export function ValidarParqueoPublico() {
-  const navigate = useNavigate();
   const [placa, setPlaca] = useState('');
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState('');
@@ -109,15 +67,13 @@ export function ValidarParqueoPublico() {
   const estado = resultado?.data?.estado ?? null;
 
   return (
-    <div className="vp-page">
+    <div className="public-page vp-page">
+      <PublicHeader />
       <header className="vp-header">
-        <button type="button" className="vp-volver" onClick={() => navigate('/')}>
-          <IconoVolver /> Volver al inicio
-        </button>
+
         <h1 className="vp-title">Validar Parqueo</h1>
         <p className="vp-subtitle">
-          Ingresa tu placa para conocer el estado de tu parqueo y obtener el QR de tu ticket,
-          que el guardia escanea para validar si está pagado.
+          Ingresa tu placa para consultar el estado del pago. Al salir, el guardia verificará tu placa y confirmará la salida.
         </p>
       </header>
 
@@ -183,13 +139,7 @@ export function ValidarParqueoPublico() {
                   </div>
                 </div>
                 <p className="vp-mensaje vp-mensaje-exito">
-                  Tu ticket está pagado. Presenta este QR al guardia: al escanearlo verá que ya pagaste y registrará tu salida.
-                </p>
-                {resultado.data.numero_ticket && (
-                  <QrTicket numeroTicket={resultado.data.numero_ticket} placa={resultado.data.placa ?? placa} />
-                )}
-                <p className="vp-qr-ayuda">
-                  Código de validación: <strong>{resultado.data.codigo_validacion ?? '—'}</strong>
+                  Tu pago está confirmado. Indica tu placa al guardia para que verifique el pago y registre tu salida.
                 </p>
               </>
             )}
@@ -213,16 +163,8 @@ export function ValidarParqueoPublico() {
                     </strong>
                   </div>
                 </div>
-                {resultado.data.numero_ticket && (
-                  <>
-                    <QrTicket numeroTicket={resultado.data.numero_ticket} placa={resultado.data.placa ?? placa} />
-                    <p className="vp-mensaje-secundario">
-                      Este es el QR de tu ticket: el guardia lo escanea para ver si ya está pagado. Tras pagar, mostrará «Pago completado».
-                    </p>
-                  </>
-                )}
                 <p className="vp-mensaje-secundario">
-                  Realiza el pago ahora desde <Link to={`/pagar-parqueo?placa=${resultado.data.placa ?? placa}`}>Pagar Parqueo</Link> para poder salir.
+                  Realiza el pago ahora desde <Link to={`/pagar-parqueo?placa=${resultado.data.placa ?? placa}`}>Pagar Parqueo</Link> o paga en efectivo con el guardia antes de salir.
                 </p>
               </>
             )}

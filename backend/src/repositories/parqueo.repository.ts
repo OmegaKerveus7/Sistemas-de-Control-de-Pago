@@ -1,3 +1,5 @@
+import { exigirEntradaActiva, MENSAJE_SIN_ENTRADA } from '../utils/entrada-activa';
+import { PagoError } from '../services/pasarela.service';
 import { getPool } from '../config/database';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { Parqueo } from '../models';
@@ -141,6 +143,12 @@ export async function validarParqueoPorPlaca(
   }
   const conn = await getPool().getConnection();
   try {
+    try { await exigirEntradaActiva(conn, limpia); }
+    catch (error) {
+      if (error instanceof PagoError && error.status === 404) return { codigo: 404, mensaje: MENSAJE_SIN_ENTRADA, data: null };
+      throw error;
+    }
+
     await conn.query(
       'CALL sp_validar_parqueo_por_placa(?, @pcodigo_s, @pmensaje, @pdata)',
       [limpia],
