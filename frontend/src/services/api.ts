@@ -1,12 +1,4 @@
-const BASE_URL = (() => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  if (import.meta.env.PROD) {
-    return '/api';
-  }
-  return 'http://localhost:4000/api';
-})();
+const BASE_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '/api' : 'http://localhost:4000/api');
 
 interface RequestOptions {
   method?: string;

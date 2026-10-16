@@ -5,7 +5,7 @@ import { getPool } from '../config/database';
 import type { Pago, FilaReporteMensual, PagoHistorial } from '../models';
 import { FacturacionError, validarFacturacion, type DatosFacturacion } from '../utils/facturacion';
 import { hoyGuatemala } from '../utils/fecha';
-import { tipoCoincideConPlaca, tipoPorPlaca } from '../utils/placa';
+import { MENSAJE_SIN_ENTRADA } from '../utils/entrada-activa';
 
 export async function listar(): Promise<Pago[]> {
   const pool = getPool();
@@ -107,7 +107,9 @@ export async function reporteDetallado(anio: number, mes: number): Promise<FilaR
      JOIN Tipo_vehiculo tv ON tv.id_tipo = pg.id_tipo
      LEFT JOIN Usuarios u ON u.id_usuario = pg.id_usuario
      LEFT JOIN Usuarios d ON d.id_usuario = t.id_usuario
-     LEFT JOIN Parqueos p ON p.id_ticket = t.id_ticket
+     LEFT JOIN Parqueos p ON p.id_parqueo = (
+       SELECT MAX(p2.id_parqueo) FROM Parqueos p2 WHERE p2.id_ticket = t.id_ticket
+     )
      LEFT JOIN Lugares l ON l.id_lugar = p.id_lugar
      LEFT JOIN Zonas z ON z.id_zona = l.id_zona
      WHERE YEAR(pg.fecha_pago) = ? AND MONTH(pg.fecha_pago) = ?
@@ -226,63 +228,28 @@ export async function crearEfectivo(datos: DatosPagoEfectivo): Promise<Resultado
               t.numero_ticket, l.codigo AS lugar, z.nombre AS zona
        FROM Tickets t
        JOIN Tipo_vehiculo tv ON tv.id_tipo = t.id_tipo
-       LEFT JOIN Parqueos p ON p.id_ticket = t.id_ticket
+       JOIN Parqueos p ON p.id_ticket = t.id_ticket AND p.fecha_liberacion IS NULL
        LEFT JOIN Lugares l ON l.id_lugar = p.id_lugar
        LEFT JOIN Zonas z ON z.id_zona = l.id_zona
        WHERE t.placa = ? AND t.activo = 1 AND t.fecha_salida IS NULL
        ORDER BY t.id_ticket DESC LIMIT 1 FOR UPDATE`, [placa]);
     const ticket = tickets[0];
+    if (!ticket) throw new PagoError(404, MENSAJE_SIN_ENTRADA);
     // Cubre tanto los pagos del ticket como el pago del día aún sin enlazar.
-    const [pagos] = ticket
-      ? await conn.query<RowDataPacket[]>(
-        'SELECT id_pago, estado_pago FROM Pagos WHERE id_ticket = ? OR (placa = ? AND fecha_vigencia = ?) FOR UPDATE',
-        [ticket.id_ticket, placa, hoy])
-      : await conn.query<RowDataPacket[]>(
-        'SELECT id_pago, estado_pago FROM Pagos WHERE placa = ? AND fecha_vigencia = ? FOR UPDATE', [placa, hoy]);
+    const [pagos] = await conn.query<RowDataPacket[]>(
+      'SELECT id_pago, estado_pago FROM Pagos WHERE id_ticket = ? OR (placa = ? AND fecha_vigencia = ?) FOR UPDATE',
+      [ticket.id_ticket, placa, hoy]);
     if (pagos.some(p => p.estado_pago === 'completado')) throw new PagoError(409, ticket ? 'Este ticket ya está pagado; no se puede cobrar otra vez' : 'Esta placa ya pagó hoy; no se puede cobrar otra vez');
     if (pagos.length) throw new PagoError(409, 'Este ticket ya tiene un pago registrado. Revisa ese pago antes de cobrar en efectivo');
 
-    let idTicket: number | null = null;
-    let idTipo: number;
-    let monto: number;
-    let idUsuario: number | null;
-    let numeroTicket = '';
-    let lugar = 'N/A';
-    let zona = 'N/A';
-    if (ticket) {
-      if (Number(ticket.id_tipo) !== datos.id_tipo_vehiculo) throw new PagoError(400, 'El tipo seleccionado no coincide con el vehículo del ticket');
-      idTicket = ticket.id_ticket;
-      idTipo = ticket.id_tipo;
-      monto = Number(ticket.precio_efectivo);
-      idUsuario = ticket.id_usuario ?? null;
-      numeroTicket = ticket.numero_ticket;
-      lugar = ticket.lugar ?? 'N/A';
-      zona = ticket.zona ?? 'N/A';
-    } else {
-      const [vehiculos] = await conn.query<RowDataPacket[]>(
-        `SELECT v.id_usuario, v.activo, tv.id_tipo, tv.nombre, tv.precio_efectivo
-         FROM Vehiculos v JOIN Tipo_vehiculo tv ON tv.id_tipo = v.id_tipo
-         WHERE UPPER(v.placa) = ? LIMIT 1 FOR UPDATE`, [placa]);
-      const vehiculo = vehiculos[0];
-      if (vehiculo) {
-        if (Number(vehiculo.activo) !== 1) throw new PagoError(409, 'Este vehículo está desactivado');
-        if (Number(vehiculo.id_tipo) !== datos.id_tipo_vehiculo) throw new PagoError(400, 'El tipo seleccionado no coincide con el vehículo registrado');
-        idTipo = vehiculo.id_tipo;
-        monto = Number(vehiculo.precio_efectivo);
-        idUsuario = vehiculo.id_usuario ?? null;
-      } else {
-        const [tipos] = await conn.query<RowDataPacket[]>(
-          'SELECT id_tipo, nombre, precio_efectivo FROM Tipo_vehiculo WHERE id_tipo = ?', [datos.id_tipo_vehiculo]);
-        const tipo = tipos[0];
-        if (!tipo) throw new PagoError(400, 'El tipo de vehículo seleccionado no existe');
-        if (!tipoCoincideConPlaca(String(tipo.nombre), tipoPorPlaca(placa)!)) throw new PagoError(400, 'El tipo seleccionado no coincide con el prefijo de la placa');
-        idTipo = tipo.id_tipo;
-        monto = Number(tipo.precio_efectivo);
-        idUsuario = null;
-        // La FK de Pagos exige que la placa exista en Vehiculos; se registra como visitante.
-        await conn.query('INSERT INTO Vehiculos (placa, id_usuario, id_tipo, activo) VALUES (?, NULL, ?, 1)', [placa, idTipo]);
-      }
-    }
+    if (Number(ticket.id_tipo) !== datos.id_tipo_vehiculo) throw new PagoError(400, 'El tipo seleccionado no coincide con el vehículo del ticket');
+    const idTicket = ticket.id_ticket;
+    const idTipo = ticket.id_tipo;
+    const monto = Number(ticket.precio_efectivo);
+    const idUsuario = ticket.id_usuario ?? null;
+    const numeroTicket = ticket.numero_ticket;
+    const lugar = ticket.lugar ?? 'N/A';
+    const zona = ticket.zona ?? 'N/A';
     if (!Number.isFinite(monto) || monto <= 0) throw new PagoError(400, 'No existe una tarifa en efectivo válida para este vehículo');
 
     const referencia = `E-${randomBytes(9).toString('hex')}`;

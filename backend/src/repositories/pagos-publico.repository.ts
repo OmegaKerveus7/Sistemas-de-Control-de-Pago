@@ -1,3 +1,4 @@
+import { exigirEntradaActiva } from '../utils/entrada-activa';
 import type { Pool, PoolConnection, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { getPool } from '../config/database';
 import { generarReferencia, PagoError, type ModoPago } from '../services/pasarela.service';
@@ -78,19 +79,18 @@ export interface ConsultaPlaca {
 export async function consultarPlaca(placaCruda: string, detalle = false): Promise<ConsultaPlaca> {
   const placa = placaValida(placaCruda);
   const pool = getPool();
+  await exigirEntradaActiva(pool, placa);
   const tipo = await resolverTipo(pool, placa);
   const hoy = hoyGuatemala();
   const [pagos] = await pool.query<RowDataPacket[]>(
     `SELECT pg.estado_pago, pg.metodo_pago, pg.monto, pg.codigo_validacion, pg.fecha_confirmacion, pg.nit, pg.nombre_facturacion
      ${PAGOS_DE_LA_PLACA} AND pg.estado_pago <> 'reembolsado'
      ORDER BY (pg.estado_pago = 'completado') DESC, pg.id_pago DESC LIMIT 1`, [placa, hoy, placa]);
-  const [dentro] = await pool.query<RowDataPacket[]>(
-    'SELECT 1 FROM Tickets WHERE placa = ? AND activo = 1 AND fecha_salida IS NULL LIMIT 1', [placa]);
   const pago = pagos[0];
   return {
     placa, registrada: tipo.registrada, id_tipo: tipo.id_tipo, tipo: tipo.nombre,
     tarifa_efectivo: tipo.precio_efectivo, tarifa_online: tipo.precio_linea,
-    dentro: dentro.length > 0, fecha_vigencia: hoy,
+    dentro: true, fecha_vigencia: hoy,
     pagado_hoy: pago?.estado_pago === 'completado',
     estado_pago: pago?.estado_pago ?? null,
     pago: pago ? {
@@ -100,12 +100,13 @@ export async function consultarPlaca(placaCruda: string, detalle = false): Promi
   };
 }
 
-/** Reserva (o reutiliza) el pago en línea del día para una placa, sin usuario ni ticket. */
+/** Reserva el pago de una placa solo después de comprobar y bloquear su ingreso activo. */
 export async function reservarPublico(placaCruda: string, facturacion: DatosFacturacion, modo: ModoPago, montoEsperado: number) {
   const placa = placaValida(placaCruda);
   const conn = await getPool().getConnection();
   try {
     await conn.beginTransaction();
+    const idTicket = await exigirEntradaActiva(conn, placa, true);
     const tipo = await resolverTipo(conn, placa, true);
     if (!tipo.activo) throw new PagoError(409, 'Este vehículo está desactivado. Consulta con el guardia');
     const monto = tipo.precio_linea;
@@ -135,11 +136,11 @@ export async function reservarPublico(placaCruda: string, facturacion: DatosFact
     const [insert] = await conn.query<ResultSetHeader>(
       `INSERT INTO Pagos (id_ticket, id_usuario, placa, id_tipo, metodo_pago, monto, codigo_validacion, estado_pago,
                           gateway_response, observacion, fecha_vigencia, nit, nombre_facturacion)
-       VALUES (NULL, NULL, ?, ?, 'linea', ?, ?, 'pendiente', ?, ?, ?, ?, ?)`,
-      [placa, tipo.id_tipo, monto, referencia, JSON.stringify({ modo }),
+       VALUES (?, NULL, ?, ?, 'linea', ?, ?, 'pendiente', ?, ?, ?, ?, ?)`,
+      [idTicket, placa, tipo.id_tipo, monto, referencia, JSON.stringify({ modo }),
         modo === 'live' ? 'Recurrente · pago público' : `PRUEBA ${modo}: sin dinero real`, hoy, facturacion.nit, facturacion.nombre]);
     await conn.commit();
-    return { nuevo: true, pago: { id_pago: insert.insertId, id_ticket: null, id_usuario: null, placa, monto, codigo_validacion: referencia,
+    return { nuevo: true, pago: { id_pago: insert.insertId, id_ticket: idTicket, id_usuario: null, placa, monto, codigo_validacion: referencia,
       estado_pago: 'pendiente', transaction_id: null, gateway_response: { modo }, fecha_vigencia: hoy,
       nit: facturacion.nit, nombre_facturacion: facturacion.nombre } as unknown as PagoOnline };
   } catch (error) { await conn.rollback(); throw error; }

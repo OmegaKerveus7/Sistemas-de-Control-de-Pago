@@ -1,3 +1,4 @@
+import { UserSectionHeader } from '../../components/UserSectionHeader/UserSectionHeader';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -36,6 +37,7 @@ export function PagarParqueo() {
   const [parqueo, setParqueo] = useState<Pick<Parqueo, 'placa' | 'fecha_entrada'> & { id?: number } | null>(null);
   const [precio, setPrecio] = useState<PrecioInfo | null>(null);
   const [error, setError] = useState('');
+  const [placaPagada, setPlacaPagada] = useState('');
   const [loading, setLoading] = useState(false);
   const [cargandoPago, setCargandoPago] = useState(false);
   const [checkout, setCheckout] = useState<{ url_pago: string; referencia: string; acceso?: string } | null>(null);
@@ -59,6 +61,7 @@ export function PagarParqueo() {
   const buscar = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+    setPlacaPagada('');
     setParqueo(null);
     setPrecio(null);
 
@@ -82,7 +85,7 @@ export function PagarParqueo() {
         return;
       }
       const activo = await parqueoService.obtenerActivoPorPlaca(limpio);
-      if (activo.estado_pago === 'completado') throw new Error('Este parqueo ya está pagado');
+      if (activo.estado_pago === 'completado') { setPlacaPagada(limpio); return; }
       const info = await pagosService.precio(activo.id);
       setParqueo(activo);
       setPrecio(info);
@@ -122,14 +125,15 @@ export function PagarParqueo() {
       </header>}
 
       <main className={`pagar-main${checkout ? ' pagar-main-checkout' : ''}`}>
-        <h1 className="pagar-title">Pago de Parqueo</h1>
-        <p className="pagar-subtitle" hidden={!!checkout}>
+        {integrado ? <UserSectionHeader title="Pagar mi parqueo" description="Selecciona tu vehículo o escribe la placa, revisa el importe y paga con tarjeta." /> : <h1 className="pagar-title">Pago de Parqueo</h1>}
+        {integrado && <ol className="user-payment-guide" aria-label="Pasos del pago"><li aria-current={!parqueo && !placaPagada ? 'step' : undefined}>1. Consulta tu placa</li><li aria-current={parqueo && !checkout ? 'step' : undefined}>2. Revisa el importe</li><li aria-current={checkout ? 'step' : undefined}>3. Paga y verifica</li></ol>}
+        <p className="pagar-subtitle" hidden={!!checkout || integrado}>
           {usuario ? `Bienvenido(a), ${usuario.nombres} ${usuario.apellidos}.` : 'No necesitas una cuenta. Ingresa la placa y el número de tu ticket.'} Paga tu estancia con tarjeta.
         </p>
 
         {error && <div className="pagar-alerta pagar-alerta-error" role="alert">{error}</div>}
 
-        {!parqueo || !precio ? (
+        {placaPagada ? <div className="pagar-card user-payment-confirmed" role="status"><span className="user-paid-badge">Pago confirmado</span><h2>La placa {placaPagada} ya está pagada</h2><p>No necesitas realizar otro pago. Al salir, el guardia verificará tu placa.</p><Link to="/app/validar" className="pagar-button">Consultar mi parqueo</Link><button type="button" className="pagar-button pagar-button-secundario" onClick={() => { setPlacaPagada(''); setPlaca(''); }}>Consultar otra placa</button></div> : !parqueo || !precio ? (
           <>
             {vehiculos.length > 0 && (
               <div className="pagar-mis-vehiculos">
@@ -194,10 +198,10 @@ export function PagarParqueo() {
             </p>
             <p className="pagar-resumen-linea">
               <span>Entrada</span>
-              <strong>{parqueo.fecha_entrada ? new Date(parqueo.fecha_entrada).toLocaleString() : '—'}</strong>
+              <strong>{parqueo.fecha_entrada ? new Date(parqueo.fecha_entrada).toLocaleString('es-GT', { timeZone: 'America/Guatemala' }) : '—'}</strong>
             </p>
             <p className="pagar-resumen-linea">
-              <span>Precio a pagar (precio fijo)</span>
+              <span>Tarifa diaria con tarjeta</span>
               <strong>Q{Number(precio.online).toFixed(2)}</strong>
             </p>
 
@@ -207,7 +211,7 @@ export function PagarParqueo() {
               onClick={pagar}
               disabled={cargandoPago}
             >
-              {cargandoPago ? 'Preparando pago...' : precio.modo === 'mock' ? 'Probar pago' : 'Abrir formulario de tarjeta'}
+              {cargandoPago ? 'Preparando pago...' : precio.modo === 'mock' ? 'Probar pago' : `Pagar Q${Number(precio.online).toFixed(2)} con tarjeta`}
             </button>}
             <button
               type="button"
@@ -227,6 +231,7 @@ export function PagarParqueo() {
           {checkout && <div className="pagar-card pagar-tarjeta"><FormularioRecurrente url={checkout.url_pago} referencia={checkout.referencia} acceso={checkout.acceso} sandbox={precio.modo === 'sandbox'} /></div>}
           </div>
         )}
+        {integrado && <p className="user-payment-note">El pago solo queda completado cuando el servidor lo confirma. Al salir, el guardia verifica tu placa. También puedes pagar en efectivo con él.</p>}
       </main>
     </div>
   );

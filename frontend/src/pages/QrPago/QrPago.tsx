@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import './QrPago.css';
 
@@ -15,11 +16,15 @@ export function QrPago() {
 
   return (
     <section className="qrpago-page">
+      <header className="qrpago-header qrpago-no-imprimir">
+        <Link to="/app/dashboard" className="qrpago-regresar">← Volver al panel de control</Link>
+        <div><span className="qrpago-etiqueta">PAGO CON TARJETA</span><h1>QR de pago</h1><p>Prepara el cartel para que los conductores abran la página de pago con su celular.</p></div>
+      </header>
       <div className="qrpago-controles qrpago-no-imprimir">
-        <h1>QR de pago</h1>
+        <h2>Configurar el cartel</h2>
         <p>Imprime este cartel y colócalo en la entrada: el público escanea, ingresa su placa y paga sin crear cuenta.</p>
         <label htmlFor="qrpago-url">Dirección a la que lleva el QR</label>
-        <input id="qrpago-url" value={url} onChange={(e) => setUrl(e.target.value)} spellCheck={false} />
+        <input type="url" autoCapitalize="none" id="qrpago-url" value={url} onChange={(e) => setUrl(e.target.value)} spellCheck={false} />
         {esLocal && <p className="qrpago-aviso">Esta dirección solo funciona en esta red o computadora. Para el cartel definitivo usa la dirección pública del sistema.</p>}
         {!urlValida && <p className="qrpago-aviso">Escribe una dirección que empiece con https://</p>}
         <div className="qrpago-acciones">
@@ -28,6 +33,8 @@ export function QrPago() {
         </div>
       </div>
 
+      <div className="qrpago-preview">
+      <div className="qrpago-preview-heading qrpago-no-imprimir"><h2>Vista previa del cartel</h2><span>{urlValida ? 'Cartel imprimible' : 'Revisa la dirección'}</span></div>
       <article className="qrpago-cartel" aria-label="Vista previa del cartel">
         <h2>Paga tu parqueo aquí</h2>
         <p className="qrpago-sub">Parqueo Zona 19 · Colegio Mixto Belén</p>
@@ -41,6 +48,7 @@ export function QrPago() {
         </ol>
         <p className="qrpago-pie">Tu pago vale por todo el día · También puedes pagar en efectivo con el guardia</p>
       </article>
+      </div>
     </section>
   );
 }

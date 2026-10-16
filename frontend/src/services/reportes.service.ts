@@ -8,8 +8,7 @@ export interface ReporteMensual {
 
 export interface ReporteDetallado {
   id: number;
-  /** Null mientras el vehículo no ha entrado (pago hecho por adelantado). */
-  id_ticket: number | null;
+  id_ticket: number;
   ticket: string;
   placa: string;
   tipo_vehiculo: string;
@@ -20,9 +19,6 @@ export interface ReporteDetallado {
   monto: number;
   estado: string;
   fecha_pago: string;
-  /** Datos del recibo con los que se emitió el pago; null en pagos anteriores a esta función. */
-  nit: string | null;
-  nombre_facturacion: string | null;
   lugar: string;
   zona: string;
 }

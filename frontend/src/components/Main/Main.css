@@ -41,7 +41,7 @@
   z-index: 10;
 }
 
-.brand-overlay {
+.main-brand-overlay {
   position: absolute;
   inset: 0;
   background:
@@ -54,7 +54,7 @@
   z-index: 1;
 }
 
-.brand-vignette {
+.main-brand-vignette {
   position: absolute;
   inset: 0;
   background:
@@ -86,7 +86,7 @@
   min-width: 0;
 }
 
-.brand-logo {
+.main-brand-logo {
   width: 56px;
   height: 56px;
   display: flex;
@@ -103,14 +103,14 @@
   animation: pulse-glow 4s ease-in-out infinite;
 }
 
-.brand-logo img {
+.main-brand-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
 }
 
-.brand-info {
+.main-brand-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -118,7 +118,7 @@
   overflow: hidden;
 }
 
-.brand-title {
+.main-brand-title {
   font-size: clamp(0.9rem, 2.5vw, 1.25rem);
   font-weight: 800;
   color: #ffffff;
@@ -129,7 +129,7 @@
   text-overflow: ellipsis;
 }
 
-.brand-subtitle {
+.main-brand-subtitle {
   font-size: clamp(0.6rem, 1.2vw, 0.7rem);
   font-weight: 500;
   color: rgba(255, 255, 255, 0.75);
@@ -409,17 +409,17 @@
     padding: 20px 32px;
   }
 
-  .brand-logo {
+  .main-brand-logo {
     width: 70px;
     height: 70px;
     padding: 8px;
   }
 
-  .brand-title {
+  .main-brand-title {
     font-size: 1.125rem;
   }
 
-  .brand-subtitle {
+  .main-brand-subtitle {
     font-size: 0.65rem;
   }
 
@@ -455,17 +455,17 @@
     padding: 24px 48px;
   }
 
-  .brand-logo {
+  .main-brand-logo {
     width: 90px;
     height: 90px;
     padding: 10px;
   }
 
-  .brand-title {
+  .main-brand-title {
     font-size: 1.5rem;
   }
 
-  .brand-subtitle {
+  .main-brand-subtitle {
     font-size: 0.75rem;
   }
 
@@ -506,187 +506,59 @@
   }
 }
 
-/* ============================================
-   MOBILE LANDSCAPE
-   ============================================ */
-@media (max-height: 500px) and (orientation: landscape) {
-  .main-page {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    grid-template-rows: 1fr;
-    grid-template-areas: "brand content";
-    min-height: 100vh;
-  }
-
-  .main-background {
-    grid-area: brand;
-    position: relative;
-  }
-
-  .main-header {
-    grid-area: brand;
-    align-self: start;
-    padding: 14px 18px 8px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    border-bottom: none;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .header-left {
-    width: 100%;
-  }
-
-  .brand-logo {
-    width: 48px;
-    height: 48px;
-  }
-
-  .brand-title {
-    color: #ffffff;
-  }
-
-  .brand-subtitle {
-    color: rgba(255, 255, 255, 0.75);
-  }
-
-  .btn-login-header {
-    align-self: flex-end;
-  }
-
-  .options-section {
-    grid-area: content;
-    padding: 14px 18px;
-  }
-
-  .options-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .option-card {
-    padding: 18px 20px;
-  }
-
-  .option-icon {
-    width: 52px;
-    height: 52px;
-  }
-
-  .main-footer {
-    grid-area: brand;
-    align-self: end;
-    padding: 10px 18px 14px;
-  }
+/* Layout shared by portrait and landscape screens. */
+.main-page { min-height: 100svh; }
+.main-header { width: 100%; max-width: 1280px; margin: 0 auto; }
+.main-brand-logo { animation: none; }
+.main-brand-logo picture { display: block; width: 100%; height: 100%; }
+.main-brand-title, .main-brand-subtitle { white-space: normal; overflow: visible; }
+.options-section { flex: 1; display: flex; align-items: center; padding-block: clamp(32px, 7vh, 80px); }
+.options-container { width: 100%; max-width: 1000px; }
+.main-page .section-title { margin-bottom: 10px; font-size: clamp(1.6rem, 3vw, 2.2rem); }
+.options-intro { color: #cbd5ed; text-align: center; margin-bottom: 32px; line-height: 1.6; }
+.main-page .options-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.main-page .option-card {
+  --card-accent: #16734e;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  padding: clamp(24px, 3vw, 36px);
+  border: 1px solid #ffffff80;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #fff 45%, #edf8f2);
+  box-shadow: 0 16px 40px #03082530;
+  text-decoration: none;
+  min-width: 0;
 }
+.main-page .option-card-validar { --card-accent: #283aa0; background: linear-gradient(145deg, #fff 45%, #eef1ff); }
+.main-page .option-card::before { background: var(--card-accent); transform: scaleX(1); height: 5px; animation: none; }
+.main-page .option-card:hover { transform: translateY(-5px); border-color: var(--card-accent); box-shadow: 0 22px 48px #03082550; }
+.main-page .option-icon { width: 64px; height: 64px; border-radius: 18px; color: var(--card-accent); }
+.main-page .option-content { width: 100%; flex: 1; justify-content: flex-start; }
+.main-page .option-title { font-size: 1.4rem; margin-bottom: 12px; }
+.main-page .option-description { font-size: .95rem; margin-bottom: 28px; flex: 1; }
+.main-page .option-action { justify-content: space-between; background: var(--card-accent); color: #fff; padding: 14px 18px; border-radius: 12px; min-height: 48px; font-size: .9rem; }
+.main-page .footer-content { gap: 20px; }
+.main-page .footer-copyright { line-height: 1.6; color: #cbd5ed; }
 
-/* ============================================
-   SMALL MOBILE (≤480px)
-   ============================================ */
-@media (max-width: 480px) {
-  .main-header {
-    padding: 14px 16px;
-    gap: 12px;
-  }
-
-  .brand-logo {
-    width: 48px;
-    height: 48px;
-    padding: 5px;
-  }
-
-  .brand-title {
-    font-size: 0.85rem;
-  }
-
-  .brand-subtitle {
-    font-size: 0.58rem;
-  }
-
-  .btn-login-header {
-    padding: 8px 14px;
-    font-size: 0.75rem;
-    gap: 6px;
-  }
-
-  .btn-login-header svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .hero-section {
-    padding: 32px 16px;
-  }
-
-  .hero-title::before {
-    width: 44px;
-    height: 3px;
-    margin: 0 auto 8px;
-  }
-
-  .options-section {
-    padding: 28px 16px;
-  }
-
-  .option-card {
-    padding: 22px 18px;
-    gap: 16px;
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .option-icon {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto;
-  }
-
-  .option-icon svg {
-    width: 28px;
-    height: 28px;
-  }
-
-  .option-title {
-    font-size: 1rem;
-  }
-
-  .option-description {
-    font-size: 0.825rem;
-  }
-
-  .option-action {
-    justify-content: center;
-  }
-
-  .main-footer {
-    padding: 20px 16px;
-  }
-
-  .footer-content {
-    gap: 12px;
-  }
-
-  .footer-brand {
-    padding: 6px 10px;
-    font-size: 0.72rem;
-  }
-
-  .footer-copyright {
-    font-size: 0.72rem;
-  }
+@media (max-width: 760px) {
+  .main-header { flex-wrap: wrap; padding: 24px; gap: 24px; }
+  .main-page .header-left { flex-basis: 100%; gap: 16px; }
+  .main-brand-title { font-size: clamp(1.1rem, 4vw, 1.5rem); }
+  .main-brand-subtitle { font-size: .65rem; line-height: 1.6; }
+  .btn-login-header { margin-left: auto; min-height: 44px; }
+  .options-section { padding: 24px 24px 40px; }
+  .main-page .options-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .main-page .option-card { gap: 18px; }
+  .main-page .option-title { font-size: 1.25rem; }
+  .main-page .option-description { margin-bottom: 20px; }
+  .main-footer { padding: 24px; }
+  .main-page .footer-content { flex-direction: column; text-align: center; }
 }
-
-/* ============================================
-   REDUCED MOTION
-   ============================================ */
+@media (max-width: 360px) {
+  .main-header, .options-section, .main-footer { padding-inline: 16px; }
+  .main-brand-logo { width: 48px; height: 48px; }
+}
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  .main-page *, .main-page *::before { animation: none; transition: none; }
 }

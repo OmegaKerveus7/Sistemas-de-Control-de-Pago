@@ -1,3 +1,4 @@
+import { UserSectionHeader } from '../../components/UserSectionHeader/UserSectionHeader';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -304,12 +305,7 @@ export function RegistrarVehiculo() {
 
   return (
     <section className="mis-vehiculos-page">
-      <div className="mis-vehiculos-header">
-        <h1 className="mis-vehiculos-title">Mis Vehículos</h1>
-        <p className="mis-vehiculos-subtitle">
-          Registra tus vehículos para identificarlos cuando entren al parqueo.
-        </p>
-      </div>
+      <UserSectionHeader title="Mis vehículos" description="Registra y administra tus placas para consultarlas y pagar más rápido." />
 
       <div className="mis-vehiculos-card">
         <h2>Registrar un vehículo</h2>

@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { centavos, totalPagos } from './totalesPagos';
 import type { ReporteDetallado } from '../../services/reportes.service';
 
 // Layout "Registro de Pagos Parqueo" entregado por el área técnica del colegio.
@@ -17,8 +18,7 @@ const COLUMNAS = [
   { titulo: 'Tipo de vehículo', ancho: 19 },
   { titulo: 'Fecha de pago', ancho: 16 },
   { titulo: 'Hora de pago', ancho: 14 },
-  { titulo: 'NIT', ancho: 16 },
-  { titulo: 'Nombre en el recibo', ancho: 34 },
+  { titulo: 'Monto del parqueo', ancho: 22 },
 ];
 
 const centrado: Partial<ExcelJS.Alignment> = { horizontal: 'center' };
@@ -82,14 +82,12 @@ export function crearLibroPagos(detalle: ReporteDetallado[], nombreHoja: string)
       i + 1,
       d.nombre_completo?.trim() || 'Visitante',
       formatearDpi(d.dpi ?? ''),
-      // Un pago hecho por adelantado todavía no tiene ticket: el vehículo no ha entrado.
-      d.id_ticket ?? 'Sin ingreso',
+      d.id_ticket,
       formatearPlaca(d.placa),
       formatearTipoVehiculo(d.tipo_vehiculo),
       fecha,
       hora,
-      d.nit?.trim() || '—',
-      d.nombre_facturacion?.trim() || '—',
+      centavos(d.monto) / 100,
     ]);
     fila.eachCell({ includeEmpty: true }, (celda) => {
       celda.font = FUENTE;
@@ -97,11 +95,19 @@ export function crearLibroPagos(detalle: ReporteDetallado[], nombreHoja: string)
       celda.alignment = centrado;
     });
     fila.getCell(2).alignment = {};
-    fila.getCell(10).alignment = {};
     fila.getCell(4).numFmt = '00000';
     fila.getCell(7).numFmt = 'mm-dd-yy';
     fila.getCell(8).numFmt = 'h:mm:ss';
+    fila.getCell(9).numFmt = '"Q"#,##0.00';
   });
 
+  hoja.autoFilter = { from: 'A1', to: `I${pagos.length + 1}` };
+  hoja.views = [{ state: 'frozen', ySplit: 1, showGridLines: false }];
+  const total = hoja.addRow(['Total cobrado (pagos completados)', '', '', '', '', '', '', '',
+    pagos.length ? { formula: `SUM(I2:I${pagos.length + 1})`, result: totalPagos(pagos) } : 0]);
+  hoja.mergeCells(total.number, 1, total.number, 8);
+  total.font = { ...FUENTE, bold: true };
+  total.getCell(9).numFmt = '"Q"#,##0.00';
+  libro.calcProperties.fullCalcOnLoad = true;
   return libro;
 }
