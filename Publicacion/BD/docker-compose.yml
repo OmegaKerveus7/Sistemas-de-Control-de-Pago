@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mysql-belen:
+    image: mysql:8.0
+    container_name: BD_parqueobelen
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "Bdcolbelen19"
+      MYSQL_DATABASE: "u878723730_parqueo"
+      MYSQL_USER: "u878723730_famkon"
+      MYSQL_PASSWORD: "Bdcolbelen19"
+      TZ: "America/Guatemala"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --default-time-zone=-06:00
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --log-bin-trust-function-creators=1   
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pBdcolbelen19"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - belen_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  belen_network:
+    driver: bridge
