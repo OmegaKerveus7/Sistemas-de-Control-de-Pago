@@ -8,3 +8,5 @@ export const registrarEntrada = (registro: RegistroEntradaGuardian, idGuardia: n
 export const estadisticas = guardianRepo.estadisticas;
 export const validarPago = (criterio: CriterioGuardian, idGuardia: number, ip: string) => guardianRepo.validarPago(criterio, idGuardia, ip);
 export const registrarSalida = (criterio: CriterioGuardian, idGuardia: number, ip: string) => guardianRepo.registrarSalida(criterio, idGuardia, ip);
+
+export const detalleIndicador = guardianRepo.detalleIndicador;

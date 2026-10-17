@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Credenciales } from '../../models';
 import { login, guardarToken } from '../../services/auth.service';
+import { rutaInicialPorRol } from '../../components/Menu';
 import './Login.css';
 
 interface Slide {
@@ -88,8 +89,8 @@ type TipoIdentificador = 'vacio' | 'dpi' | 'correo';
 
 const detectarTipo = (valor: string): TipoIdentificador => {
   if (!valor) return 'vacio';
-  if (valor.includes('@')) return 'correo';
-  return 'dpi';
+  if (/^\d[\d\s]*$/.test(valor)) return 'dpi';
+  return 'correo';
 };
 
 const validarCorreo = (correo: string): boolean => {
@@ -165,7 +166,7 @@ export default function Login() {
           localStorage.setItem('usuario', JSON.stringify(resultado.usuario));
         }
         const redirect = searchParams.get('redirect');
-        navigate(redirect && redirect.startsWith('/') ? redirect : '/app/dashboard');
+        navigate(redirect && redirect.startsWith('/') ? redirect : rutaInicialPorRol(resultado.usuario?.rol));
       } else {
         setError(resultado.mensaje || 'Error al iniciar sesión');
         triggerShake();

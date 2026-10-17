@@ -1,0 +1,13 @@
+.cobro-panel { margin-top: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; display: grid; gap: 10px; }
+.cobro-estado { margin: 0; font-weight: 700; font-size: .92rem; }
+.cobro-estado-pagado { color: #166534; }
+.cobro-estado-pendiente { color: #92400e; }
+.cobro-form { display: grid; gap: 8px; }
+.cobro-check { display: flex; align-items: center; gap: 8px; font-size: .88rem; cursor: pointer; }
+.cobro-campos { display: grid; gap: 8px; }
+.cobro-campos input { padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: .9rem; }
+.cobro-boton { background: #166534; color: #fff; border: 0; border-radius: 8px; padding: 11px 14px; font-weight: 800; cursor: pointer; }
+.cobro-boton:disabled { opacity: .6; cursor: wait; }
+.cobro-aviso { margin: 0; font-size: .85rem; color: #475569; }
+.cobro-aviso-exito { color: #166534; font-weight: 700; }
+.cobro-aviso-error { color: #b91c1c; font-weight: 600; }

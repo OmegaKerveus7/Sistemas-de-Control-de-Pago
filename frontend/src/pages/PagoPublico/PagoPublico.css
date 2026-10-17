@@ -1,0 +1,27 @@
+.pagar-input-placa { font-size: 1.5rem; letter-spacing: .12em; text-align: center; text-transform: uppercase; font-weight: 700; }
+.pagar-facturacion { border: 1px solid #d9dee7; border-radius: 10px; padding: 12px 14px 14px; margin: 14px 0; }
+.pagar-facturacion legend { padding: 0 6px; font-weight: 600; color: #1b2a41; font-size: .9rem; }
+.pagar-check { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; }
+.pagar-check input { width: 18px; height: 18px; }
+.pagar-resumen-total { font-size: 1.15rem; border-top: 1px dashed #c5ccd8; padding-top: 10px; margin-top: 6px; }
+.pagar-pie { text-align: center; color: #5a6472; font-size: .85rem; margin-top: 20px; }
+.pagar-recibo { border-top: 1px dashed #c5ccd8; margin-top: 12px; padding-top: 8px; text-align: left; }
+.pagar-acciones { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+
+@media print {
+  .pagar-no-imprimir { display: none !important; }
+  .pagar-page { background: #fff; min-height: 0; }
+  .pagar-card { box-shadow: none; border: 1px solid #999; }
+}
+
+/* Keep public navigation available at every payment step. */
+.pagar-header { flex-wrap: wrap; gap: 16px; }
+.pagar-header .pagar-volver { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; font-size: .9rem; font-weight: 600; }
+.pagar-header .pagar-volver:hover { background: #ffffff18; }
+.pagar-main, .pagar-card, .pagar-facturacion { min-width: 0; }
+.pagar-resumen-linea { flex-wrap: wrap; overflow-wrap: anywhere; }
+@media (max-width: 540px) {
+  .pagar-header { padding: 20px 16px; align-items: flex-start; flex-direction: column; }
+  .pagar-main { padding-inline: 16px; margin-block: 24px; }
+  .pagar-card { padding: 20px; }
+}

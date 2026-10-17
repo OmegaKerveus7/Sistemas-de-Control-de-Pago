@@ -1,0 +1,61 @@
+.public-page.pagar-page,
+.public-page.vp-page {
+  min-height: 100svh;
+  background: #f5f6f8;
+}
+
+.public-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px max(20px, calc((100vw - 1100px) / 2));
+  background: #fff;
+  border-bottom: 1px solid #dfe4eb;
+}
+
+.public-brand { display: flex; align-items: center; gap: 10px; color: #1d2a54; text-decoration: none; }
+.public-brand img { width: 44px; height: 44px; object-fit: contain; }
+.public-brand strong { display: block; font-size: 1rem; }
+.public-brand small { display: block; margin-top: 2px; color: #5d6878; font-size: .78rem; }
+.public-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 10px; color: #253780; font-size: .9rem; font-weight: 600; text-decoration: none; }
+.public-back:hover { text-decoration: underline; }
+
+.public-page .pagar-main { width: 100%; max-width: 560px; margin: 32px auto 48px; padding: 0 20px; }
+.public-page .pagar-title, .public-page .vp-title { color: #1d2a54; font-size: clamp(1.5rem, 4vw, 1.9rem); letter-spacing: -.02em; }
+.public-page .pagar-main > .pagar-subtitle, .public-page .vp-subtitle { color: #526070; font-size: .95rem; line-height: 1.5; margin-bottom: 22px; }
+.public-page .pagar-card, .public-page .vp-form, .public-page .vp-resultado { border: 1px solid #dfe4eb; border-radius: 12px; box-shadow: none; padding: 24px; }
+.public-page .pagar-card { gap: 14px; }
+.public-page .pagar-label, .public-page .vp-label { color: #1d2a54; }
+.public-page .pagar-input, .public-page .vp-input { min-height: 50px; border-color: #cdd5e0; background: #fff; border-radius: 8px; font-size: 1.1rem; }
+.public-page .pagar-input:focus, .public-page .vp-input:focus { outline: 2px solid #253780; outline-offset: 2px; box-shadow: none; }
+.public-page .pagar-button:not(.pagar-button-secundario), .public-page .vp-btn-primary { background: #253780; color: #fff; border-radius: 8px; min-height: 48px; }
+.public-page .pagar-button:not(.pagar-button-secundario):hover:not(:disabled), .public-page .vp-btn-primary:hover:not(:disabled) { background: #1c2c6e; }
+.public-page .pagar-pie { color: #5d6878; line-height: 1.5; }
+.public-page.vp-page { padding: 0 0 48px; }
+.public-page .vp-header { max-width: 700px; padding: 0 20px; margin: 32px auto 0; }
+.public-page .vp-main { max-width: 700px; padding: 0 20px; }
+.public-page .vp-form-row { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
+.public-page .vp-form-row .vp-btn-secondary { grid-column: 1 / -1; justify-self: start; padding: 6px 0; min-height: 36px; border: 0; text-decoration: underline; }
+.public-page .vp-resultado { margin-top: 20px; }
+.public-page .pagar-main-checkout { max-width: 760px; margin-top: 20px; }
+.public-page .pagar-tarjeta { padding: 20px; }
+.public-page .pagar-resultado .pagar-title { color: #1d2a54; font-size: 1.6rem; }
+
+@media (max-width: 600px) {
+  .public-header { padding: 12px 16px; }
+  .public-brand img { width: 38px; height: 38px; }
+  .public-brand strong { font-size: .9rem; }
+  .public-brand small { font-size: .72rem; }
+  .public-page .pagar-main, .public-page .vp-header, .public-page .vp-main { padding-inline: 16px; }
+  .public-page .pagar-card, .public-page .vp-form, .public-page .vp-resultado { padding: 20px; }
+  .public-page .vp-form-row { grid-template-columns: minmax(0, 1fr); }
+  .public-page .vp-form-row .vp-btn-secondary { justify-self: center; }
+  .public-page .pagar-input, .public-page .vp-input { font-size: 1rem; }
+}
+
+@media print {
+  .public-header { display: none; }
+  .public-page.pagar-page, .public-page.vp-page { background: #fff; }
+}

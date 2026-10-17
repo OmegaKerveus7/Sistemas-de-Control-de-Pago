@@ -1,0 +1,184 @@
+.tarifas-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tarifas-title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--belen-azul);
+  margin-bottom: 6px;
+}
+
+.tarifas-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-texto-secundario);
+}
+
+.tarifas-card {
+  overflow: hidden;
+}
+
+.tarifas-estado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 20px;
+  color: var(--color-texto-secundario);
+  font-size: 0.9rem;
+}
+
+.tarifas-tabla-wrapper {
+  overflow-x: auto;
+}
+
+.tarifas-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.tarifas-tabla th {
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--color-fondo-input);
+  color: var(--belen-azul);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-borde);
+  white-space: nowrap;
+}
+
+.tarifas-tabla td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-borde-suave);
+  color: var(--color-texto);
+  white-space: nowrap;
+}
+
+.tarifas-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tarifas-tabla tbody tr:hover {
+  background: var(--color-fondo-input);
+}
+
+.tarifas-capitalize {
+  text-transform: capitalize;
+}
+
+.tarifas-estado-texto {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.tarifas-estado-texto.activo {
+  color: #1c8a4f;
+}
+
+.tarifas-estado-texto.inactivo {
+  color: var(--belen-rojo);
+}
+
+.tarifas-btn-accion {
+  padding: 7px 12px;
+  border-radius: var(--radio-sm);
+  border: 1px solid var(--color-borde);
+  background: var(--color-blanco);
+  color: var(--belen-azul);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transicion);
+}
+
+.tarifas-btn-accion:hover {
+  border-color: var(--belen-dorado);
+  background: var(--color-fondo-input);
+}
+
+/* Modal */
+.tarifas-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 35, 126, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.tarifas-modal {
+  width: 100%;
+  max-width: 460px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tarifas-modal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--belen-azul);
+}
+
+.tarifas-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tarifas-modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.tarifas-btn-cancelar {
+  height: 48px;
+  padding: 0 20px;
+  border-radius: var(--radio-md);
+  border: 1.5px solid var(--color-borde);
+  background: var(--color-blanco);
+  color: var(--color-texto-secundario);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transicion);
+}
+
+.tarifas-btn-cancelar:hover {
+  border-color: var(--belen-azul-claro);
+  color: var(--belen-azul);
+}
+
+.tarifas-btn-guardar {
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--radio-md);
+  background: var(--belen-azul);
+  color: var(--color-blanco);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transicion);
+}
+
+.tarifas-btn-guardar:hover:not(:disabled) {
+  background: var(--belen-azul-medio);
+}
+
+.tarifas-btn-guardar:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

@@ -1,0 +1,1 @@
+export { HistorialPagos } from './HistorialPagos';

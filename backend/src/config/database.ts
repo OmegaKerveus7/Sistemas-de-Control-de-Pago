@@ -14,6 +14,8 @@ const dbConfig: mysql.PoolOptions = {
   database: requiredEnv('DB_NAME'),
   waitForConnections: true,
   connectionLimit: 10,
+  // fecha_vigencia es un día calendario: como string evita que un Date lo desplace por zona horaria.
+  dateStrings: ['DATE'],
   queueLimit: 0,
 };
 
