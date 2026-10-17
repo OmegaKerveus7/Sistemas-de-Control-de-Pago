@@ -9,6 +9,7 @@ export interface PagoOnline extends RowDataPacket {
   transaction_id: string | null; gateway_response: { modo: ModoPago; url_pago?: string } | string;
   fecha_pago?: string; fecha_confirmacion?: string | null; fecha_vigencia?: string | null;
   nit?: string | null; nombre_facturacion?: string | null;
+  pagador_nombre?: string | null; pagador_correo?: string | null;
 }
 export function gateway(pago: PagoOnline): { modo: ModoPago; url_pago?: string } {
   return typeof pago.gateway_response === 'string' ? JSON.parse(pago.gateway_response) : pago.gateway_response;
@@ -83,6 +84,13 @@ export async function actualizarEstado(id: number, estado: 'completado' | 'falli
   // Idempotente: un rechazo tardío o una entrega repetida no revierte un pago confirmado.
   await getPool().query(`UPDATE Pagos SET estado_pago = ?, fecha_confirmacion = IF(? = 'completado', NOW(), fecha_confirmacion)
     WHERE id_pago = ? AND estado_pago IN ('pendiente', 'fallido')`, [estado, estado, id]);
+}
+
+/** Solo escribe una vez: una entrega repetida del webhook no pisa ni duplica el historial. */
+export async function guardarPagador(id: number, pagador: { nombre: string | null; correo: string | null }) {
+  await getPool().query(`UPDATE Pagos SET pagador_nombre = ?, pagador_correo = ?
+    WHERE id_pago = ? AND estado_pago = 'completado' AND pagador_nombre IS NULL AND pagador_correo IS NULL`,
+    [pagador.nombre, pagador.correo, id]);
 }
 
 export async function pendientes(ultimoId = 0) {

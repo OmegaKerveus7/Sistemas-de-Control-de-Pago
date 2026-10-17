@@ -67,9 +67,10 @@ export interface Checkout {
   currency?: string;
   live_mode?: boolean;
   metadata?: { referencia?: string };
+  latest_intent?: { id?: string } | null;
 }
 
-async function recurrente(path: string, body?: unknown): Promise<Checkout> {
+async function recurrente<T = Checkout>(path: string, body?: unknown): Promise<T> {
   validarConfiguracionPago();
   const response = await fetch(`https://app.recurrente.com/api${path}`, {
     method: body ? 'POST' : 'GET',
@@ -78,7 +79,7 @@ async function recurrente(path: string, body?: unknown): Promise<Checkout> {
     signal: AbortSignal.timeout(15000),
   });
   if (!response.ok) throw new PagoError(502, `Recurrente no pudo procesar la solicitud (HTTP ${response.status}). Consulta la referencia antes de reintentar.`);
-  return await response.json() as Checkout;
+  return await response.json() as T;
 }
 
 export async function crearCheckout(pago: { referencia: string; monto: number; placa: string }) {
@@ -102,6 +103,24 @@ export async function crearCheckout(pago: { referencia: string; monto: number; p
 export async function obtenerCheckout(id: string) {
   if (!/^ch_[\w-]+$/.test(id)) throw new PagoError(400, 'Checkout inválido');
   return recurrente(`/checkouts/${encodeURIComponent(id)}`);
+}
+
+export interface Pagador { nombre: string | null; correo: string | null }
+
+const REGEX_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Recurrente rellena el sandbox con un pagador ficticio: no es quien pagó, así que no se guarda. */
+const DOMINIO_RELLENO_SANDBOX = '@sandbox.recurrente.com';
+
+/** Quién pagó según Recurrente: el checkout no lo trae, pero su intent sí. Sin dato válido devuelve null. */
+export async function obtenerPagador(checkout: Checkout): Promise<Pagador | null> {
+  const intent = checkout.latest_intent?.id;
+  if (!intent || !/^in_[\w-]+$/.test(intent)) return null;
+  const data = await recurrente<{ customer?: { full_name?: unknown; email?: unknown } | null }>(`/intents/${encodeURIComponent(intent)}`);
+  const nombre = typeof data.customer?.full_name === 'string' ? data.customer.full_name.trim().replace(/\s+/g, ' ').slice(0, 120) : '';
+  const correoCrudo = typeof data.customer?.email === 'string' ? data.customer.email.trim().toLowerCase() : '';
+  if (correoCrudo.endsWith(DOMINIO_RELLENO_SANDBOX)) return null;
+  const correo = correoCrudo.length <= 254 && REGEX_CORREO.test(correoCrudo) ? correoCrudo : '';
+  return nombre || correo ? { nombre: nombre || null, correo: correo || null } : null;
 }
 
 export function validarCheckout(data: Checkout, pago: { transaction_id: string | null; monto: number | string; codigo_validacion: string }, mode: ModoPago) {

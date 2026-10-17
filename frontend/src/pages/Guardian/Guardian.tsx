@@ -8,6 +8,7 @@ import {
   type ResumenGuardian,
 } from '../../services/guardian.service';
 import { CobroPlaca } from '../../components/CobroPlaca';
+import { useAuth } from '../../hooks/useAuth';
 import './Guardian.css';
 
 type EstadoMensaje = 'exito' | 'error' | 'bloqueo';
@@ -48,6 +49,7 @@ function lugarCompatibleConTipo(lugar: LugarGuardian, tipo: 'carro' | 'moto' | n
 }
 
 export function Guardian() {
+  const { usuario } = useAuth();
   const [operacion, setOperacion] = useState<'entrada' | 'salida'>('entrada');
   const [ubicacionManual, setUbicacionManual] = useState(false);
   const [resumen, setResumen] = useState<ResumenGuardian | null>(null);
@@ -213,7 +215,7 @@ export function Guardian() {
 
   return (
     <section className={`guardian-page guardian-mode-${operacion}`}>
-      <Link to="/app/dashboard" className="guardian-back">← Volver al panel de control</Link>
+      {usuario?.rol !== 'guardia' && <Link to="/app/dashboard" className="guardian-back">← Volver al panel de control</Link>}
       <div className="guardian-heading">
         <div>
           <p className="guardian-eyebrow">Control de acceso</p>

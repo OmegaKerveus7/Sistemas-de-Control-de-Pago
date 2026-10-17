@@ -25,7 +25,6 @@ interface FormularioVehiculo {
   id_tipo: string;
   id_marca: string;
   marcaManual: string;
-  color: string;
   modelo: string;
 }
 
@@ -34,13 +33,11 @@ const FORMULARIO_VACIO: FormularioVehiculo = {
   id_tipo: '',
   id_marca: '',
   marcaManual: '',
-  color: '',
   modelo: '',
 };
 
 interface FormularioEdicion {
   placa: string;
-  color: string;
   modelo: string;
 }
 
@@ -59,7 +56,7 @@ export function RegistrarVehiculo() {
   const [errorLista, setErrorLista] = useState('');
 
   const [vehiculoEditando, setVehiculoEditando] = useState<Vehiculo | null>(null);
-  const [formularioEdicion, setFormularioEdicion] = useState<FormularioEdicion>({ placa: '', color: '', modelo: '' });
+  const [formularioEdicion, setFormularioEdicion] = useState<FormularioEdicion>({ placa: '', modelo: '' });
   const [errorEdicion, setErrorEdicion] = useState('');
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
 
@@ -173,7 +170,6 @@ export function RegistrarVehiculo() {
     const esOtrosMarca = formulario.id_marca === OTROS_MARCA;
     const idMarcaNum = formulario.id_marca && !esOtrosMarca ? Number(formulario.id_marca) : undefined;
     const marcaPersonalizada = esOtrosMarca ? formulario.marcaManual.trim() : undefined;
-    const colorLimpio = formulario.color.trim() || undefined;
     const modeloLimpio = formulario.modelo.trim();
 
     if (vehiculos.some((v) => v.placa.toUpperCase() === placaLimpia && v.activo !== false)) {
@@ -189,7 +185,6 @@ export function RegistrarVehiculo() {
         id_tipo: idTipoNum,
         id_marca: idMarcaNum,
         marca_personalizada: marcaPersonalizada,
-        color: colorLimpio,
         modelo: modeloLimpio,
       });
       setMensajeExito(`Vehículo ${placaLimpia} registrado correctamente.`);
@@ -218,13 +213,13 @@ export function RegistrarVehiculo() {
 
   const abrirEdicion = (vehiculo: Vehiculo) => {
     setVehiculoEditando(vehiculo);
-    setFormularioEdicion({ placa: vehiculo.placa, color: vehiculo.color ?? '', modelo: vehiculo.modelo ?? '' });
+    setFormularioEdicion({ placa: vehiculo.placa, modelo: vehiculo.modelo ?? '' });
     setErrorEdicion('');
   };
 
   const cerrarEdicion = () => {
     setVehiculoEditando(null);
-    setFormularioEdicion({ placa: '', color: '', modelo: '' });
+    setFormularioEdicion({ placa: '', modelo: '' });
     setErrorEdicion('');
   };
 
@@ -234,7 +229,6 @@ export function RegistrarVehiculo() {
     setErrorEdicion('');
 
     const nuevaPlaca = formularioEdicion.placa.trim().toUpperCase();
-    const nuevoColor = formularioEdicion.color.trim();
     const nuevoModelo = formularioEdicion.modelo.trim();
 
     if (!nuevaPlaca) {
@@ -253,10 +247,9 @@ export function RegistrarVehiculo() {
     }
 
     const placaCambio = nuevaPlaca !== vehiculoEditando.placa;
-    const colorCambio = (nuevoColor || null) !== (vehiculoEditando.color ?? null);
     const modeloCambio = (nuevoModelo || null) !== (vehiculoEditando.modelo ?? null);
 
-    if (!placaCambio && !colorCambio && !modeloCambio) {
+    if (!placaCambio && !modeloCambio) {
       cerrarEdicion();
       return;
     }
@@ -274,13 +267,12 @@ export function RegistrarVehiculo() {
           id_usuario: usuario.id,
           id_tipo: vehiculoEditando.id_tipo,
           id_marca: vehiculoEditando.id_marca,
-          color: nuevoColor || undefined,
+          color: vehiculoEditando.color ?? undefined,
           modelo: nuevoModelo || undefined,
         });
         await vehiculosService.eliminar(vehiculoEditando.placa);
       } else {
         await vehiculosService.actualizar(vehiculoEditando.placa, {
-          color: nuevoColor || undefined,
           modelo: nuevoModelo || undefined,
         });
       }
@@ -381,20 +373,6 @@ export function RegistrarVehiculo() {
                 disabled={guardando}
               />
             </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="color">Color (opcional)</label>
-              <input
-                id="color"
-                className="form-input"
-                type="text"
-                value={formulario.color}
-                onChange={(e) => setFormulario({ ...formulario, color: e.target.value })}
-                placeholder="Ej. Rojo"
-                maxLength={30}
-                disabled={guardando}
-              />
-            </div>
           </div>
 
           <div className="mis-vehiculos-form-actions">
@@ -431,7 +409,7 @@ export function RegistrarVehiculo() {
                   <div className="mis-vehiculos-item-info">
                     <span className="mis-vehiculos-item-placa">{v.placa}</span>
                     <span className="mis-vehiculos-item-detalle">
-                      {etiquetaTipo(tipo)}{marca ? ` · ${marca.nombre}` : ''}{v.modelo ? ` · ${v.modelo}` : ''}{v.color ? ` · ${v.color}` : ''}
+                      {etiquetaTipo(tipo)}{marca ? ` · ${marca.nombre}` : ''}{v.modelo ? ` · ${v.modelo}` : ''}
                     </span>
                     <span className={`mis-vehiculos-estado ${v.activo === false ? 'inactivo' : ''}`}>
                       {v.activo === false ? 'Inactivo' : 'Activo'}
@@ -479,19 +457,6 @@ export function RegistrarVehiculo() {
                   value={formularioEdicion.placa}
                   onChange={(e) => setFormularioEdicion({ ...formularioEdicion, placa: e.target.value.toUpperCase() })}
                   maxLength={7}
-                  disabled={guardandoEdicion}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Color</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  value={formularioEdicion.color}
-                  onChange={(e) => setFormularioEdicion({ ...formularioEdicion, color: e.target.value })}
-                  placeholder="Ej. Rojo"
-                  maxLength={30}
                   disabled={guardandoEdicion}
                 />
               </div>
