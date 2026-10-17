@@ -31,22 +31,21 @@ export function PagosHoy({ revision = 0 }: { revision?: number }) {
   return (
     <section className="dashboard-stats" aria-label="Pagos de hoy">
       <div className="dashboard-stats-heading">
-        <div><h2>Cobros de hoy</h2><p>Solo los pagos completados cuentan como dinero cobrado. Actualización automática cada 30 segundos.</p></div><Link className="dashboard-control-link" to="/app/pagos">Consultar pagos →</Link>
+        <h2>Pagos</h2><Link className="dashboard-control-link" to="/app/pagos">Ver pagos</Link>
       </div>
 
       {error && <p className="dashboard-stats-error" role="alert">{error} Se muestran los últimos datos recibidos.</p>}
       <div className="dashboard-stats-grid dashboard-payments-grid">
-        <article className="dashboard-stat dashboard-stat-free"><span>Placas con pago confirmado</span><strong>{totales.pagados}</strong><small>{totales.efectivo} efectivo · {totales.en_linea} tarjeta</small></article>
-        <article className="dashboard-stat"><span>Dinero cobrado hoy</span><strong>{quetzales(totales.monto)}</strong><small>pagos completados hoy</small></article>
-        <article className="dashboard-stat dashboard-stat-warning"><span>Pagos con tarjeta pendientes</span><strong>{totales.pendientes}</strong><small>No incluidos en el total cobrado</small></article>
+        <article className="dashboard-stat"><span>Cobrado hoy</span><strong>{quetzales(totales.monto)}</strong><small>{totales.pagados} pagos confirmados</small></article>
+        <article className="dashboard-stat"><span>Tarjeta pendiente</span><strong>{totales.pendientes}</strong></article>
       </div>
 
-      <section className="dashboard-attention" aria-labelledby="attention-title">
-        <div className="dashboard-attention-heading"><div><span className="dashboard-section-label">ANTES DE AUTORIZAR UNA SALIDA</span><h3 id="attention-title">{totales.dentro_sin_pago} vehículos dentro sin pago vigente hoy</h3><p>Incluye entradas de días anteriores. Verifica o registra el pago al atender su salida.</p></div><Link className="dashboard-control-link" to="/app/guardian">Ir a control de acceso →</Link></div>
-        {datos.dentro_sin_pago.length > 0 ? <details><summary>Ver placas y espacios ({datos.dentro_sin_pago.length})</summary><div className="pagoshoy-tabla-wrap"><table className="pagoshoy-tabla"><thead><tr><th>Placa</th><th>Ubicación</th><th>Fecha de entrada</th></tr></thead><tbody>{datos.dentro_sin_pago.map(v => <tr key={v.ticket}><td><strong>{v.placa}</strong></td><td>{v.zona} · {v.lugar}</td><td>{new Date(v.fecha_entrada).toLocaleString('es-GT', { timeZone: 'America/Guatemala', dateStyle: 'short', timeStyle: 'short' })}</td></tr>)}</tbody></table></div></details> : <p>No hay vehículos pendientes de pago dentro del parqueo.</p>}
-      </section>
+      {totales.dentro_sin_pago > 0 && <section className="dashboard-attention" aria-labelledby="attention-title">
+        <div className="dashboard-attention-heading"><h3 id="attention-title">{totales.dentro_sin_pago} vehículos dentro sin pago</h3><Link className="dashboard-control-link" to="/app/guardian">Atender salidas</Link></div>
+        <details><summary>Ver placas y espacios</summary><div className="pagoshoy-tabla-wrap"><table className="pagoshoy-tabla"><thead><tr><th>Placa</th><th>Ubicación</th><th>Fecha de entrada</th></tr></thead><tbody>{datos.dentro_sin_pago.map(v => <tr key={v.ticket}><td><strong>{v.placa}</strong></td><td>{v.zona} · {v.lugar}</td><td>{new Date(v.fecha_entrada).toLocaleString('es-GT', { timeZone: 'America/Guatemala', dateStyle: 'short', timeStyle: 'short' })}</td></tr>)}</tbody></table></div></details>
+      </section>}
 
-      <details className="dashboard-transactions"><summary>Movimientos de pago de hoy ({datos.pagos.length})</summary><p className="dashboard-actualizado">El importe de cada operación se muestra junto a su estado. Los pendientes no se suman a lo cobrado.</p>
+      <details className="dashboard-transactions"><summary>Movimientos de hoy ({datos.pagos.length})</summary>
       {datos.pagos.length === 0 ? <p className="pagoshoy-vacio">Todavía no hay pagos registrados hoy.</p> : (
         <div className="pagoshoy-tabla-wrap">
           <table className="pagoshoy-tabla">

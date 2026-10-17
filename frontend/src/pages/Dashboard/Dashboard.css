@@ -128,3 +128,36 @@ button.dashboard-stat:disabled { cursor: wait; }
   .dashboard-page .dashboard-stat { padding: 14px; }
   .pagoshoy-tabla { min-width: 560px; }
 }
+
+/* Resumen breve; el menú conserva el acceso a cada módulo. */
+.dashboard-page { max-width: 900px; gap: 16px; }
+.dashboard-title { margin: 0; }
+.dashboard-daybar { padding: 16px 20px; border: 1px solid #dfe4ed; border-radius: 10px; background: #fff; color: #26346d; }
+.dashboard-daybar strong { font-size: .92rem; font-weight: 600; }
+.dashboard-primary-action { padding: 9px 14px; border: 1px solid #253780; border-radius: 8px; background: #253780; color: #fff; text-decoration: none; }
+.dashboard-primary-action:hover { background: #1c2c6e; }
+.dashboard-page .dashboard-stats { padding: 20px; border-radius: 12px; box-shadow: none; }
+.dashboard-page .dashboard-stats-heading { margin-bottom: 14px; }
+.dashboard-page .dashboard-occupancy-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.dashboard-page .dashboard-payments-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.dashboard-page .dashboard-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-height: 112px; padding: 16px; border: 1px solid #e0e5ed; border-radius: 10px; background: #f8f9fc; box-shadow: none; }
+.dashboard-page .dashboard-stat-free { background: #f4faf6; border-color: #dce9df; }
+.dashboard-page .dashboard-stat > span { order: 0; color: #49566b; font-size: .82rem; }
+.dashboard-page .dashboard-stat > strong, .dashboard-payments-grid .dashboard-stat > strong { order: 1; margin: 0; color: #26346d; font-size: 1.8rem; line-height: 1.2; text-align: left; }
+.dashboard-page .dashboard-stat > small { order: 2; font-size: .78rem; }
+button.dashboard-stat:hover { border-color: #253780; box-shadow: none; }
+.dashboard-attention { margin-top: 16px; padding: 14px 16px; border-left-width: 3px; border-radius: 8px; }
+.dashboard-attention h3 { margin: 0; }
+.dashboard-attention details { margin-top: 8px; }
+.dashboard-transactions { margin-top: 16px; }
+@media (max-width: 650px) {
+  .dashboard-daybar { align-items: stretch; }
+  .dashboard-page .dashboard-occupancy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-page .dashboard-payments-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .dashboard-page .dashboard-occupancy-grid, .dashboard-page .dashboard-payments-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-page .dashboard-occupancy-grid > :last-child { grid-column: 1 / -1; }
+  .dashboard-page .dashboard-stat { min-height: 100px; padding: 12px; }
+  .dashboard-page .dashboard-stat > strong, .dashboard-payments-grid .dashboard-stat > strong { font-size: 1.5rem; }
+}

@@ -125,8 +125,7 @@ export function PagarParqueo() {
       </header>}
 
       <main className={`pagar-main${checkout ? ' pagar-main-checkout' : ''}`}>
-        {integrado ? <UserSectionHeader title="Pagar mi parqueo" description="Selecciona tu vehículo o escribe la placa, revisa el importe y paga con tarjeta." /> : <h1 className="pagar-title">Pago de Parqueo</h1>}
-        {integrado && <ol className="user-payment-guide" aria-label="Pasos del pago"><li aria-current={!parqueo && !placaPagada ? 'step' : undefined}>1. Consulta tu placa</li><li aria-current={parqueo && !checkout ? 'step' : undefined}>2. Revisa el importe</li><li aria-current={checkout ? 'step' : undefined}>3. Paga y verifica</li></ol>}
+        {integrado ? <UserSectionHeader title="Pagar mi parqueo" description="Consulta tu placa y paga con tarjeta." /> : <h1 className="pagar-title">Pago de Parqueo</h1>}
         <p className="pagar-subtitle" hidden={!!checkout || integrado}>
           {usuario ? `Bienvenido(a), ${usuario.nombres} ${usuario.apellidos}.` : 'No necesitas una cuenta. Ingresa la placa y el número de tu ticket.'} Paga tu estancia con tarjeta.
         </p>
@@ -231,7 +230,7 @@ export function PagarParqueo() {
           {checkout && <div className="pagar-card pagar-tarjeta"><FormularioRecurrente url={checkout.url_pago} referencia={checkout.referencia} acceso={checkout.acceso} sandbox={precio.modo === 'sandbox'} /></div>}
           </div>
         )}
-        {integrado && <p className="user-payment-note">El pago solo queda completado cuando el servidor lo confirma. Al salir, el guardia verifica tu placa. También puedes pagar en efectivo con él.</p>}
+        {integrado && <p className="user-payment-note">El guardia verificará tu pago al salir.</p>}
       </main>
     </div>
   );

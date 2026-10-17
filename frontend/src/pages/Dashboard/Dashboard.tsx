@@ -1,25 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { OPCIONES_POR_ROL, type OpcionMenu } from '../../components/Menu';
 import { useAuth } from '../../hooks/useAuth';
 import { guardianService, type EstadisticasGuardian, type ResumenGuardian, type TipoIndicador, type DetalleIndicador } from '../../services/guardian.service';
 import { PagosHoy } from './PagosHoy';
 import './Dashboard.css';
-
-const DETALLE: Record<string, { titulo: string; descripcion: string; accion: string }> = {
-  '/app/usuarios': { titulo: 'Administrar usuarios', descripcion: 'Crea cuentas, edita los datos y activa o desactiva el acceso al sistema.', accion: 'Gestionar cuentas' },
-  '/app/parqueo': { titulo: 'Consultar parqueo', descripcion: 'Revisa qué vehículos están dentro, su espacio y las entradas y salidas registradas.', accion: 'Ver registros' },
-  '/app/pagos': { titulo: 'Gestionar pagos', descripcion: 'Consulta una placa, revisa el adeudo y registra el pago en efectivo o con tarjeta.', accion: 'Consultar y cobrar' },
-  '/app/tarifas': { titulo: 'Configurar tarifas', descripcion: 'Edita el precio por tipo de vehículo y método de pago.', accion: 'Editar tarifas' },
-  '/app/auditoria': { titulo: 'Consultar auditoría', descripcion: 'Revisa quién realizó cambios en usuarios, tickets, parqueo y pagos.', accion: 'Ver acciones' },
-  '/app/guardian': { titulo: 'Controlar entradas y salidas', descripcion: 'Registra el ingreso, asigna un espacio y verifica el pago antes de autorizar la salida.', accion: 'Abrir control de acceso' },
-  '/app/buscar-vehiculo': { titulo: 'Buscar vehículo', descripcion: 'Consulta una placa para identificar el vehículo y los datos de su dueño.', accion: 'Buscar por placa' },
-  '/app/validar': { titulo: 'Consultar mi ticket', descripcion: 'Verifica el estado del parqueo y del pago de tu vehículo.', accion: 'Consultar estado' },
-  '/app/reportes': { titulo: 'Consultar reportes', descripcion: 'Revisa los pagos por mes, los montos cobrados y descarga el registro en Excel.', accion: 'Ver y exportar reportes' },
-  '/app/pagar': { titulo: 'Pagar mi parqueo', descripcion: 'Consulta tu estancia y realiza el pago con tarjeta.', accion: 'Consultar y pagar' },
-  '/app/historial': { titulo: 'Ver mis pagos', descripcion: 'Consulta tus pagos anteriores y el estado de cada transacción.', accion: 'Abrir historial' },
-  '/app/mis-vehiculos': { titulo: 'Administrar mis vehículos', descripcion: 'Registra tus vehículos y mantén actualizados sus datos.', accion: 'Gestionar vehículos' },
-};
 
 function IconoIndicador({ tipo }: { tipo: 'espacio' | 'vehiculo' | 'entrada' | 'salida' | 'pago' | 'sinpago' | 'actualizar' }) {
   const trazos = {
@@ -50,7 +34,6 @@ const CRITERIOS_INDICADOR: Record<TipoIndicador, string> = {
 export function Dashboard() {
   const { usuario } = useAuth();
   const rol = usuario?.rol;
-  const opciones: OpcionMenu[] = ((rol && OPCIONES_POR_ROL[rol]) ?? []).filter(o => o.path !== '/app/dashboard');
   const [resumen, setResumen] = useState<ResumenGuardian | null>(null);
   const [estadisticas, setEstadisticas] = useState<EstadisticasGuardian | null>(null);
   const [errorEstadisticas, setErrorEstadisticas] = useState<string | null>(null);
@@ -115,42 +98,25 @@ export function Dashboard() {
   useEffect(() => { void cargarResumen(); }, [cargarResumen]);
   const numero = (valor: number | string | undefined) => cargando || valor === undefined ? '—' : Number(valor);
 
-  function tarjetas(lista: OpcionMenu[]) {
-    return <div className="dashboard-cards">{lista.map(opcion => {
-      const detalle = DETALLE[opcion.path];
-      return <Link key={opcion.path} to={opcion.path} className="dashboard-card">
-        <span className="dashboard-card-icono" aria-hidden="true"><opcion.Icono /></span>
-        <span className="dashboard-card-title">{detalle?.titulo ?? opcion.etiqueta}</span>
-        <span className="dashboard-card-desc">{detalle?.descripcion}</span>
-        <span className="dashboard-card-accion">{detalle?.accion ?? 'Abrir módulo'}<span aria-hidden="true">→</span></span>
-      </Link>;
-    })}</div>;
-  }
-
   return <section className="dashboard-page">
     <header className="dashboard-hello">
-      <h1 className="dashboard-title">Resumen del parqueo</h1>
-      <p className="dashboard-subtitle">Hola, {usuario?.nombres}. {esPersonalParqueo ? 'Revisa la disponibilidad, los cobros de hoy y los vehículos que requieren atención.' : 'Desde aquí puedes acceder a las tareas disponibles para tu cuenta.'}</p>
-      <span className="dashboard-rol">{rol}</span>
+      <h1 className="dashboard-title">Resumen de hoy</h1>
     </header>
 
-    {esPersonalParqueo && <div className="dashboard-daybar"><div><span className="dashboard-section-label">JORNADA ACTUAL</span><strong>{new Date().toLocaleDateString('es-GT', { timeZone: 'America/Guatemala', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong></div><Link className="dashboard-primary-action" to="/app/guardian">Registrar entrada o salida →</Link></div>}
+    {esPersonalParqueo && <div className="dashboard-daybar"><strong>{new Date().toLocaleDateString('es-GT', { timeZone: 'America/Guatemala', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong><Link className="dashboard-primary-action" to="/app/guardian">Entradas y salidas</Link></div>}
     {esPersonalParqueo && <section className="dashboard-stats" aria-label="Estado actual del parqueo" aria-busy={cargando}>
-      <div className="dashboard-stats-heading"><div><h2>Disponibilidad y movimientos</h2><p>Los espacios y vehículos muestran el estado actual. Las entradas y salidas corresponden a hoy.</p></div>
+      <div className="dashboard-stats-heading"><h2>Parqueo</h2>
         <button type="button" className="dashboard-control-link" disabled={cargando} onClick={() => void cargarResumen()}><IconoIndicador tipo="actualizar" />{cargando ? 'Actualizando…' : 'Actualizar'}</button>
       </div>
       {errorEstadisticas && <p className="dashboard-stats-error" role="alert">{errorEstadisticas}</p>}
       <div className="dashboard-stats-grid dashboard-occupancy-grid">
-        <button type="button" className="dashboard-stat dashboard-stat-free" onClick={e => abrirDetalle('espacios', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Espacios libres"><IconoIndicador tipo="espacio" /><span>Espacios libres</span><strong>{numero(resumen?.disponibles)}</strong><small>De {numero(resumen?.total)} espacios habilitados</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
-        <button type="button" className="dashboard-stat dashboard-stat-busy" onClick={e => abrirDetalle('vehiculos', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Vehículos dentro"><IconoIndicador tipo="vehiculo" /><span>Vehículos dentro</span><strong>{numero(estadisticas?.vehiculos_activos)}</strong><small>Incluye ingresos de días anteriores</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
-        <button type="button" className="dashboard-stat" onClick={e => abrirDetalle('entradas', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Entradas de hoy"><IconoIndicador tipo="entrada" /><span>Entradas de hoy</span><strong>{numero(estadisticas?.entradas_hoy)}</strong><small>Vehículos que ingresaron hoy</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
-        <button type="button" className="dashboard-stat dashboard-stat-exit" onClick={e => abrirDetalle('salidas', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Salidas de hoy"><IconoIndicador tipo="salida" /><span>Salidas de hoy</span><strong>{numero(estadisticas?.salidas_hoy)}</strong><small>Vehículos que salieron hoy</small><span className="dashboard-ver-detalle">Ver detalle →</span></button>
+        <button type="button" className="dashboard-stat dashboard-stat-free" onClick={e => abrirDetalle('espacios', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Espacios libres"><span>Espacios libres</span><strong>{numero(resumen?.disponibles)}</strong><small>de {numero(resumen?.total)}</small></button>
+        <button type="button" className="dashboard-stat" onClick={e => abrirDetalle('vehiculos', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Vehículos dentro"><span>Vehículos dentro</span><strong>{numero(estadisticas?.vehiculos_activos)}</strong></button>
+        <button type="button" className="dashboard-stat" onClick={e => abrirDetalle('entradas', e.currentTarget)} disabled={cargando} aria-haspopup="dialog" aria-label="Ver detalle: Entradas de hoy"><span>Entradas hoy</span><strong>{numero(estadisticas?.entradas_hoy)}</strong></button>
       </div>
-      {actualizado && <p className="dashboard-actualizado">Última actualización: {actualizado.toLocaleTimeString('es-GT', { timeZone: 'America/Guatemala', hour: '2-digit', minute: '2-digit' })}</p>}
     </section>}
 
     {esPersonalParqueo && <PagosHoy revision={actualizado?.getTime() ?? 0} />}
-    <nav className="dashboard-modulos" aria-label="Accesos a los módulos"><h2>Herramientas de trabajo</h2><p>Accede a los registros y a la administración del sistema.</p>{tarjetas(opciones)}</nav>
     {indicadorAbierto && <dialog ref={dialogo} className="dashboard-detalle-modal" aria-labelledby="dashboard-detalle-titulo" onCancel={() => setIndicadorAbierto(null)} onClose={() => setIndicadorAbierto(null)}>
       <header className="dashboard-detalle-header"><div><h2 id="dashboard-detalle-titulo">{NOMBRES_INDICADOR[indicadorAbierto]}</h2><p>{CRITERIOS_INDICADOR[indicadorAbierto]}</p></div><button type="button" className="dashboard-control-link" onClick={() => setIndicadorAbierto(null)} aria-label="Cerrar detalle">Cerrar ✕</button></header>
       {cargandoDetalle ? <p role="status">Cargando detalle…</p> : errorDetalle ? <div role="alert"><p className="dashboard-stats-error">{errorDetalle}</p><button type="button" className="dashboard-control-link" onClick={() => setRevisionDetalle(n => n + 1)}>Reintentar</button></div> : detalle && <>
