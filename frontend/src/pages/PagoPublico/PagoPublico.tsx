@@ -75,9 +75,9 @@ export function PagoPublico() {
       <PublicHeader />
 
       <main className={`pagar-main${enCheckout ? ' pagar-main-checkout' : ''}`}>
-        <h1 className="pagar-title">Paga tu parqueo</h1>
+        <h1 className="pagar-title">Pagar parqueo</h1>
         <p className="pagar-subtitle" hidden={enCheckout}>
-          Sin crear cuenta. Ingresa tu placa, paga con tarjeta y presenta tu placa al guardia: tu pago vale por todo el día.
+          Ingresa tu placa para pagar con tarjeta. El pago vale por todo el día.
         </p>
 
         {error && <div className="pagar-alerta pagar-alerta-error" role="alert">{error}</div>}
@@ -98,11 +98,9 @@ export function PagoPublico() {
           <div className="pagar-card pagar-resultado pagar-resultado-aprobado">
             <h2 className="pagar-resumen-titulo">Esta placa ya pagó hoy</h2>
             <p className="pagar-resumen-linea"><span>Placa</span><strong>{consulta.placa}</strong></p>
-            <p className="pagar-resumen-linea"><span>Monto</span><strong>{formatoQuetzales(consulta.pago?.monto ?? 0)}</strong></p>
-            <p className="pagar-resumen-linea"><span>Forma de pago</span><strong>{consulta.pago?.metodo === 'efectivo' ? 'Efectivo' : 'Tarjeta'}</strong></p>
             <p className="pagar-resumen-linea"><span>Válido</span><strong>{formatoDia(consulta.fecha_vigencia)}</strong></p>
-            <p className="pagar-subtitle">No necesitas pagar de nuevo: puedes entrar y salir hoy.</p>
-            <button type="button" className="pagar-button" onClick={reiniciar}>Pagar otra placa</button>
+            <p className="pagar-subtitle">Puedes presentar esta placa al guardia.</p>
+            <button type="button" className="pagar-button pagar-button-secundario" onClick={reiniciar}>Consultar otra placa</button>
           </div>
         )}
 
@@ -111,7 +109,6 @@ export function PagoPublico() {
             <form className="pagar-card pagar-resumen" onSubmit={pagar}>
               <h2 className="pagar-resumen-titulo">Resumen de pago</h2>
               <p className="pagar-resumen-linea"><span>Placa</span><strong>{consulta.placa}</strong></p>
-              <p className="pagar-resumen-linea"><span>Vehículo</span><strong>{consulta.tipo === 'moto' ? 'Motocicleta' : 'Automóvil'}{consulta.registrada ? '' : ' · visitante'}</strong></p>
               <p className="pagar-resumen-linea"><span>Válido para</span><strong>{formatoDia(consulta.fecha_vigencia)}</strong></p>
               <p className="pagar-resumen-linea pagar-resumen-total"><span>Total a pagar</span><strong>{formatoQuetzales(consulta.tarifa_online)}</strong></p>
 

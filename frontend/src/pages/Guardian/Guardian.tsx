@@ -218,9 +218,7 @@ export function Guardian() {
       {usuario?.rol !== 'guardia' && <Link to="/app/dashboard" className="guardian-back">← Volver al panel de control</Link>}
       <div className="guardian-heading">
         <div>
-          <p className="guardian-eyebrow">Control de acceso</p>
           <h1>Entradas y salidas</h1>
-          <p>Elige la operación y sigue los pasos para atender al conductor.</p>
         </div>
         <button type="button" className="guardian-refresh" onClick={() => void cargarEstado()} disabled={cargandoMapa}>
           {cargandoMapa ? 'Actualizando...' : <><IconoActualizar /> Actualizar</>}
@@ -255,19 +253,17 @@ export function Guardian() {
       )}
 
       <div className="guardian-summary" aria-live="polite">
-        <article className="guardian-stat guardian-stat-total"><span>Capacidad total</span><strong>{numero(resumen?.total)}</strong></article>
-        <article className="guardian-stat guardian-stat-free"><span>Espacios libres</span><strong>{numero(resumen?.disponibles)}</strong></article>
-        <article className="guardian-stat guardian-stat-busy"><span>Espacios ocupados</span><strong>{numero(resumen?.ocupados)}</strong></article>
+        <span>Espacios libres</span>
+        <strong>{numero(resumen?.disponibles)} <small>de {numero(resumen?.total)}</small></strong>
       </div>
 
       <div className="guardian-operation-picker" role="group" aria-label="Operación del guardia">
-        <button type="button" aria-pressed={operacion === 'entrada'} disabled={registrandoEntrada || registrandoSalida} onClick={() => { setOperacion('entrada'); setMensaje(null); }}><strong>→ Registrar entrada</strong><span>Registrar placa y asignar espacio</span></button>
-        <button type="button" aria-pressed={operacion === 'salida'} disabled={registrandoEntrada || registrandoSalida} onClick={() => { setOperacion('salida'); setMensaje(null); }}><strong>← Cobrar / registrar salida</strong><span>Verificar o cobrar y registrar salida</span></button>
+        <button type="button" aria-pressed={operacion === 'entrada'} disabled={registrandoEntrada || registrandoSalida} onClick={() => { setOperacion('entrada'); setMensaje(null); }}>Entrada</button>
+        <button type="button" aria-pressed={operacion === 'salida'} disabled={registrandoEntrada || registrandoSalida} onClick={() => { setOperacion('salida'); setMensaje(null); }}>Salida</button>
       </div>
       <div className="guardian-workspace guardian-workspace-focused">
         <article className="guardian-card guardian-entry-card" hidden={operacion !== 'entrada'}>
-          <div className="guardian-card-title"><div><h2>¿Qué vehículo va a ingresar?</h2><p>Solo necesitas la placa. La ubicación se asigna automáticamente.</p></div></div>
-          <aside className="guardian-steps" aria-label="Pasos para registrar una entrada"><h3>Así registras la entrada</h3><ol><li><strong>Escribe la placa</strong><span>El tipo de vehículo se detecta automáticamente.</span></li><li><strong>Confirma la entrada</strong><span>Se genera el ticket y se ocupa un espacio disponible.</span></li><li><strong>Indica dónde estacionarse</strong><span>La confirmación muestra el parqueo y el número de espacio.</span></li></ol></aside>
+          <div className="guardian-card-title"><h2>Registrar entrada</h2></div>
           <form onSubmit={registrarEntrada} className="guardian-form">
             <label htmlFor="placa-entrada">Placa del vehículo</label>
             <input
@@ -290,8 +286,7 @@ export function Guardian() {
                 </p>
               )
             )}
-            <div className="guardian-auto-location"><strong>Asignación automática</strong><p>El sistema elige un espacio libre compatible con el vehículo.</p></div>
-            <label className="guardian-manual-toggle"><input type="checkbox" checked={ubicacionManual} onChange={(e) => { setUbicacionManual(e.target.checked); setZonaEntrada(''); setLugarEntrada(''); }} disabled={registrandoEntrada} /> Elegir parqueo o espacio específico</label>
+            <label className="guardian-manual-toggle"><input type="checkbox" checked={ubicacionManual} onChange={(e) => { setUbicacionManual(e.target.checked); setZonaEntrada(''); setLugarEntrada(''); }} disabled={registrandoEntrada} /> Elegir espacio manualmente</label>
             {ubicacionManual && <div className="guardian-location-fields">
             <label htmlFor="zona-entrada">Parqueo</label>
             <select
@@ -328,15 +323,13 @@ export function Guardian() {
               className="guardian-button guardian-button-primary"
               disabled={registrandoEntrada || !tipoDetectado || (ubicacionManual && !!zonaEntrada && lugaresEntradaDisponibles.length === 0)}
             >
-              {registrandoEntrada ? 'Registrando...' : ubicacionManual && lugarEntrada ? 'Confirmar entrada en el espacio seleccionado' : 'Confirmar entrada y asignar espacio'}
+              {registrandoEntrada ? 'Registrando...' : 'Confirmar entrada'}
             </button>
           </form>
-          <p className="guardian-hint">No se requiere pago para ingresar. El conductor puede pagar con tarjeta durante su estancia o en efectivo contigo antes de salir.</p>
         </article>
 
         <article className="guardian-card guardian-exit-card" hidden={operacion !== 'salida'}>
-          <div className="guardian-card-title"><div><h2>¿Qué vehículo va a salir?</h2><p>Busca su placa para verificar el pago o registrar el cobro en efectivo.</p></div></div>
-          <aside className="guardian-steps" aria-label="Pasos para registrar una salida"><h3>Así atiendes la salida</h3><ol><li><strong>Busca la placa</strong><span>Comprueba que coincida con el vehículo que tienes enfrente.</span></li><li><strong>Revisa el pago</strong><span>Si falta pagar, registra el efectivo o verifica el pago en línea.</span></li><li><strong>Confirma la salida</strong><span>El espacio se libera al completar esta acción.</span></li></ol></aside>
+          <div className="guardian-card-title"><h2>Registrar salida</h2></div>
           <label className="guardian-search-label" htmlFor="guardian-busqueda">Placa del vehículo</label>
           <form onSubmit={buscarVehiculo} className="guardian-search-row guardian-search-placa">
             <input
@@ -350,7 +343,6 @@ export function Guardian() {
             />
             <button className="guardian-button guardian-button-secondary" disabled={buscando}>{buscando ? 'Buscando...' : 'Buscar'}</button>
           </form>
-          <p className="guardian-hint">Busca la placa para consultar si ya pagó. Si falta el pago, podrás registrar el efectivo antes de confirmar la salida.</p>
 
           {vehiculo && (
             <div className="guardian-vehicle-result">
@@ -359,8 +351,7 @@ export function Guardian() {
                 {esPagoCompletado(vehiculo) ? 'Pago completado' : (vehiculo.pago_estado ?? 'Sin pago')}
               </span>
               {!esPagoCompletado(vehiculo) && <div className="guardian-exit-payment">
-                <h3>Pago pendiente: elige cómo continuar</h3>
-                <p>Si paga con tarjeta desde la plataforma, pulsa «Verificar pago» cuando termine. Si entrega efectivo, registra el cobro aquí.</p>
+                <h3>Pago pendiente</h3>
                 <CobroPlaca key={vehiculo.placa} placa={vehiculo.placa} onCobrado={() => void consultarVehiculo({ ticket: vehiculo.numero_ticket })} />
                 <button type="button" className="guardian-refresh" disabled={buscando} onClick={() => void consultarVehiculo({ ticket: vehiculo.numero_ticket })}>{buscando ? 'Verificando…' : 'Verificar pago'}</button>
               </div>}
@@ -372,7 +363,7 @@ export function Guardian() {
                   disabled={!esPagoCompletado(vehiculo) || registrandoSalida}
                   title={!esPagoCompletado(vehiculo) ? 'La salida requiere un pago completado' : 'Confirmar salida y liberar lugar'}
                 >
-                  {registrandoSalida ? 'Registrando salida...' : 'Confirmar salida y liberar espacio'}
+                  {registrandoSalida ? 'Registrando salida...' : 'Confirmar salida'}
                 </button>
               </div>
             </div>
@@ -380,8 +371,8 @@ export function Guardian() {
         </article>
       </div>
 
-      <section className="guardian-card guardian-map-card">
-        <div className="guardian-map-title"><div><h2>Ocupación por zona</h2><p>Se actualiza automáticamente cada 15 segundos.</p></div><span className="guardian-live"><i /> En tiempo real</span></div>
+      <details className="guardian-card guardian-map-card">
+        <summary className="guardian-map-title">Ver ocupación por zona <span>{numero(resumen?.ocupados)} ocupados</span></summary>
         {cargandoMapa ? <div className="guardian-loading">Cargando lugares...</div> : lugaresPorZona.length === 0 ? (
           <div className="guardian-empty"><strong>Aún no hay lugares configurados.</strong><span>Cuando Administración registre lugares reales, aparecerán agrupados por zona aquí.</span></div>
         ) : (
@@ -400,7 +391,7 @@ export function Guardian() {
             ))}
           </div>
         )}
-      </section>
+      </details>
     </section>
   );
 }

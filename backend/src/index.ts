@@ -21,12 +21,18 @@ const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
 const origenFrontend = process.env.FRONTEND_BASE_URL ? new URL(process.env.FRONTEND_BASE_URL).origin : 'http://localhost:5173';
+const origenesFrontend = [origenFrontend];
+const urlFrontend = new URL(origenFrontend);
+if (urlFrontend.hostname === 'localhost' || urlFrontend.hostname === '127.0.0.1') {
+  urlFrontend.hostname = urlFrontend.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
+  origenesFrontend.push(urlFrontend.origin);
+}
 // Solo la API pública de tickets permite llamadas desde aplicaciones externas sin cookies.
 app.use('/api/pagos/publico', cors());
 app.use('/api/pagos/compartido', cors());
 app.use((req, res, next) => {
   if (/^\/api\/pagos\/(publico|compartido)(?:\/|$)/.test(req.path)) { next(); return; }
-  cors({ origin: origenFrontend })(req, res, next);
+  cors({ origin: origenesFrontend })(req, res, next);
 });
 validarConfiguracionPago();
 app.post('/api/pagos/webhook/recurrente', express.raw({ type: 'application/json', limit: '256kb' }), webhook);

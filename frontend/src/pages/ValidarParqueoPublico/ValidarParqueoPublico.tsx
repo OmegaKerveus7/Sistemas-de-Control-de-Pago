@@ -95,9 +95,9 @@ export function ValidarParqueoPublico() {
             <button type="submit" className="vp-btn-primary" disabled={buscando}>
               {buscando ? 'Validando...' : 'Validar'}
             </button>
-            <button type="button" className="vp-btn-secondary" onClick={limpiar} disabled={buscando}>
+            {(placa || resultado) && <button type="button" className="vp-btn-secondary" onClick={limpiar} disabled={buscando}>
               Limpiar
-            </button>
+            </button>}
           </div>
           {error && <p className="vp-error" role="alert">{error}</p>}
         </form>
