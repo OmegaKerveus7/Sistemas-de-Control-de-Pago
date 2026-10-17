@@ -6,6 +6,7 @@ let calls: string[] = [];
 let committed = false;
 let rolledBack = false;
 let created = 0;
+let pagadorGuardado = 0;
 let tarifa = 27;
 let permisoDelDia = false;
 let ticketPublicoExiste = true;
@@ -31,6 +32,10 @@ async function query(sql: string, args: unknown[] = []): Promise<unknown[]> {
     if (pago && (!pago.transaction_id || pago.transaction_id === args[3])) { pago.transaction_id = String(args[0]); pago.gateway_response = JSON.parse(String(args[1])); }
     return [{ affectedRows: 1 }];
   }
+  if (sql.includes('SET pagador_nombre')) {
+    if (pago && pago.estado_pago === 'completado' && !pago.pagador_nombre && !pago.pagador_correo) { pago.pagador_nombre = args[0] as string | null; pago.pagador_correo = args[1] as string | null; pagadorGuardado++; }
+    return [{ affectedRows: 1 }];
+  }
   if (sql.includes('SET estado_pago')) {
     expect(sql).toContain("estado_pago IN ('pendiente', 'fallido')");
     if (pago && ['pendiente', 'fallido'].includes(pago.estado_pago)) pago.estado_pago = String(args[0]);
@@ -44,7 +49,7 @@ const service = await import('../services/pagos-online.service');
 const { reservar } = await import('./pagos-online.repository');
 const originalFetch = globalThis.fetch;
 const env = { ...process.env };
-beforeEach(() => { pago = undefined; calls = []; committed = rolledBack = false; created = 0; tarifa = 27; permisoDelDia = false; ticketPublicoExiste = true; usuarioTicket = 7; guardiaTicket = 9; process.env.NODE_ENV = 'test'; process.env.PAYMENT_PROVIDER = 'mock'; });
+beforeEach(() => { pago = undefined; calls = []; committed = rolledBack = false; created = 0; pagadorGuardado = 0; tarifa = 27; permisoDelDia = false; ticketPublicoExiste = true; usuarioTicket = 7; guardiaTicket = 9; process.env.NODE_ENV = 'test'; process.env.PAYMENT_PROVIDER = 'mock'; });
 afterEach(() => { process.env = { ...env }; globalThis.fetch = originalFetch; });
 function sandbox(status = 'unpaid', override: Record<string, unknown> = {}) {
   process.env.PAYMENT_PROVIDER = 'recurrente'; process.env.PAYMENT_MODE = 'sandbox'; process.env.RECURRENTE_SECRET_KEY = 'sk_test_fixture';
@@ -119,6 +124,38 @@ test('webhook recupera respuesta perdida y es idempotente ante entregas repetida
   expect(pago?.estado_pago).toBe('completado'); expect(pago?.transaction_id).toBe('ch_test');
   sandbox(); const failed = evento('intent.failed'); await service.webhook(failed.body, failed.headers);
   expect(pago?.estado_pago).toBe('completado');
+});
+test('guarda quién pagó desde el intent de Recurrente, una sola vez', async () => {
+  sandbox(); await reservar(3, 7, 'sandbox', 27);
+  sandbox('paid', { latest_intent: { id: 'in_test' }, customer: { full_name: '  Ana   Pérez ', email: 'Ana@Example.COM' } });
+  const { body, headers } = evento();
+  await service.webhook(body, headers); await service.webhook(body, headers);
+  expect(pago?.estado_pago).toBe('completado');
+  expect(pago?.pagador_nombre).toBe('Ana Pérez'); expect(pago?.pagador_correo).toBe('ana@example.com');
+  expect(pagadorGuardado).toBe(1);
+});
+test('el pagador por confirmación manual también se guarda', async () => {
+  sandbox(); const first = await service.crear(3, 7, 27);
+  sandbox('paid', { latest_intent: { id: 'in_test' }, customer: { full_name: 'Luis Gómez', email: 'luis@example.com' } });
+  expect((await service.confirmar(first.referencia, 7)).aprobado).toBe(true);
+  expect(pago?.pagador_nombre).toBe('Luis Gómez'); expect(pago?.pagador_correo).toBe('luis@example.com');
+});
+test('el pagador ficticio del sandbox o un dato inválido no se guarda y no afecta el pago', async () => {
+  sandbox(); const first = await service.crear(3, 7, 27);
+  sandbox('paid', { latest_intent: { id: 'in_test' }, customer: { full_name: 'Pagador de prueba', email: 'pagador-de-prueba+ac_x@sandbox.recurrente.com' } });
+  expect((await service.confirmar(first.referencia, 7)).aprobado).toBe(true);
+  expect(pagadorGuardado).toBe(0);
+});
+test('si Recurrente falla al consultar al pagador, el pago igual queda completado', async () => {
+  sandbox(); await reservar(3, 7, 'sandbox', 27);
+  const ok = globalThis.fetch;
+  sandbox('paid', { latest_intent: { id: 'in_test' } });
+  const paid = globalThis.fetch;
+  globalThis.fetch = (async (url: unknown, options?: RequestInit) => String(url).includes('/intents/') ? new Response('{}', { status: 500 }) : paid(url as string, options)) as typeof fetch;
+  const { body, headers } = evento();
+  await service.webhook(body, headers);
+  expect(pago?.estado_pago).toBe('completado'); expect(pagadorGuardado).toBe(0);
+  globalThis.fetch = ok;
 });
 test('firma inválida no consulta la API ni modifica la BD', async () => {
   sandbox(); await service.crear(3, 7, 27);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { rutaInicialPorRol } from '../../components/Menu';
 import { pagosService, type Pago, type PrecioInfo, type ResultadoConfirmar, type ConsultaPlaca } from '../../services/pagos.service';
 import { parqueoService, type Parqueo } from '../../services/parqueo.service';
 import { FormularioRecurrente } from '../PagarParqueo/FormularioRecurrente';
@@ -48,7 +49,7 @@ export function Pagos() {
 
   function regresar() {
     if (typeof window.history.state?.idx === 'number' && window.history.state.idx > 0) navigate(-1);
-    else navigate('/app/dashboard');
+    else navigate(rutaInicialPorRol(usuario?.rol));
   }
 
   const cargar = useCallback(async () => {

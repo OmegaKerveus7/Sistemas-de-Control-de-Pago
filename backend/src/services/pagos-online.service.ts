@@ -24,15 +24,29 @@ export async function prepararCheckout({ pago, nuevo }: { pago: repo.PagoOnline;
     const checkout = await pasarela.crearCheckout({ referencia: pago.codigo_validacion, monto: Number(pago.monto), placa: pago.placa });
     await repo.guardarCheckout(pago, checkout);
     return { url_pago: checkout.url_pago, referencia: pago.codigo_validacion, modo };
-  } catch {
+  } catch (error) {
+    console.error(`[Pagos] Falló la creación del checkout ${pago.codigo_validacion}:`, error instanceof Error ? error.message : error);
     throw new pasarela.PagoError(502, `No se pudo preparar el pago ${pago.codigo_validacion}. Consulta con administración antes de reintentar para evitar otro cobro.`);
+  }
+}
+/** Guarda quién pagó. Es un dato accesorio: si falla (Recurrente, o la BD sin migrar) el pago ya confirmado no se toca. */
+async function registrarPagador(pago: repo.PagoOnline, checkout: pasarela.Checkout) {
+  if (pago.pagador_nombre || pago.pagador_correo) return;
+  try {
+    const pagador = await pasarela.obtenerPagador(checkout);
+    if (pagador) await repo.guardarPagador(pago.id_pago, pagador);
+  } catch (error) {
+    console.error(`[Pagos] No se pudo guardar quién pagó ${pago.codigo_validacion}:`, error instanceof Error ? error.message : error);
   }
 }
 export async function sincronizar(pago: repo.PagoOnline) {
   validarAmbiente(pago);
   if (pago.estado_pago === 'completado' || pago.estado_pago === 'reembolsado' || pasarela.modoPago() === 'mock' || !pago.transaction_id) return resultado(pago);
   const checkout = await pasarela.obtenerCheckout(pago.transaction_id);
-  if (pasarela.validarCheckout(checkout, pago, pasarela.modoPago())) await repo.actualizarEstado(pago.id_pago, 'completado');
+  if (pasarela.validarCheckout(checkout, pago, pasarela.modoPago())) {
+    await repo.actualizarEstado(pago.id_pago, 'completado');
+    await registrarPagador(pago, checkout);
+  }
   return resultado(await repo.porReferencia(pago.codigo_validacion));
 }
 export async function confirmar(referencia: string, usuario?: number) { return sincronizar(await repo.porReferencia(referencia, usuario)); }
@@ -62,8 +76,10 @@ export async function webhook(body: Buffer, headers: { id?: string; timestamp?: 
     // Recupera una creación cuyo resultado HTTP se perdió, sin duplicar el cobro.
     await repo.guardarCheckout(pago, { id: checkout.id, url_pago: pasarela.urlRetorno(pago.codigo_validacion) });
   }
-  if (checkout.status === 'paid') await repo.actualizarEstado(pago.id_pago, 'completado');
-  else if (event.event_type === 'intent.failed' && checkout.status === 'unpaid') await repo.actualizarEstado(pago.id_pago, 'fallido');
+  if (checkout.status === 'paid') {
+    await repo.actualizarEstado(pago.id_pago, 'completado');
+    await registrarPagador(pago, checkout);
+  } else if (event.event_type === 'intent.failed' && checkout.status === 'unpaid') await repo.actualizarEstado(pago.id_pago, 'fallido');
 }
 
 let reconciliando = false;

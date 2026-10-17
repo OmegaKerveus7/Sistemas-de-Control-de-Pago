@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { VehiculoConDueno } from '../../models';
 import { vehiculosService } from '../../services/vehiculos.service';
+import { useAuth } from '../../hooks/useAuth';
+import { rutaInicialPorRol } from '../../components/Menu';
 import './BuscarVehiculo.css';
 
 const REGEX_PLACA = /^[PM]\d{3}[A-Z]{3}$/;
@@ -12,9 +14,10 @@ function IconoBusqueda({ volver = false }: { volver?: boolean }) {
 
 export function BuscarVehiculo() {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   function regresar() {
     if (typeof window.history.state?.idx === 'number' && window.history.state.idx > 0) navigate(-1);
-    else navigate('/app/dashboard');
+    else navigate(rutaInicialPorRol(usuario?.rol));
   }
   const [termino, setTermino] = useState('');
   const [resultados, setResultados] = useState<VehiculoConDueno[]>([]);
