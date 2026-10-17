@@ -8,8 +8,8 @@ export const usuariosRouter = Router();
 usuariosRouter.post('/registro', usuariosController.registroPublico);
 
 // Rutas protegidas
-usuariosRouter.get('/', verificarToken, usuariosController.listar);
-usuariosRouter.get('/:id', verificarToken, usuariosController.obtenerPorId);
-usuariosRouter.post('/', verificarToken, verificarRol('ADMIN'), usuariosController.crear);
-usuariosRouter.put('/:id', verificarToken, verificarRol('ADMIN'), usuariosController.actualizar);
-usuariosRouter.delete('/:id', verificarToken, verificarRol('ADMIN'), usuariosController.eliminar);
+usuariosRouter.get('/', verificarToken, verificarRol('administrador'), usuariosController.listar);
+usuariosRouter.get('/:id', verificarToken, verificarRol('administrador'), usuariosController.obtenerPorId);
+usuariosRouter.post('/', verificarToken, verificarRol('administrador'), usuariosController.crear);
+usuariosRouter.put('/:id', verificarToken, verificarRol('administrador'), usuariosController.actualizar);
+usuariosRouter.delete('/:id', verificarToken, verificarRol('administrador'), usuariosController.eliminar);

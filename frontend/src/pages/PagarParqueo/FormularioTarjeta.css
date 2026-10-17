@@ -1,0 +1,10 @@
+.formulario-tarjeta-page { width: min(100% - 40px, 840px); margin: 28px auto; color: var(--belen-azul); }
+.formulario-tarjeta-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.formulario-tarjeta-header h1 { font-size: 1.5rem; font-weight: 800; }
+.formulario-tarjeta-header p { margin-top: 5px; color: var(--color-texto-secundario); }
+.formulario-tarjeta-volver { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0; background: #fff; color: var(--belen-azul); border: 1px solid var(--color-borde); border-radius: var(--radio-sm); }
+.formulario-tarjeta-volver:hover { border-color: var(--belen-dorado); }
+.formulario-tarjeta-card { padding: 24px; background: #fff; border: 1px solid var(--color-borde); border-top: 3px solid var(--belen-azul); border-radius: var(--radio-lg); box-shadow: var(--sombra-sm); }
+.formulario-tarjeta-exito { padding: 20px; background: #ecfdf3; color: #166534; border-radius: var(--radio-sm); }
+.formulario-tarjeta-exito p { margin: 8px 0 16px; }
+@media (max-width: 600px) { .formulario-tarjeta-page { width: calc(100% - 24px); margin: 16px auto; } .formulario-tarjeta-card { padding: 16px; } }

@@ -1,5 +1,20 @@
 import { api } from './api';
 
+export type TipoIndicador = 'espacios' | 'vehiculos' | 'entradas' | 'salidas' | 'pendientes' | 'sin_pago';
+export interface FilaDetalleIndicador {
+  id: number;
+  lugar: string | null;
+  zona: string | null;
+  tipo_vehiculo: string | null;
+  placa?: string;
+  ticket?: string;
+  fecha_entrada?: string;
+  fecha_salida?: string | null;
+  monto?: number | string | null;
+  estado_pago?: string;
+}
+export interface DetalleIndicador { tipo: TipoIndicador; total: number; filas: FilaDetalleIndicador[]; }
+
 export interface ResumenZonaGuardian {
   id: number;
   zona: string;
@@ -12,6 +27,12 @@ export interface ResumenGuardian {
   total: number | string;
   disponibles: number | string;
   ocupados: number | string;
+  ocupados_anteriores: number | string;
+  ocupados_anteriores_detalle: Array<{
+    id: number;
+    lugar: string;
+    zona: string;
+  }>;
   por_zona: ResumenZonaGuardian[];
 }
 
@@ -29,9 +50,16 @@ export interface LugarGuardian {
   zona_id: number;
   zona: string;
   estado: 'disponible' | 'ocupado' | 'extra' | string;
+  tipo_permitido?: string | null;
   color?: string | null;
   ticket?: string | null;
   placa?: string | null;
+}
+
+export interface RegistroEntradaGuardian {
+  placa: string;
+  zona_id?: number;
+  lugar_id?: number;
 }
 
 export interface CriterioGuardian {
@@ -62,6 +90,8 @@ export interface EntradaGuardian {
   tipo_vehiculo: string;
   es_externo: boolean;
   lugar: { id: number; numero: string; zona: string };
+  pago_vigente: boolean;
+  pago: { metodo: string; referencia: string } | null;
 }
 
 export interface SalidaGuardian {
@@ -74,10 +104,11 @@ export interface SalidaGuardian {
 }
 
 export const guardianService = {
+  detalleIndicador: (tipo: TipoIndicador) => api.get<DetalleIndicador>(`/guardian/detalle/${tipo}`),
   resumen: () => api.get<ResumenGuardian>('/guardian/resumen'),
   estadisticas: () => api.get<EstadisticasGuardian>('/guardian/estadisticas'),
   lugares: () => api.get<LugarGuardian[]>('/guardian/lugares'),
-  entrada: (placa: string, tipo?: 'moto' | 'carro') => api.post<EntradaGuardian>('/guardian/entrada', { placa, tipo }),
+  entrada: (registro: RegistroEntradaGuardian) => api.post<EntradaGuardian>('/guardian/entrada', registro),
   buscar: (criterio: CriterioGuardian) => api.post<BusquedaGuardian>('/guardian/buscar', criterio),
   validarPago: (criterio: CriterioGuardian) => api.post<BusquedaGuardian>('/guardian/validar-pago', criterio),
   salida: (criterio: CriterioGuardian) => api.post<SalidaGuardian>('/guardian/salida', criterio),
